@@ -14,6 +14,7 @@ COPY packages/shared/package.json ./packages/shared/
 COPY apps/backend/src ./apps/backend/src
 COPY apps/backend/prisma ./apps/backend/prisma
 COPY apps/backend/tsconfig.json ./apps/backend/
+COPY apps/backend/tsup.config.ts ./apps/backend/
 COPY tsconfig.base.json ./
 
 # Generate Prisma client
