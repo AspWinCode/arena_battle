@@ -1,0 +1,54 @@
+{
+  "name": "RoboCode Arena",
+
+  // Node 20 + встроенный Docker (нужен для sandbox-контейнеров)
+  "image": "mcr.microsoft.com/devcontainers/javascript-node:20",
+
+  "features": {
+    // PostgreSQL 15 прямо внутри Codespace
+    "ghcr.io/devcontainers/features/postgres:1": {
+      "version": "15",
+      "password": "postgres"
+    },
+    // Docker-in-Docker для sandbox-контейнеров Python/C++/Java
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {
+      "version": "latest",
+      "enableNonRootDocker": "true"
+    }
+  },
+
+  // Проброс портов: frontend + backend
+  "forwardPorts": [5173, 3001],
+  "portsAttributes": {
+    "5173": {
+      "label": "Frontend (Vite)",
+      "onAutoForward": "openBrowser"
+    },
+    "3001": {
+      "label": "Backend API"
+    }
+  },
+
+  // Скрипт после создания контейнера
+  "postCreateCommand": "bash .devcontainer/post-create.sh",
+
+  // VS Code расширения
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "prisma.prisma",
+        "bradlc.vscode-tailwindcss",
+        "ms-vscode.vscode-typescript-next",
+        "mtxr.sqltools",
+        "mtxr.sqltools-driver-pg"
+      ],
+      "settings": {
+        "editor.formatOnSave": true,
+        "editor.defaultFormatter": "esbenp.prettier-vscode",
+        "typescript.preferences.importModuleSpecifier": "relative"
+      }
+    }
+  }
+}
