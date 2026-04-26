@@ -1,10 +1,14 @@
 {
   "name": "RoboCode Arena",
 
-  // Node 20 + встроенный Docker (нужен для sandbox-контейнеров)
-  "image": "mcr.microsoft.com/devcontainers/javascript-node:20",
+  // Node 20 на базе Ubuntu (стандартный Codespaces-образ)
+  "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
 
   "features": {
+    // Node.js 20
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "20"
+    },
     // PostgreSQL 15 прямо внутри Codespace
     "ghcr.io/devcontainers/features/postgres:1": {
       "version": "15",
