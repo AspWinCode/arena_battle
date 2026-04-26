@@ -1,0 +1,75 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Level {
+  BLOCKS
+  CODE
+  PRO
+}
+
+enum Status {
+  WAITING
+  CODING
+  BATTLE
+  DONE
+}
+
+model Admin {
+  id        String    @id @default(cuid())
+  email     String    @unique
+  password  String
+  sessions  Session[]
+  createdAt DateTime  @default(now())
+}
+
+model Session {
+  id          String   @id @default(cuid())
+  adminId     String
+  name        String
+  level       Level    @default(CODE)
+  lang        String?
+  format      String   @default("bo3")
+  timeLimit   Int      @default(10)
+  code1       String   @unique
+  code2       String   @unique
+  allowedSkins String[] @default(["robot", "gladiator", "boxer", "cosmonaut"])
+  status      Status   @default(WAITING)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  admin       Admin    @relation(fields: [adminId], references: [id])
+  players     Player[]
+  battles     Battle[]
+}
+
+model Player {
+  id        String   @id @default(cuid())
+  sessionId String
+  slot      Int
+  name      String
+  skin      String
+  lang      String?
+  code      String?  @db.Text
+  strategy  Json?
+  createdAt DateTime @default(now())
+  session   Session  @relation(fields: [sessionId], references: [id])
+
+  @@unique([sessionId, slot])
+}
+
+model Battle {
+  id        String   @id @default(cuid())
+  sessionId String
+  round     Int
+  winner    Int
+  hp1Final  Int
+  hp2Final  Int
+  log       Json
+  createdAt DateTime @default(now())
+  session   Session  @relation(fields: [sessionId], references: [id])
+}

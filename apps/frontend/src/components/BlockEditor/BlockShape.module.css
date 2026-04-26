@@ -1,0 +1,151 @@
+.block {
+  display: inline-flex;
+  flex-direction: column;
+  min-width: 80px;
+  user-select: none;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,.4));
+}
+
+.body {
+  background: var(--block-color);
+  padding: 6px 10px;
+  min-height: 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.labelRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  min-height: 24px;
+}
+
+.labelText {
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  text-shadow: 0 1px 2px rgba(0,0,0,.5);
+  white-space: nowrap;
+}
+
+/* ── type-hat ─────────────────────────────────────────────────── */
+.type-hat .body {
+  border-radius: 16px 16px 0 0;
+}
+
+/* ── type-cap ─────────────────────────────────────────────────── */
+.type-cap .body {
+  border-radius: 0 0 6px 6px;
+}
+
+/* ── type-reporter ────────────────────────────────────────────── */
+.type-reporter {
+  display: inline-flex;
+}
+.type-reporter .body {
+  border-radius: 12px;
+  padding: 4px 10px;
+  min-width: 60px;
+}
+
+/* ── type-predicate ───────────────────────────────────────────── */
+.type-predicate {
+  display: inline-flex;
+}
+.type-predicate .body {
+  clip-path: polygon(12px 0%, calc(100% - 12px) 0%, 100% 50%, calc(100% - 12px) 100%, 12px 100%, 0% 50%);
+  padding: 4px 20px;
+  min-width: 60px;
+}
+
+/* ── C-block ──────────────────────────────────────────────────── */
+.innerBody {
+  background: rgba(0,0,0,.2);
+  border-left: 3px solid rgba(255,255,255,.2);
+  margin-left: 14px;
+  min-height: 28px;
+  padding: 4px 4px;
+  border-radius: 0 0 4px 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.innerPlaceholder {
+  font-size: 10px;
+  color: rgba(255,255,255,.4);
+  font-style: italic;
+  padding: 4px 8px;
+  text-align: center;
+}
+
+/* ── Slots ────────────────────────────────────────────────────── */
+.slotNumber {
+  width: 44px;
+  background: rgba(255,255,255,.15);
+  border: 1px solid rgba(255,255,255,.3);
+  border-radius: 6px;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 2px 4px;
+  text-align: center;
+  outline: none;
+}
+
+.slotString {
+  width: 72px;
+  background: rgba(255,255,255,.15);
+  border: 1px solid rgba(255,255,255,.3);
+  border-radius: 6px;
+  color: #fff;
+  font-size: 12px;
+  padding: 2px 4px;
+  outline: none;
+}
+
+.slotDropdown {
+  background: rgba(255,255,255,.15);
+  border: 1px solid rgba(255,255,255,.3);
+  border-radius: 6px;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 4px;
+  outline: none;
+  cursor: pointer;
+}
+
+.slotDropdown option { background: #1a1a35; color: #fff; }
+
+.slotBoolean {
+  width: 32px;
+  height: 16px;
+  clip-path: polygon(6px 0%, calc(100% - 6px) 0%, 100% 50%, calc(100% - 6px) 100%, 6px 100%, 0% 50%);
+  background: rgba(255,255,255,.15);
+  border-radius: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.slotBooleanFilled { color: #fff; font-size: 10px; }
+.slotBooleanEmpty  { display: block; width: 20px; height: 10px; }
+
+.slotReporter {
+  min-width: 40px;
+  height: 18px;
+  background: rgba(255,255,255,.15);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  color: #fff;
+  padding: 0 6px;
+}
+
+.slotReporterEmpty { display: block; width: 30px; height: 10px; }

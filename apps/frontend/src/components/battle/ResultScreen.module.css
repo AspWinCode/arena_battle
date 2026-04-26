@@ -1,0 +1,230 @@
+.root {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  overflow-y: auto;
+  position: relative;
+}
+
+.bg {
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(ellipse 80% 60% at 50% 0%, rgba(124,58,237,.1) 0%, transparent 60%);
+  pointer-events: none;
+}
+
+.container {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 560px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+  animation: slideUp .5s cubic-bezier(.16,1,.3,1) forwards;
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(30px); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* ── Result badge ─────────────────────────────────────────────── */
+.resultBadge {
+  font-size: 28px;
+  font-weight: 900;
+  letter-spacing: .04em;
+  padding: 12px 32px;
+  border-radius: 99px;
+  text-align: center;
+}
+
+.win {
+  background: linear-gradient(135deg, rgba(212,175,55,.2), rgba(212,175,55,.05));
+  border: 2px solid #d4af37;
+  color: #fbbf24;
+  text-shadow: 0 0 20px rgba(251,191,36,.4);
+}
+
+.loss {
+  background: rgba(230, 38, 31, .1);
+  border: 2px solid rgba(230, 38, 31, .4);
+  color: #f87171;
+}
+
+.draw {
+  background: rgba(100, 100, 140, .2);
+  border: 2px solid rgba(100, 100, 140, .4);
+  color: var(--text-muted);
+}
+
+/* ── Winner ───────────────────────────────────────────────────── */
+.winner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.winnerIcon {
+  font-size: 64px;
+  filter: drop-shadow(0 0 20px rgba(251,191,36,.4));
+}
+
+.winnerName {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--text);
+}
+
+.winnerLabel {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+/* ── Score row ────────────────────────────────────────────────── */
+.scoreRow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  width: 100%;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 20px 32px;
+}
+
+.scorePlayer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  font-size: 15px;
+  min-width: 140px;
+}
+
+.scoreRight { justify-content: flex-end; }
+
+.scoreBig {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 42px;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+}
+
+.scoreWin { color: var(--gold); }
+.scoreDash { color: var(--text-muted); font-size: 28px; }
+
+/* ── Rounds ───────────────────────────────────────────────────── */
+.rounds {
+  width: 100%;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 16px 20px;
+}
+
+.roundsTitle {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--text-muted);
+  margin-bottom: 12px;
+}
+
+.roundsList { display: flex; flex-direction: column; gap: 8px; }
+
+.roundRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+}
+
+.roundLabel {
+  min-width: 60px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.roundBars {
+  flex: 1;
+  height: 6px;
+  background: var(--bg-mid);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.roundBar {
+  height: 100%;
+  background: var(--text-muted);
+  border-radius: 3px;
+  transition: width .3s ease;
+}
+.roundBarRight { float: right; }
+.roundBarWin { background: var(--green); }
+
+.roundHp {
+  min-width: 40px;
+  text-align: center;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.roundWinLabel { color: var(--green); }
+.roundVs { color: var(--border); }
+
+.roundWinner {
+  min-width: 100px;
+  text-align: right;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+/* ── Stats ────────────────────────────────────────────────────── */
+.stats {
+  display: flex;
+  gap: 16px;
+  width: 100%;
+}
+
+.stat {
+  flex: 1;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.statValue {
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+
+.statLabel {
+  font-size: 11px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: .05em;
+}
+
+.btn {
+  width: 100%;
+  max-width: 280px;
+  padding: 14px;
+  font-size: 16px;
+  font-weight: 700;
+}

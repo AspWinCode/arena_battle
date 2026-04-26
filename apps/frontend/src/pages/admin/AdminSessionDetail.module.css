@@ -1,0 +1,212 @@
+.root {
+  min-height: 100vh;
+  background: var(--bg-dark);
+  overflow-y: auto;
+}
+
+.content {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 32px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.loading, .error {
+  padding: 60px;
+  text-align: center;
+  color: var(--text-muted);
+}
+
+.back {
+  font-size: 13px;
+  color: var(--text-muted);
+  text-decoration: none;
+  display: inline-block;
+  margin-bottom: 12px;
+}
+.back:hover { color: var(--accent); }
+
+.headerRow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.title { font-size: 24px; font-weight: 800; }
+
+.meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+
+.metaItem {
+  font-size: 12px;
+  color: var(--text-muted);
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  padding: 2px 8px;
+  border-radius: 99px;
+}
+
+.headerActions { display: flex; gap: 8px; }
+
+/* ── Codes ─────────────────────────────────────────────────────── */
+.codesRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.codeBox {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.codeLabel {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  color: var(--text-muted);
+  min-width: 80px;
+}
+
+.codeVal {
+  font-family: 'Courier New', monospace;
+  font-size: 20px;
+  font-weight: 900;
+  color: var(--accent);
+  letter-spacing: .15em;
+  flex: 1;
+  text-align: center;
+}
+
+/* ── Players ───────────────────────────────────────────────────── */
+.playersGrid {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 16px;
+  align-items: center;
+}
+
+.vsDiv {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.score {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 36px;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+}
+
+.scoreWin  { color: var(--gold); }
+.scoreSep  { color: var(--text-muted); font-size: 24px; }
+
+.playerCard {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  text-align: center;
+}
+
+.playerSlot {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--text-muted);
+}
+
+.playerIcon  { font-size: 40px; }
+.playerName  { font-size: 18px; font-weight: 700; }
+.playerLang  { font-size: 11px; color: var(--accent); font-weight: 700; font-family: monospace; }
+.playerWins  { font-size: 12px; color: var(--text-muted); }
+
+.codeSnippet {
+  width: 100%;
+  background: var(--bg-dark);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 8px 10px;
+  margin-top: 4px;
+  text-align: left;
+}
+
+.codeSnippet pre {
+  font-size: 10px;
+  font-family: 'Courier New', monospace;
+  color: var(--text-muted);
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow: hidden;
+  max-height: 80px;
+}
+
+.playerEmpty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 12px 0;
+}
+
+.playerEmptyLabel { color: var(--text-muted); font-size: 13px; }
+
+/* ── Rounds ────────────────────────────────────────────────────── */
+.section {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+}
+
+.sectionTitle {
+  font-size: 14px;
+  font-weight: 700;
+  margin-bottom: 14px;
+}
+
+.roundsList { display: flex; flex-direction: column; gap: 8px; }
+
+.roundRow {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 12px;
+  background: var(--bg-mid);
+  border-radius: var(--radius);
+  font-size: 13px;
+}
+
+.roundLabel { font-weight: 700; min-width: 72px; color: var(--text-muted); }
+
+.roundResult {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.roundVs    { color: var(--border); }
+.roundWin   { color: var(--green); font-weight: 700; }

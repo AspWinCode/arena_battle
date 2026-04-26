@@ -1,0 +1,27 @@
+node_modules/
+dist/
+.env
+.env.local
+.env.*.local
+*.log
+.DS_Store
+Thumbs.db
+
+# Prisma
+apps/backend/prisma/migrations/
+apps/backend/node_modules/.prisma/
+
+# IDE
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+
+# Build artifacts
+apps/frontend/dist/
+apps/backend/dist/
+
+# Docker
+docker/sandbox-cpp/a.out

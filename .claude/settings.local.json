@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//c/Users/direc/AppData/Roaming/Claude/local-agent-mode-sessions/skills-plugin/55b15c54-cab1-439e-8434-2e8b04073402/1ae975f1-8870-448a-9179-eb5272bf1f5c/skills/docx/**)",
+      "Bash(pandoc --track-changes=all \"C:\\\\Users\\\\direc\\\\Downloads\\\\robocode-tz-v2.docx\" -o output.md)",
+      "Bash(python \"C:\\\\Users\\\\direc\\\\AppData\\\\Roaming\\\\Claude\\\\local-agent-mode-sessions\\\\skills-plugin\\\\55b15c54-cab1-439e-8434-2e8b04073402\\\\1ae975f1-8870-448a-9179-eb5272bf1f5c\\\\skills\\\\docx\\\\scripts\\\\office\\\\unpack.py\" \"C:\\\\Users\\\\direc\\\\Downloads\\\\robocode-tz-v2.docx\" \"C:\\\\Users\\\\direc\\\\Downloads\\\\robocode-tz-unpacked\")",
+      "Read(//d/tmp/**)",
+      "Bash(python3 -c ' *)",
+      "Bash(npm install *)",
+      "Bash(npx tsc *)",
+      "Bash(git init *)",
+      "Bash(git remote *)",
+      "Bash(git add *)"
+    ]
+  }
+}

@@ -1,0 +1,180 @@
+.root {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--bg-dark);
+  position: relative;
+}
+
+/* ── Compiling overlay ───────────────────────────────────────── */
+.compilingOverlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(10, 10, 26, .85);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 20;
+}
+
+.compilingBox {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 40px;
+  background: var(--bg-card);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 0 40px rgba(0,229,255,.15);
+}
+
+.compilingSpinner {
+  font-size: 40px;
+  animation: spin 1.2s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.compilingTitle {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.compilingSubtitle {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+/* ── Score bar ───────────────────────────────────────────────── */
+.scorebar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 24px;
+  background: var(--bg-card);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.scorePlayer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  font-size: 14px;
+  min-width: 160px;
+}
+
+.scorePlayerRight {
+  justify-content: flex-end;
+}
+
+.youBadge {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 6px;
+  background: rgba(0,229,255,.15);
+  border: 1px solid rgba(0,229,255,.3);
+  border-radius: 99px;
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: .05em;
+}
+
+.scoreCenter {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.scoreNum {
+  font-size: 28px;
+  font-weight: 900;
+  color: var(--text);
+  min-width: 28px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.scoreSep {
+  font-size: 20px;
+  color: var(--text-muted);
+}
+
+/* ── Arena ───────────────────────────────────────────────────── */
+.arenaWrap {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px 24px 8px;
+  overflow: hidden;
+}
+
+/* ── Turn log ────────────────────────────────────────────────── */
+.log {
+  flex-shrink: 0;
+  padding: 8px 24px 10px;
+  background: var(--bg-card);
+  border-top: 1px solid var(--border);
+}
+
+.logTitle {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+
+.logList {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  max-height: 130px;
+  overflow-y: auto;
+}
+
+.logRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  padding: 3px 8px;
+  border-radius: 4px;
+  color: var(--text-muted);
+  transition: background .15s;
+}
+
+.logRowLatest {
+  background: rgba(0,229,255,.07);
+  color: var(--text);
+  border-left: 2px solid var(--accent);
+}
+
+.logTurn {
+  font-weight: 700;
+  min-width: 48px;
+  color: var(--text-muted);
+}
+
+.logAction {
+  min-width: 90px;
+  font-weight: 600;
+}
+
+.logVs {
+  color: var(--border);
+  font-size: 10px;
+}
+
+.logResult {
+  flex: 1;
+  text-align: right;
+  font-size: 11px;
+}

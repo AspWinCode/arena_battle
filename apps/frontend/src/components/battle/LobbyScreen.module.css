@@ -1,0 +1,121 @@
+.root {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 40px;
+  padding: 32px;
+  background: var(--bg-dark);
+  position: relative;
+  overflow: hidden;
+}
+
+.root::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 60% 40% at 50% 0%, rgba(0,229,255,.06) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--accent);
+  letter-spacing: .02em;
+}
+
+.players {
+  display: flex;
+  align-items: center;
+  gap: 40px;
+}
+
+.vs {
+  font-size: 32px;
+  font-weight: 900;
+  color: var(--text-muted);
+  text-shadow: 0 0 20px rgba(124,58,237,.5);
+}
+
+.playerCard {
+  width: 180px;
+  background: var(--bg-card);
+  border: 2px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 24px 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  transition: border-color .2s;
+}
+
+.myCard {
+  border-color: var(--accent);
+  box-shadow: 0 0 24px rgba(0,229,255,.15);
+}
+
+.playerLabel {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--text-muted);
+}
+
+.playerIcon { font-size: 48px; }
+
+.playerName {
+  font-size: 16px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.playerStatus {
+  font-size: 12px;
+  color: var(--text-muted);
+  background: var(--bg-mid);
+  padding: 4px 10px;
+  border-radius: 99px;
+}
+
+.statusReady {
+  color: var(--green);
+  background: rgba(34,197,94,.1);
+}
+
+.playerEmpty { display: contents; }
+
+.status {
+  font-size: 16px;
+  font-weight: 600;
+  text-align: center;
+}
+
+.waiting {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--text-muted);
+}
+
+.ready { color: var(--green); }
+
+.dotsAnim span {
+  animation: blink 1.4s ease-in-out infinite;
+  font-size: 20px;
+  line-height: 1;
+}
+.dotsAnim span:nth-child(2) { animation-delay: .2s; }
+.dotsAnim span:nth-child(3) { animation-delay: .4s; }
+
+@keyframes blink {
+  0%, 80%, 100% { opacity: 0; }
+  40% { opacity: 1; }
+}
