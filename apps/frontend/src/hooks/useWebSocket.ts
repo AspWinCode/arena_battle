@@ -2,17 +2,20 @@ import { useEffect, useRef, useCallback } from 'react'
 import type { ClientMessage, ServerMessage } from '@robocode/shared'
 import { useBattleStore } from '../stores/battleStore'
 
-const WS_URL = import.meta.env.VITE_WS_URL ?? `ws://${window.location.host}`
+const WS_URL = import.meta.env.VITE_WS_URL
+  ?? `${window.location.protocol === 'https:' ? 'wss' : 'ws'}://${window.location.host}`
 
 export function useWebSocket(sessionId: string | null) {
   const ws = useRef<WebSocket | null>(null)
   const handleMessage = useBattleStore(s => s.handleMessage)
   const reconnectTimer = useRef<ReturnType<typeof setTimeout>>()
 
-  const send = useCallback((msg: ClientMessage) => {
+  const send = useCallback((msg: ClientMessage): boolean => {
     if (ws.current?.readyState === WebSocket.OPEN) {
       ws.current.send(JSON.stringify(msg))
+      return true
     }
+    return false
   }, [])
 
   const connect = useCallback(() => {
@@ -38,7 +41,6 @@ export function useWebSocket(sessionId: string | null) {
     ws.current.onclose = (e) => {
       console.log('[WS] closed', e.code, e.reason)
       if (e.code !== 1000 && e.code !== 4001 && e.code !== 4004) {
-        // Reconnect after 2s for non-intentional closes
         reconnectTimer.current = setTimeout(connect, 2000)
       }
     }
@@ -56,7 +58,6 @@ export function useWebSocket(sessionId: string | null) {
     }
   }, [connect])
 
-  // Ping every 25 seconds
   useEffect(() => {
     const interval = setInterval(() => {
       send({ type: 'ping', payload: {} })
