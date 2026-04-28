@@ -73,18 +73,20 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
     return { ok: true }
   })
 
-  // Dev-only: seed admin
-  if (process.env.NODE_ENV !== 'production') {
-    fastify.post('/seed-admin', async (request, reply) => {
-      const body = loginSchema.safeParse(request.body)
-      if (!body.success) return reply.status(400).send({ error: 'Invalid input', code: 'INVALID_INPUT' })
+  // Bootstrap the very first admin. Once any admin exists, this route is closed.
+  fastify.post('/seed-admin', async (request, reply) => {
+    const body = loginSchema.safeParse(request.body)
+    if (!body.success) {
+      return reply.status(400).send({ error: 'Invalid input', code: 'INVALID_INPUT' })
+    }
 
-      const exists = await prisma.admin.findUnique({ where: { email: body.data.email } })
-      if (exists) return { ok: true, message: 'Admin already exists' }
+    const adminCount = await prisma.admin.count()
+    if (adminCount > 0) {
+      return reply.status(403).send({ error: 'Admin bootstrap is disabled', code: 'ADMIN_EXISTS' })
+    }
 
-      const hash = await bcrypt.hash(body.data.password, 12)
-      await prisma.admin.create({ data: { email: body.data.email, password: hash } })
-      return { ok: true }
-    })
-  }
+    const hash = await bcrypt.hash(body.data.password, 12)
+    await prisma.admin.create({ data: { email: body.data.email, password: hash } })
+    return { ok: true }
+  })
 }

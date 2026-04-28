@@ -14,13 +14,13 @@ test:
 
 # Docker
 docker-up:
-	docker compose up -d
+	docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d
 
 docker-down:
-	docker compose down
+	docker compose -f docker-compose.yml -f docker-compose.dev.yml down
 
 docker-build:
-	docker compose build
+	docker compose -f docker-compose.yml -f docker-compose.dev.yml build
 
 # Sandbox images
 sandboxes:

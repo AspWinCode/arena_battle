@@ -1,8 +1,5 @@
-# Production override — frontend на порту 8080 чтобы не конфликтовать с хостовым nginx
+# Production override: frontend на 8080, чтобы не конфликтовать с хостовым nginx
 services:
   frontend:
     ports:
-      - "8080:80"
-    # убираем маппинг 443 из базового compose
-  postgres:
-    ports: []   # не выставляем postgres наружу
+      - "${FRONTEND_PORT:-8080}:80"

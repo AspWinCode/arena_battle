@@ -10,7 +10,15 @@
       "Bash(npx tsc *)",
       "Bash(git init *)",
       "Bash(git remote *)",
-      "Bash(git add *)"
+      "Bash(git add *)",
+      "Bash(git push *)",
+      "Bash(git commit -m ' *)",
+      "Bash(npm run *)",
+      "Bash(git commit -m 'fix: shared package exports — use .mjs for ESM consumers *)",
+      "Bash(git commit -m 'feat: VPS deployment scripts *)",
+      "Bash(git commit -m 'fix: docker-compose build context — use repo root for monorepo COPY paths *)",
+      "Bash(git commit -m 'fix: copy tsup.config.ts into Docker build context *)",
+      "Bash(git commit -m 'fix: commit all local changes including critical port 80 conflict fix *)"
     ]
   }
 }

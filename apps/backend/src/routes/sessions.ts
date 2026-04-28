@@ -93,7 +93,13 @@ export const sessionRoutes: FastifyPluginAsync = async (fastify) => {
       where: { id: request.params.id, adminId: jwt.adminId },
     })
     if (!session) return reply.status(404).send({ error: 'Session not found', code: 'NOT_FOUND' })
-    await prisma.session.delete({ where: { id: request.params.id } })
+
+    await prisma.$transaction([
+      prisma.player.deleteMany({ where: { sessionId: request.params.id } }),
+      prisma.battle.deleteMany({ where: { sessionId: request.params.id } }),
+      prisma.session.delete({ where: { id: request.params.id } }),
+    ])
+
     return { ok: true }
   })
 

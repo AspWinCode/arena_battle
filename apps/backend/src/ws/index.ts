@@ -20,7 +20,7 @@ export const wsRoutes: FastifyPluginAsync = async (fastify) => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (socket: any, request: any) => {
       const { sessionId } = request.params as { sessionId: string }
-      const ws = socket as BareSocket
+      const ws = (socket?.socket ?? socket) as BareSocket
 
       let playerSlot: 1 | 2 | null = null
       let joinedRoom = false
@@ -37,6 +37,7 @@ export const wsRoutes: FastifyPluginAsync = async (fastify) => {
         // ── CONNECT ────────────────────────────────────────────────
         if (msg.type === 'connect' && !joinedRoom) {
           const { playerCode, name, skin } = msg.payload
+          fastify.log.info({ sessionId, name, skin }, '[WS] connect message received')
 
           const session = await prisma.session.findUnique({
             where: { id: sessionId },
@@ -67,6 +68,7 @@ export const wsRoutes: FastifyPluginAsync = async (fastify) => {
           }
 
           if (!slot) {
+            fastify.log.warn({ sessionId, name }, '[WS] invalid code or token')
             ws.send(JSON.stringify({
               type: 'error',
               payload: { code: 'INVALID_CODE', message: 'Invalid session code or token' },
@@ -91,6 +93,7 @@ export const wsRoutes: FastifyPluginAsync = async (fastify) => {
 
           const room = rooms.get(sessionId)!
           room.addPlayer(ws, playerSlot, name, skin as SkinId)
+          fastify.log.info({ sessionId, slot: playerSlot, name }, '[WS] player added to room')
 
           await prisma.player.upsert({
             where: { sessionId_slot: { sessionId, slot: playerSlot } },
@@ -121,6 +124,7 @@ export const wsRoutes: FastifyPluginAsync = async (fastify) => {
       })
 
       ws.on('close', () => {
+        fastify.log.info({ sessionId, slot: playerSlot }, '[WS] socket closed')
         if (playerSlot) rooms.get(sessionId)?.handleDisconnect(playerSlot)
       })
 

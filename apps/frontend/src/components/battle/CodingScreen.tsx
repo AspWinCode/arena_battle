@@ -81,9 +81,9 @@ export default function CodingScreen({ onReady }: { onReady: (code: string, lang
   const isUrgent = timeLeft < 60
 
   const handleReady = () => {
-    if (!code.trim()) return
+    if (!currentCode.trim()) return
     setSubmitted(true)
-    onReady(code || DEFAULT_TEMPLATES[lang] || '', lang)
+    onReady(currentCode, lang)
   }
 
   const currentCode = code || DEFAULT_TEMPLATES[lang] || ''

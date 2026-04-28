@@ -101,14 +101,30 @@ make seed-admin
 # Собрать sandbox-образы
 make sandboxes
 
-# Запустить всё
+# Локальный Docker-запуск
 make docker-up
 
 # Создать admin
 make seed-admin
 ```
 
-Приложение доступно на `http://localhost` (nginx → frontend + api proxy).
+Локально по умолчанию frontend доступен на `http://localhost:8080`, backend на `http://localhost:3001`.
+
+Если порты на машине уже заняты, можно переопределить их через `.env`:
+
+```bash
+FRONTEND_PORT=18080
+BACKEND_PORT=13001
+POSTGRES_PORT=15432
+```
+
+Для VPS используется отдельный override:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+```
+
+В production базовый `docker-compose.yml` не публикует конфликтующие порты наружу. Наружу выставляется только порт frontend из `FRONTEND_PORT` (по умолчанию `8080`), а host nginx проксирует на него.
 
 ---
 
