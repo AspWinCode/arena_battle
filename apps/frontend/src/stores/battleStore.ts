@@ -13,6 +13,9 @@ interface BattleState {
   sessionLevel: SessionLevel | null
   allowedSkins: SkinId[]
   wsToken: string | null
+  // Player identity (saved at join time, before lobby_update arrives)
+  myName: string | null
+  mySkin: SkinId | null
 
   // Lobby
   p1: LobbyPlayer | null
@@ -33,11 +36,11 @@ interface BattleState {
   turns: TurnResult[]
   latestTurn: TurnResult | null
   completedRounds: RoundResult[]
-  matchWinner: 0 | 1 | 2 | null
+  matchWinner: 0 | 1 | 2 | null  // null = not finished, 0 = draw, 1|2 = winner slot
   score: [number, number]
 
   // Actions
-  setSession: (sessionId: string, slot: 1 | 2, level: SessionLevel, skins: SkinId[], token: string) => void
+  setSession: (sessionId: string, slot: 1 | 2, level: SessionLevel, skins: SkinId[], token: string, name: string, skin: SkinId) => void
   setCode: (code: string) => void
   setLang: (lang: Lang) => void
   handleMessage: (msg: ServerMessage) => void
@@ -50,6 +53,8 @@ const initialState = {
   sessionLevel: null,
   allowedSkins: ['robot', 'gladiator', 'boxer', 'cosmonaut'] as SkinId[],
   wsToken: null,
+  myName: null,
+  mySkin: null,
   p1: null,
   p2: null,
   phase: 'lobby' as BattlePhase,
@@ -71,8 +76,8 @@ const initialState = {
 export const useBattleStore = create<BattleState>((set) => ({
   ...initialState,
 
-  setSession: (sessionId, slot, sessionLevel, allowedSkins, wsToken) =>
-    set({ sessionId, slot, sessionLevel, allowedSkins, wsToken }),
+  setSession: (sessionId, slot, sessionLevel, allowedSkins, wsToken, myName, mySkin) =>
+    set({ sessionId, slot, sessionLevel, allowedSkins, wsToken, myName, mySkin }),
 
   setCode: (code) => set({ code }),
   setLang: (lang) => set({ lang }),

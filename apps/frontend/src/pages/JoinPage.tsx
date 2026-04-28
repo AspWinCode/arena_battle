@@ -40,7 +40,8 @@ export default function JoinPage() {
         skin,
       })
 
-      setSession(res.sessionId, res.playerSlot, 'code', ['robot', 'gladiator', 'boxer', 'cosmonaut'], res.wsToken)
+      // 'code' level is a placeholder — real level arrives via WS 'connected' message
+      setSession(res.sessionId, res.playerSlot, 'code', ['robot', 'gladiator', 'boxer', 'cosmonaut'], res.wsToken, name.trim(), skin)
       navigate(`/battle/${res.sessionId}`)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Ошибка подключения')

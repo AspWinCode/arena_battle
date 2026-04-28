@@ -119,6 +119,12 @@ export class SessionRoom {
 
     this.broadcastAll({ type: 'compile_status', payload: { status: 'compiling' } })
 
+    // Mark session active
+    await prisma.session.update({
+      where: { id: this.sessionId },
+      data: { status: 'BATTLE' },
+    }).catch(() => {})
+
     try {
       const [s1, s2] = await Promise.all([
         this.compilePlayer(p1),

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { api } from '../../api/client'
 import { useAdminStore } from '../../stores/adminStore'
@@ -52,8 +52,10 @@ export default function AdminSessionDetail() {
   const [session, setSession] = useState<SessionDetail | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError]     = useState('')
+  const sessionRef = useRef<SessionDetail | null>(null)
+  sessionRef.current = session
 
-  const load = async () => {
+  const load = useCallback(async () => {
     try {
       const data = await api.get<SessionDetail>(`/session/${id}`, token ?? undefined)
       setSession(data)
@@ -62,19 +64,37 @@ export default function AdminSessionDetail() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [id, token])
 
   useEffect(() => {
     load()
-    // Auto-refresh every 5s if session is active
+  }, [load])
+
+  // Auto-refresh every 5s while session is active
+  useEffect(() => {
     const interval = setInterval(() => {
-      if (session && ['WAITING', 'CODING', 'BATTLE'].includes(session.status)) load()
+      const s = sessionRef.current
+      if (s && ['WAITING', 'CODING', 'BATTLE'].includes(s.status)) load()
     }, 5000)
     return () => clearInterval(interval)
-  }, [id, session?.status])
+  }, [load])
 
-  const handleExport = () => {
-    window.open(`/api/v1/session/${id}/export`, '_blank')
+  const handleExport = async () => {
+    try {
+      const res = await fetch(`/api/v1/session/${id}/export`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      if (!res.ok) throw new Error('Export failed')
+      const blob = await res.blob()
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `battle-${id}.csv`
+      a.click()
+      URL.revokeObjectURL(url)
+    } catch {
+      alert('Ошибка экспорта')
+    }
   }
 
   if (loading) return <div className={styles.loading}>⏳ Загрузка...</div>

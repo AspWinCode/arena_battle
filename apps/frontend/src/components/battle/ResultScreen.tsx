@@ -13,9 +13,10 @@ export default function ResultScreen({ onPlayAgain }: { onPlayAgain: () => void 
   const completedRounds = useBattleStore(s => s.completedRounds)
   const slot           = useBattleStore(s => s.slot)
 
-  const isWinner = matchWinner === slot
-  const isDraw   = matchWinner === null
-  const winnerPlayer = matchWinner === 1 ? p1 : p2
+  const isWinner     = matchWinner !== null && matchWinner !== 0 && matchWinner === slot
+  const isDraw       = matchWinner === 0
+  // Show winner card only when there's a real winner (not draw, not null)
+  const winnerPlayer = matchWinner === 1 ? p1 : matchWinner === 2 ? p2 : null
 
   return (
     <div className={styles.root}>
@@ -27,13 +28,13 @@ export default function ResultScreen({ onPlayAgain }: { onPlayAgain: () => void 
           {isDraw ? '🤝 НИЧЬЯ' : isWinner ? '🏆 ПОБЕДА!' : '💀 ПОРАЖЕНИЕ'}
         </div>
 
-        <div className={styles.winner}>
-          <div className={styles.winnerIcon}>
-            {SKIN_ICONS[winnerPlayer?.skin ?? 'robot']}
+        {!isDraw && winnerPlayer && (
+          <div className={styles.winner}>
+            <div className={styles.winnerIcon}>{SKIN_ICONS[winnerPlayer.skin ?? 'robot']}</div>
+            <div className={styles.winnerName}>{winnerPlayer.name}</div>
+            <div className={styles.winnerLabel}>победил в матче</div>
           </div>
-          <div className={styles.winnerName}>{winnerPlayer?.name ?? '???'}</div>
-          <div className={styles.winnerLabel}>победил в матче</div>
-        </div>
+        )}
 
         {/* Score */}
         <div className={styles.scoreRow}>
