@@ -4,7 +4,7 @@ set -euo pipefail
 DOMAIN="${DOMAIN:-arenabattle.tirskix.space}"
 APP_DIR="${APP_DIR:-/opt/arena_battle}"
 REPO="${REPO:-https://github.com/AspWinCode/arena_battle.git}"
-FRONTEND_PORT="${FRONTEND_PORT:-8080}"
+FRONTEND_PORT="${FRONTEND_PORT:-8181}"
 
 echo "========================================"
 echo "  RoboCode Arena VPS deploy"

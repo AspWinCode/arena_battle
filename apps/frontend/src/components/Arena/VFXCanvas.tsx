@@ -101,7 +101,8 @@ const VFXCanvas = forwardRef<VFXHandle, { width: number; height: number }>((
 
       // Screen shake
       const sh = shakeRef.current
-      if (sh.frames > 0) {
+      const shaking = sh.frames > 0
+      if (shaking) {
         sh.x = (Math.random() - 0.5) * sh.intensity * (sh.frames / 12)
         sh.y = (Math.random() - 0.5) * sh.intensity * (sh.frames / 12)
         sh.frames--
@@ -153,7 +154,7 @@ const VFXCanvas = forwardRef<VFXHandle, { width: number; height: number }>((
         n.life--
       }
 
-      if (sh.frames > 0) ctx.restore()
+      if (shaking) ctx.restore()
       ctx.globalAlpha = 1
 
       rafRef.current = requestAnimationFrame(loop)
