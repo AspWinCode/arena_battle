@@ -55,9 +55,9 @@ function GladiatorBody({ action, shieldActive }: {
 
   return (
     <g>
-      {/* Тень под ногами */}
-      <ellipse cx={0} cy={2} rx={48} ry={7}
-        fill="#000" opacity={0.45} />
+      {/* Тень под ногами (масштабируется вместе с фигурой) */}
+      <ellipse cx={0} cy={2} rx={20} ry={3}
+        fill="#000" opacity={0.5} />
 
       {/* Shield shimmer */}
       {shieldActive && (
@@ -166,6 +166,10 @@ function GenericBody({ skinId, action, shieldActive }: {
 
 /* ── Main export ─────────────────────────────────────────────────────────────── */
 const ROBOT_SCALE = 2.8
+// PNG-спрайт гладиатора имеет много прозрачного поля по краям —
+// масштабируем относительно точки ног (local 0,0), чтобы фигурка
+// росла вверх и оставалась на полу.
+const GLADIATOR_SCALE = 2.6
 
 export default function RobotSVG({ skinId, flip, action, hp, maxHp, name, x, y, shieldActive }: Props) {
   const hpPct  = Math.max(0, Math.min(100, (hp / maxHp) * 100))
@@ -181,10 +185,10 @@ export default function RobotSVG({ skinId, flip, action, hp, maxHp, name, x, y, 
         <text x={55} y={-5}  textAnchor="middle" fill={hpColor} fontSize={12} fontWeight={700}>{hp}</text>
       </g>
 
-      {/* Gladiator is intrinsically sized via SW/SH — only mirror for P2.
-          Generic skins use ROBOT_SCALE transform. */}
       {skinId === 'gladiator' ? (
-        <g transform={flip ? 'scale(-1,1)' : undefined}>
+        <g transform={flip
+          ? `scale(${-GLADIATOR_SCALE}, ${GLADIATOR_SCALE})`
+          : `scale(${GLADIATOR_SCALE})`}>
           <GladiatorBody action={action} shieldActive={shieldActive} />
         </g>
       ) : (
