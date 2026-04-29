@@ -8,8 +8,8 @@ const W = 600
 const H = 380
 
 // Positions on the SVG canvas
-const P1_X = 130
-const P2_X = 470
+const P1_X = 145
+const P2_X = 455
 const ROBOT_Y = 335  // floor at H-40 = 340, characters stand 5px above
 
 const SKIN_COLORS: Record<string, string> = {

@@ -84,7 +84,7 @@ function GladiatorBody({ action, shieldActive }: {
             y={SY}
             width={SW}
             height={SH}
-            preserveAspectRatio="xMidYMax meet"
+            preserveAspectRatio="xMidYMid slice"
           />
 
         </g>{/* /attack lunge */}
