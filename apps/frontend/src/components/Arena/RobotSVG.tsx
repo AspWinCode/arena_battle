@@ -35,15 +35,9 @@ const BE = '#f3f5f8'   // blade edge light
 const BD = '#6f7584'   // blade dark
 
 /*
-  Redrawn to match the supplied chibi-gladiator reference:
-  • Huge dome helmet (~42% of total height) with bold gold stripes & ear-disc
-  • Visible angry face: heavy brow, fierce eye, clenched jaw with teeth
-  • Short barrel chest in brown leather
-  • Red kilt (pteruges) with strip lines
-  • Stubby chibi legs with grey greaves and brown sandals
-  • Large battle-axe: long dark handle, spike tip, red accent, serrated silver head
-  • Metal gauntlet on weapon hand
-  Faces RIGHT by default; Player 2 is mirrored via scale(-1,1).
+  Gladiator uses a PNG sprite placed in /public/skins/gladiator.png
+  The PNG must have a TRANSPARENT background.
+  Faces RIGHT; Player 2 is mirrored by the parent scale(-1,1).
 */
 function GladiatorBody({ action, shieldActive }: {
   action?: ActionName | null
@@ -51,231 +45,58 @@ function GladiatorBody({ action, shieldActive }: {
 }) {
   const attacking = action === 'attack' || action === 'combo' || action === 'laser'
 
+  // Sprite sizing: width=120 SVG units, proportionally ~140 tall.
+  // x=-60 centres the image; y=-140 aligns feet to y=0.
+  const SW = 120
+  const SH = 140
+  const SX = -60
+  const SY = -SH   // top edge, feet land at y=0
+
   return (
     <g>
       {/* Shield shimmer */}
       {shieldActive && (
-        <ellipse cx={0} cy={-22} rx={50} ry={72} fill="none" stroke={GL} strokeWidth={2.5} strokeDasharray="5 3">
+        <ellipse cx={0} cy={-SH * 0.45} rx={SW * 0.52} ry={SH * 0.52}
+          fill="none" stroke={GL} strokeWidth={2.5} strokeDasharray="5 3">
           <animate attributeName="opacity" values="0.72;0.25;0.72" dur="0.85s" repeatCount="indefinite" />
-          <animate attributeName="rx" values="50;54;50" dur="0.85s" repeatCount="indefinite" />
+          <animate attributeName="rx" values={`${SW*0.52};${SW*0.56};${SW*0.52}`} dur="0.85s" repeatCount="indefinite" />
         </ellipse>
       )}
 
-      {/* ── All body parts breathe together ── */}
+      {/* ── Sprite group: breathe + attack ── */}
       <g>
+        {/* Idle breathing */}
         <animateTransform attributeName="transform" type="translate"
-          values="0,0; 0,-2; 0,0" dur="2.2s" repeatCount="indefinite"
-          calcMode="spline" keySplines="0.45 0 0.55 1; 0.45 0 0.55 1" />
-        <animateTransform attributeName="transform" additive="sum" type="rotate"
-          values="0 0 0; -0.8 0 0; 0 0 0" dur="2.2s" repeatCount="indefinite"
+          values="0,0; 0,-3; 0,0" dur="2.2s" repeatCount="indefinite"
           calcMode="spline" keySplines="0.45 0 0.55 1; 0.45 0 0.55 1" />
 
-        {/* ══════════════════════════════════════════
-            SANDALS / FEET  (y 46–56)
-        ══════════════════════════════════════════ */}
-        {/* Left sandal */}
-        <path d="M -18 46 L -24 52 L -24 56 L -4 56 L -4 52 L -8 46 Z" fill={LD} />
-        <path d="M -23 52 L -3 52" stroke="#6b4021" strokeWidth={1.5} />
-        {/* Right sandal */}
-        <path d="M 2 46 L -4 52 L -4 56 L 20 56 L 20 52 L 14 46 Z" fill={LD} />
-        <path d="M -3 52 L 19 52" stroke="#6b4021" strokeWidth={1.5} />
-
-        {/* ══════════════════════════════════════════
-            GREAVES  (y 35–46)
-        ══════════════════════════════════════════ */}
-        <rect x={-22} y={35} width={18} height={13} rx={3} fill={H} stroke={HM} strokeWidth={1.2} />
-        <line x1={-20} y1={39} x2={-6}  y2={39} stroke={G} strokeWidth={1}   opacity={0.6} />
-        <line x1={-20} y1={43} x2={-6}  y2={43} stroke={G} strokeWidth={0.8} opacity={0.4} />
-        <rect x={-2}  y={35} width={20} height={13} rx={3} fill={H} stroke={HM} strokeWidth={1.2} />
-        <line x1={0}  y1={39} x2={17} y2={39} stroke={G} strokeWidth={1}   opacity={0.6} />
-        <line x1={0}  y1={43} x2={17} y2={43} stroke={G} strokeWidth={0.8} opacity={0.4} />
-
-        {/* ══════════════════════════════════════════
-            LEGS – short chibi stubs  (y 22–35)
-        ══════════════════════════════════════════ */}
-        <path d="M -18 22 C -20 28 -22 33 -22 35 L -4 35 C -4 33 -4 28 -4 22 Z"  fill={SK} />
-        <path d="M  2  22 C  0  28 -2  33 -2  35 L 18 35 C 18 33 18 28 18 22 Z"  fill={SK} />
-
-        {/* ══════════════════════════════════════════
-            RED KILT / PTERUGES  (y 2–22)
-        ══════════════════════════════════════════ */}
-        <path d="M -20 2 L 26 2 L 30 22 L -20 22 Z" fill={RD} stroke={RK} strokeWidth={1.2} />
-        {([-14,-8,-2,4,10,16,22] as number[]).map((kx,i) => (
-          <line key={i} x1={kx} y1={2} x2={kx+1} y2={21} stroke={RK} strokeWidth={0.9} opacity={0.5} />
-        ))}
-
-        {/* ══════════════════════════════════════════
-            BELT  (y -5 – 3)
-        ══════════════════════════════════════════ */}
-        <rect x={-20} y={-5} width={48} height={9} rx={2} fill={LD} stroke={LB} strokeWidth={1.2} />
-        {([-14,-8,-2,4,10,16,22] as number[]).map((bx,i) => (
-          <circle key={i} cx={bx} cy={-1} r={2} fill={GL} />
-        ))}
-
-        {/* ══════════════════════════════════════════
-            CHEST – barrel leather armour  (y -5 – -40)
-        ══════════════════════════════════════════ */}
-        <path d="M -20 -5 C -22 -14 -20 -30 -14 -40 L 16 -40 C 22 -30 24 -16 24 -5 Z"
-          fill={LB} stroke={LD} strokeWidth={1.3} />
-        {([-9,-15,-21,-27,-33] as number[]).map((ry,i) => (
-          <path key={i}
-            d={`M ${-18+i*0.6} ${ry} C 2 ${ry-1} 18 ${ry+1} ${22-i*0.6} ${ry}`}
-            fill="none" stroke={LD} strokeWidth={1.3} opacity={0.65} />
-        ))}
-        <path d="M -12 -8 C -2 -12 8 -12 16 -8" fill="none" stroke="#9a5a1e" strokeWidth={2} opacity={0.45} />
-
-        {/* ══════════════════════════════════════════
-            LEFT ARM STUB (back arm, partially visible)
-        ══════════════════════════════════════════ */}
-        <path d="M -14 -34 C -20 -30 -26 -20 -24 -10 L -14 -8 Z" fill={SK} stroke={SD} strokeWidth={0.8} />
-
-        {/* ══════════════════════════════════════════
-            SHOULDER PLATE
-        ══════════════════════════════════════════ */}
-        <path d="M -14 -40 C -8 -46 -2 -46 4 -44 L 2 -36 C -4 -35 -10 -38 -14 -40 Z"
-          fill={H} stroke={HM} strokeWidth={1} />
-
-        {/* ══════════════════════════════════════════
-            NECK
-        ══════════════════════════════════════════ */}
-        <path d="M -6 -40 L -6 -34 L 6 -34 L 6 -40 C 6 -44 -6 -44 -6 -40 Z" fill={SK} />
-
-        {/* ══════════════════════════════════════════
-            RIGHT ARM + FOREARM (weapon arm)
-        ══════════════════════════════════════════ */}
-        <path d="M 16 -36 C 22 -32 28 -22 26 -10 L 16 -10 Z" fill={SK} stroke={SD} strokeWidth={0.8} />
-        <path d="M 18 -10 C 24 -4 28 6 24 16 L 16 14 C 16 4 16 -4 18 -10 Z" fill={SK} stroke={SD} strokeWidth={0.8} />
-
-        {/* ══════════════════════════════════════════
-            METAL GAUNTLET on weapon hand
-        ══════════════════════════════════════════ */}
-        <path d="M 16 12 C 20 10 28 12 28 18 L 28 28 C 26 30 22 30 16 28 L 16 12 Z"
-          fill={HM} stroke={H} strokeWidth={1.3} />
-        <circle cx={22} cy={20} r={5}   fill={G}  stroke={LD} strokeWidth={1} />
-        <circle cx={22} cy={20} r={3.5} fill={GL} stroke={G}  strokeWidth={0.8} />
-        <circle cx={21} cy={19} r={1.2} fill={BE} opacity={0.65} />
-        <line x1={16} y1={16} x2={28} y2={16} stroke={H} strokeWidth={1.1} opacity={0.5} />
-        <line x1={16} y1={22} x2={28} y2={22} stroke={H} strokeWidth={1.1} opacity={0.5} />
-
-        {/* ══════════════════════════════════════════
-            AXE  (animated weapon-arm group)
-        ══════════════════════════════════════════ */}
+        {/* Attack lunge */}
         <g>
           <animateTransform attributeName="transform" type="rotate"
-            values={attacking ? '-20 22 20; 18 22 20; -20 22 20' : '4 22 20; -4 22 20; 4 22 20'}
-            dur={attacking ? '0.34s' : '2.8s'} repeatCount="indefinite"
+            values={attacking ? '-12 0 -20; 10 0 -20; -12 0 -20' : '0 0 0; 0 0 0; 0 0 0'}
+            dur={attacking ? '0.34s' : '1s'} repeatCount="indefinite"
             calcMode="spline" keySplines="0.4 0 0.6 1; 0.4 0 0.6 1" />
 
-          {/* Handle (long, dark, diagonal) */}
-          <path d="M 20 30 L 80 -26" stroke={LD}    strokeWidth={7.5} strokeLinecap="round" />
-          <path d="M 20 30 L 80 -26" stroke="#3d1c06" strokeWidth={5}   strokeLinecap="round" />
-          {/* Red wrap accent near blade */}
-          <path d="M 62 -12 L 72 -22" stroke={RD} strokeWidth={6} strokeLinecap="round" opacity={0.9} />
-          {/* Handle grain */}
-          <path d="M 20 30 L 80 -26" stroke="#6b3312" strokeWidth={1.2} strokeDasharray="3 4" opacity={0.5} />
+          {/* ── PNG sprite ── */}
+          <image
+            href="/skins/gladiator.png"
+            x={SX}
+            y={SY}
+            width={SW}
+            height={SH}
+            preserveAspectRatio="xMidYMax meet"
+          />
 
-          {/* ── Axe head (large, serrated silver) ── */}
-          <path d="M 76 -22
-                   C 90 -34 102 -40 114 -38
-                   L 110 -22 L 120 -10 L 106 4 L 112 14
-                   C 100 16 88 12 76 -2 Z"
-            fill={BS} stroke={BD} strokeWidth={1.8} />
-          {/* Inner blade highlight */}
-          <path d="M 84 -28 C 96 -36 108 -36 112 -30 L 100 -16 L 108 -6 C 102 -2 94 -2 86 -6 Z"
-            fill={BE} opacity={0.65} />
-          <path d="M 88 -28 C 98 -36 110 -34 114 -28" fill="none" stroke={BE} strokeWidth={2}   opacity={0.55} />
-          <path d="M 78 -22 C 92 -12 98 0 96 10"      fill="none" stroke={BD} strokeWidth={3}   opacity={0.25} />
-          {/* Top spike */}
-          <path d="M 82 -28 L 76 -40 L 88 -40 Z" fill={BS} stroke={BD} strokeWidth={1.3} />
-          <path d="M 83 -30 L 78 -39 L 87 -38 Z" fill={BE} opacity={0.8} />
-          {/* Red diamond accent */}
-          <path d="M 78 -22 L 72 -28 L 78 -36 L 82 -28 Z" fill="#b33232" stroke="#7a1616" strokeWidth={1} />
-        </g>
+        </g>{/* /attack lunge */}
 
-        {/* ══════════════════════════════════════════
-            HELMET – large chibi dome  (y -40 – -102)
-        ══════════════════════════════════════════ */}
-        {/* Main dark dome */}
-        <path d="M -2 -102
-                 C -28 -98 -42 -80 -40 -60
-                 C -38 -46 -28 -40 -16 -40
-                 L 16 -40
-                 C 24 -40 28 -48 28 -62
-                 C 28 -84 16 -102 -2 -102 Z"
-          fill={H} stroke="#0a0c14" strokeWidth={2} />
-        {/* Dome inner sheen */}
-        <path d="M -2 -98 C 12 -94 20 -80 22 -64"
-          fill="none" stroke={HM} strokeWidth={5} opacity={0.22} strokeLinecap="round" />
-
-        {/* ── Three bold gold stripes (back-top → front-bottom) ── */}
-        <path d="M -24 -94 C  -8 -92  8 -86 18 -78" fill="none" stroke={G}  strokeWidth={6}   strokeLinecap="round" />
-        <path d="M -26 -82 C -10 -80  6 -76 16 -68" fill="none" stroke={GL} strokeWidth={5.5} strokeLinecap="round" />
-        <path d="M -26 -70 C -12 -68  2 -64 12 -56" fill="none" stroke={G}  strokeWidth={5}   strokeLinecap="round" />
-
-        {/* ── Gold ear disc (back/left of helmet) ── */}
-        <circle cx={-30} cy={-64} r={10}  fill={G}  stroke={LD} strokeWidth={1.2} />
-        <circle cx={-30} cy={-64} r={7}   fill={GL} stroke={G}  strokeWidth={0.9} />
-        <circle cx={-28} cy={-66} r={2.2} fill={BE} opacity={0.7} />
-
-        {/* ── Cheek plates (front & back) ── */}
-        <path d="M 18 -40 C 24 -48 28 -56 26 -66 L 20 -62 C 20 -54 20 -48 16 -40 Z"
-          fill={H} stroke="#0a0c14" strokeWidth={1.4} />
-        <path d="M -16 -40 C -20 -48 -18 -58 -12 -62 L -10 -54 C -12 -50 -14 -46 -14 -40 Z"
-          fill={H} stroke="#0a0c14" strokeWidth={1.2} />
-
-        {/* ══════════════════════════════════════════
-            FACE (visible through open visor)
-        ══════════════════════════════════════════ */}
-        {/* Skin area */}
-        <path d="M -8 -92
-                 C  4 -96 16 -94 22 -86
-                 L 26 -62
-                 C 26 -50 20 -44 12 -42
-                 L  0 -42
-                 C -4 -48 -8 -60 -8 -76
-                 C -10 -86 -10 -92 -8 -92 Z"
-          fill={SK} />
-        {/* Face contour shadow */}
-        <path d="M -6 -90 C 4 -94 14 -92 20 -86 L 24 -68 C 22 -56 18 -48 12 -44"
-          fill="none" stroke={SD} strokeWidth={2.5} opacity={0.22} />
-
-        {/* Heavy angry brow ridge */}
-        <path d="M 2 -84 C 10 -88 18 -86 24 -80" stroke="#1a0a00" strokeWidth={7}   strokeLinecap="round" />
-        <path d="M 2 -84 C 10 -88 18 -86 24 -80" stroke="#3d1a06" strokeWidth={3.5} strokeLinecap="round" opacity={0.7} />
-
-        {/* Fierce, narrowed eye */}
-        <ellipse cx={18} cy={-76} rx={5.5} ry={3.5} fill="#160c00" />
-        <ellipse cx={20} cy={-77} rx={2.2} ry={1.5} fill="white" opacity={0.5} />
-        <circle  cx={20.5} cy={-78} r={1}  fill="white" opacity={0.8} />
-
-        {/* Nose */}
-        <path d="M 22 -70 C 24 -68 24 -64 22 -62"
-          fill="none" stroke={SD} strokeWidth={2.2} strokeLinecap="round" opacity={0.6} />
-
-        {/* Grimacing mouth with teeth */}
-        <path d="M 6 -54 C 12 -58 20 -58 24 -54" stroke="#1a0800" strokeWidth={3.5} strokeLinecap="round" />
-        <path d="M  8 -56 L  8 -52" stroke="white" strokeWidth={2} strokeLinecap="round" opacity={0.55} />
-        <path d="M 13 -57 L 13 -53" stroke="white" strokeWidth={2} strokeLinecap="round" opacity={0.55} />
-        <path d="M 18 -57 L 18 -53" stroke="white" strokeWidth={2} strokeLinecap="round" opacity={0.5}  />
-        <path d="M 23 -55 L 23 -52" stroke="white" strokeWidth={2} strokeLinecap="round" opacity={0.45} />
-
-        {/* Chin / jaw line */}
-        <path d="M 4 -54 C 0 -52 -2 -48 0 -44"
-          fill="none" stroke={SD} strokeWidth={2} opacity={0.5} strokeLinecap="round" />
-
-        {/* Visor edge shadow */}
-        <path d="M -8 -94 C -12 -86 -12 -76 -10 -64 L -8 -52 C -6 -48 -2 -44 2 -42"
-          fill="none" stroke="#0d0800" strokeWidth={4.5} opacity={0.45} strokeLinecap="round" />
-
-        {/* ══════════════════════════════════════════
-            ACTION TEXT
-        ══════════════════════════════════════════ */}
+        {/* Action label next to sprite */}
         {action && (
-          <text x={30} y={-62} fill={GL} fontSize={10} fontWeight={800} fontFamily="monospace" textAnchor="start">
+          <text x={SW * 0.45} y={SY + SH * 0.4}
+            fill={GL} fontSize={10} fontWeight={800} fontFamily="monospace" textAnchor="start">
             {action.toUpperCase()}
           </text>
         )}
-      </g>
+      </g>{/* /breathe */}
     </g>
   )
 }
