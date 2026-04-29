@@ -1,6 +1,25 @@
 import type { Strategy } from '@robocode/shared'
 import { buildStrategy, type ActionCall } from './build-strategy.js'
 
+const ACTION_NAMES = [
+  'attack',
+  'laser',
+  'shield',
+  'dodge',
+  'combo',
+  'repair',
+  'moveForward',
+  'moveBackward',
+] as const
+
+export const ACTION_BRIDGE_SOURCE = ACTION_NAMES.map(name => `
+globalThis.${name} = (...args) => {
+  const ref = globalThis.__bridge_${name};
+  ref.applySync(undefined, args, { arguments: { copy: true } });
+  return { action: '${name}', args };
+};
+`).join('\n')
+
 const TEST_CODE_SUFFIX = `
 ;(function(){
   var e1 = { hp:60, lastAction:'attack', shieldActive:false, cooldowns:{laser:0,combo:0,repair:0} };
@@ -40,17 +59,12 @@ export async function runJS(code: string): Promise<Strategy> {
       results.push({ action, ...extra })
     })
 
-  await ctx.global.set('attack',       makeRef('attack'))
-  await ctx.global.set('laser',        makeRef('laser'))
-  await ctx.global.set('shield',       makeRef('shield'))
-  await ctx.global.set('dodge',        makeRef('dodge'))
-  await ctx.global.set('combo',        makeRef('combo'))
-  await ctx.global.set('repair',       makeRef('repair'))
-  await ctx.global.set('moveForward',  makeRef('moveForward'))
-  await ctx.global.set('moveBackward', makeRef('moveBackward'))
+  for (const actionName of ACTION_NAMES) {
+    await ctx.global.set(`__bridge_${actionName}`, makeRef(actionName))
+  }
 
   try {
-    const fullCode = code + TEST_CODE_SUFFIX
+    const fullCode = `${ACTION_BRIDGE_SOURCE}\n${code}\n${TEST_CODE_SUFFIX}`
     const script = await isolate.compileScript(fullCode)
     await script.run(ctx, { timeout: 50 })
   } catch (err) {

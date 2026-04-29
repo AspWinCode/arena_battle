@@ -10,14 +10,25 @@ export interface ActionCall {
   moves?: ActionCall[]
 }
 
-export function buildStrategy(calls: ActionCall[]): Strategy {
-  // calls[0] = action at normal HP (enemy HP ~60)
-  // calls[1] = action at low HP (enemy HP ~20)
-  const primary = (calls[0]?.action ?? 'attack') as ActionName
-  const lowHp = (calls[1]?.action ?? primary) as ActionName
+function isBattleAction(action: string | undefined): action is ActionName {
+  return action === 'attack'
+    || action === 'laser'
+    || action === 'shield'
+    || action === 'dodge'
+    || action === 'combo'
+    || action === 'repair'
+}
 
-  const hasShield = calls.some(c => c.action === 'shield')
-  const hasDodge = calls.some(c => c.action === 'dodge')
+export function buildStrategy(calls: ActionCall[]): Strategy {
+  const battleCalls = calls.filter(call => isBattleAction(call.action))
+
+  // battleCalls[0] = action at normal HP (enemy HP ~60)
+  // battleCalls[1] = action at low HP (enemy HP ~20)
+  const primary = battleCalls[0]?.action ?? 'attack'
+  const lowHp = battleCalls[1]?.action ?? primary
+
+  const hasShield = battleCalls.some(c => c.action === 'shield')
+  const hasDodge = battleCalls.some(c => c.action === 'dodge')
 
   const onHit: ActionName = hasDodge ? 'dodge' : hasShield ? 'shield' : 'attack'
 
@@ -27,7 +38,7 @@ export function buildStrategy(calls: ActionCall[]): Strategy {
     primary === 'dodge' ? 'Evasive' :
     hasShield ? 'Defensive' : 'Standard'
 
-  const moveCall = calls.find(c => c.action?.startsWith('move'))
+  const moveCall = [...calls].reverse().find(c => c.action?.startsWith('move'))
   const position: Position =
     moveCall?.action === 'moveForward' ? 'close' :
     moveCall?.action === 'moveBackward' ? 'far' : 'mid'
