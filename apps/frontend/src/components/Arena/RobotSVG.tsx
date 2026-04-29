@@ -45,12 +45,13 @@ function GladiatorBody({ action, shieldActive }: {
 }) {
   const attacking = action === 'attack' || action === 'combo' || action === 'laser'
 
-  // Sprite sizing: width=120 SVG units, proportionally ~140 tall.
-  // x=-60 centres the image; y=-140 aligns feet to y=0.
-  const SW = 120
-  const SH = 140
-  const SX = -60
-  const SY = -SH   // top edge, feet land at y=0
+  // PNG is 1537x1023 (landscape, ratio 1.503:1).
+  // Container must match PNG ratio exactly so 'meet' fills it without letterboxing.
+  // Target height 270 SVG units → width = round(270 * 1537/1023) = 406
+  const SH = 270
+  const SW = 406
+  const SX = -203   // ─SW/2, centres sprite
+  const SY = -SH    // feet at y=0
 
   return (
     <g>
@@ -84,7 +85,7 @@ function GladiatorBody({ action, shieldActive }: {
             y={SY}
             width={SW}
             height={SH}
-            preserveAspectRatio="xMidYMid slice"
+            preserveAspectRatio="xMidYMax meet"
           />
 
         </g>{/* /attack lunge */}
@@ -166,19 +167,24 @@ export default function RobotSVG({ skinId, flip, action, hp, maxHp, name, x, y, 
   return (
     <g transform={`translate(${x}, ${y})`}>
       {/* HP bar – never flipped */}
-      <g transform="translate(-55, -320)">
+      <g transform="translate(-55, -285)">
         <rect x={0} y={0} width={110} height={10} rx={4} fill="#1a1a35" />
         <rect x={0} y={0} width={hpPct * 1.1} height={10} rx={4} fill={hpColor} />
         <text x={55} y={24}  textAnchor="middle" fill="#94a3b8" fontSize={12} fontWeight={600}>{name}</text>
         <text x={55} y={-5}  textAnchor="middle" fill={hpColor} fontSize={12} fontWeight={700}>{hp}</text>
       </g>
 
-      {/* Player 2 faces left via mirror; scale up both axes */}
-      <g transform={flip ? `scale(${-ROBOT_SCALE}, ${ROBOT_SCALE})` : `scale(${ROBOT_SCALE})`}>
-        {skinId === 'gladiator'
-          ? <GladiatorBody action={action} shieldActive={shieldActive} />
-          : <GenericBody   skinId={skinId} action={action} shieldActive={shieldActive} />}
-      </g>
+      {/* Gladiator is intrinsically sized via SW/SH — only mirror for P2.
+          Generic skins use ROBOT_SCALE transform. */}
+      {skinId === 'gladiator' ? (
+        <g transform={flip ? 'scale(-1,1)' : undefined}>
+          <GladiatorBody action={action} shieldActive={shieldActive} />
+        </g>
+      ) : (
+        <g transform={flip ? `scale(${-ROBOT_SCALE}, ${ROBOT_SCALE})` : `scale(${ROBOT_SCALE})`}>
+          <GenericBody skinId={skinId} action={action} shieldActive={shieldActive} />
+        </g>
+      )}
     </g>
   )
 }
