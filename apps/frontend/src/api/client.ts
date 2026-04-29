@@ -16,8 +16,14 @@ async function request<T>(
     body: body ? JSON.stringify(body) : undefined,
   })
 
-  const data = await res.json()
-  if (!res.ok) throw new Error(data.error ?? 'Request failed')
+  const text = await res.text()
+  let data: any
+  try {
+    data = text ? JSON.parse(text) : {}
+  } catch {
+    throw new Error(`Server error ${res.status}: unexpected response`)
+  }
+  if (!res.ok) throw new Error(data.error ?? `Request failed (${res.status})`)
   return data as T
 }
 
