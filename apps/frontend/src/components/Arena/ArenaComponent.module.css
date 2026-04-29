@@ -24,7 +24,7 @@
   position: relative;
   width: 100%;
   max-width: 600px;
-  aspect-ratio: 600 / 320;
+  aspect-ratio: 600 / 380;
   border-radius: 12px;
   overflow: hidden;
   border: 1px solid rgba(0,229,255,.1);

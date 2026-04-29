@@ -157,7 +157,7 @@ function GenericBody({ skinId, action, shieldActive }: {
 }
 
 /* ── Main export ─────────────────────────────────────────────────────────────── */
-const ROBOT_SCALE = 1.6
+const ROBOT_SCALE = 2.2
 
 export default function RobotSVG({ skinId, flip, action, hp, maxHp, name, x, y, shieldActive }: Props) {
   const hpPct  = Math.max(0, Math.min(100, (hp / maxHp) * 100))
@@ -166,11 +166,11 @@ export default function RobotSVG({ skinId, flip, action, hp, maxHp, name, x, y, 
   return (
     <g transform={`translate(${x}, ${y})`}>
       {/* HP bar – never flipped */}
-      <g transform="translate(-50, -240)">
-        <rect x={0} y={0} width={100} height={9} rx={4} fill="#1a1a35" />
-        <rect x={0} y={0} width={hpPct * 1.0} height={9} rx={4} fill={hpColor} />
-        <text x={50} y={22}  textAnchor="middle" fill="#94a3b8" fontSize={11} fontWeight={600}>{name}</text>
-        <text x={50} y={-4}  textAnchor="middle" fill={hpColor} fontSize={11} fontWeight={700}>{hp}</text>
+      <g transform="translate(-55, -320)">
+        <rect x={0} y={0} width={110} height={10} rx={4} fill="#1a1a35" />
+        <rect x={0} y={0} width={hpPct * 1.1} height={10} rx={4} fill={hpColor} />
+        <text x={55} y={24}  textAnchor="middle" fill="#94a3b8" fontSize={12} fontWeight={600}>{name}</text>
+        <text x={55} y={-5}  textAnchor="middle" fill={hpColor} fontSize={12} fontWeight={700}>{hp}</text>
       </g>
 
       {/* Player 2 faces left via mirror; scale up both axes */}
