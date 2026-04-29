@@ -166,10 +166,11 @@ function GenericBody({ skinId, action, shieldActive }: {
 
 /* ── Main export ─────────────────────────────────────────────────────────────── */
 const ROBOT_SCALE = 2.8
-// PNG-спрайт гладиатора имеет много прозрачного поля по краям —
-// масштабируем относительно точки ног (local 0,0), чтобы фигурка
-// росла вверх и оставалась на полу.
-const GLADIATOR_SCALE = 2.6
+// PNG-спрайт гладиатора имеет огромное прозрачное поле по краям
+// (видимая фигурка занимает лишь ~10% от bbox PNG). Масштабируем
+// агрессивно вокруг точки ног (local 0,0), прозрачные края
+// уходят за пределы арены и обрезаются overflow:hidden.
+const GLADIATOR_SCALE = 4.0
 
 export default function RobotSVG({ skinId, flip, action, hp, maxHp, name, x, y, shieldActive }: Props) {
   const hpPct  = Math.max(0, Math.min(100, (hp / maxHp) * 100))
