@@ -24,8 +24,12 @@ export function buildStrategy(calls: ActionCall[]): Strategy {
 
   // battleCalls[0] = action at normal HP (enemy HP ~60)
   // battleCalls[1] = action at low HP (enemy HP ~20)
-  const primary = battleCalls[0]?.action ?? 'attack'
-  const lowHp = battleCalls[1]?.action ?? primary
+  const primary: ActionName = isBattleAction(battleCalls[0]?.action)
+    ? battleCalls[0].action as ActionName
+    : 'attack'
+  const lowHp: ActionName = isBattleAction(battleCalls[1]?.action)
+    ? battleCalls[1].action as ActionName
+    : primary
 
   const hasShield = battleCalls.some(c => c.action === 'shield')
   const hasDodge = battleCalls.some(c => c.action === 'dodge')
