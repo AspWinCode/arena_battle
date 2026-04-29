@@ -46,21 +46,25 @@ function GladiatorBody({ action, shieldActive }: {
   const attacking = action === 'attack' || action === 'combo' || action === 'laser'
 
   // PNG is 1537x1023 (landscape, ratio 1.503:1).
-  // Container must match PNG ratio exactly so 'meet' fills it without letterboxing.
-  // Target height 270 SVG units → width = round(270 * 1537/1023) = 406
-  const SH = 270
-  const SW = 406
-  const SX = -203   // ─SW/2, centres sprite
-  const SY = -SH    // feet at y=0
+  // PNG имеет ~12% прозрачного отступа снизу — компенсируем через FOOT_OFFSET.
+  const SH = 380
+  const SW = 571
+  const SX = -SW / 2   // centres sprite
+  const FOOT_OFFSET = 38  // визуальные ноги выше нижнего края PNG → смещаем спрайт вниз
+  const SY = -SH + FOOT_OFFSET
 
   return (
     <g>
+      {/* Тень под ногами */}
+      <ellipse cx={0} cy={2} rx={48} ry={7}
+        fill="#000" opacity={0.45} />
+
       {/* Shield shimmer */}
       {shieldActive && (
-        <ellipse cx={0} cy={-SH * 0.45} rx={SW * 0.52} ry={SH * 0.52}
+        <ellipse cx={0} cy={-SH * 0.45} rx={SW * 0.4} ry={SH * 0.45}
           fill="none" stroke={GL} strokeWidth={2.5} strokeDasharray="5 3">
           <animate attributeName="opacity" values="0.72;0.25;0.72" dur="0.85s" repeatCount="indefinite" />
-          <animate attributeName="rx" values={`${SW*0.52};${SW*0.56};${SW*0.52}`} dur="0.85s" repeatCount="indefinite" />
+          <animate attributeName="rx" values={`${SW*0.4};${SW*0.44};${SW*0.4}`} dur="0.85s" repeatCount="indefinite" />
         </ellipse>
       )}
 
@@ -112,6 +116,9 @@ function GenericBody({ skinId, action, shieldActive }: {
 
   return (
     <g>
+      {/* Тень под ногами */}
+      <ellipse cx={0} cy={52} rx={22} ry={3.5} fill="#000" opacity={0.5} />
+
       {shieldActive && (
         <ellipse cx={0} cy={-20} rx={40} ry={55} fill={`${c.primary}15`} stroke={c.primary} strokeWidth={2} strokeDasharray="4 2">
           <animate attributeName="opacity" values="0.8;0.3;0.8" dur="0.8s" repeatCount="indefinite" />

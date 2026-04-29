@@ -8,9 +8,9 @@ const W = 600
 const H = 380
 
 // Positions on the SVG canvas
-const P1_X = 160
-const P2_X = 440
-const ROBOT_Y = 335  // floor at H-40 = 340, characters stand 5px above
+const P1_X = 140
+const P2_X = 460
+const ROBOT_Y = 340  // characters stand at floor line
 
 const SKIN_COLORS: Record<string, string> = {
   robot:     '#00e5ff',
@@ -155,8 +155,10 @@ export default function ArenaComponent({
           ))}
 
           {/* Floor */}
-          <rect x={0} y={H - 40} width={W} height={40} fill="#12122a" />
-          <line x1={0} y1={H - 40} x2={W} y2={H - 40} stroke="#00e5ff" strokeOpacity="0.15" strokeWidth={1} />
+          <rect x={0} y={H - 40} width={W} height={40} fill="#0d0d22" />
+          <line x1={0} y1={H - 40} x2={W} y2={H - 40} stroke="#00e5ff" strokeOpacity="0.45" strokeWidth={1.5} />
+          {/* Подсветка пола */}
+          <rect x={0} y={H - 40} width={W} height={3} fill="#00e5ff" opacity="0.18" />
 
           {/* Arena center decoration */}
           <circle cx={W / 2} cy={H - 40} r={80}
