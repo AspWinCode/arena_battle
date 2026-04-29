@@ -158,7 +158,7 @@ function GenericBody({ skinId, action, shieldActive }: {
 }
 
 /* ── Main export ─────────────────────────────────────────────────────────────── */
-const ROBOT_SCALE = 2.2
+const ROBOT_SCALE = 2.8
 
 export default function RobotSVG({ skinId, flip, action, hp, maxHp, name, x, y, shieldActive }: Props) {
   const hpPct  = Math.max(0, Math.min(100, (hp / maxHp) * 100))
