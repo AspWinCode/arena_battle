@@ -47,13 +47,13 @@ function GladiatorBody({ action, shieldActive }: {
 
   // Кроп-рамка персонажа в PNG 1537×1023 (px).
   // Если персонаж срезан или смещён — подправь CROP_* значения.
-  const CROP_X = 380    // левый край зоны персонажа
-  const CROP_Y = 200    // верхний край (над шлемом)
-  const CROP_W = 780    // ширина зоны
-  const CROP_H = 780    // высота зоны (ноги ~в самом низу)
+  const CROP_X = 250    // левый край зоны персонажа
+  const CROP_Y = 60     // верхний край (выше шлема с плюмажем)
+  const CROP_W = 1050   // ширина зоны (вся фигура)
+  const CROP_H = 950    // высота зоны (ноги внизу)
 
   // Размер отображения в SVG-единицах (аспект = CROP_W/CROP_H)
-  const SH = 290
+  const SH = 180
   const SW = SH * CROP_W / CROP_H  // сохраняем аспект кропа
   const SX = -SW / 2
   const SY = -SH   // ноги at y=0
