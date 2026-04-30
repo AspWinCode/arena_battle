@@ -111,6 +111,8 @@ export class BattleEngine {
       p2HpAfter: this.p2.hp,
       p1Heal,
       p2Heal,
+      p1Position: this.p1.position,
+      p2Position: this.p2.position,
       log: this.buildLog(a1, a2, p1Dmg, p2Dmg, p1Heal, p2Heal),
     }
   }

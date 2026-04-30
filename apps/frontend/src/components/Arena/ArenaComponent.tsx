@@ -6,11 +6,17 @@ import styles from './ArenaComponent.module.css'
 
 const W = 600
 const H = 380
-
-// Positions on the SVG canvas
-const P1_X = 190
-const P2_X = 410
 const ROBOT_Y = 340
+
+// X positions per position tier
+// close → characters nearly touching in center
+// mid   → default spacing
+// far   → characters at opposite sides
+const POSITION_X: Record<string, { p1: number; p2: number }> = {
+  close: { p1: 230, p2: 370 },
+  mid:   { p1: 190, p2: 410 },
+  far:   { p1: 140, p2: 460 },
+}
 
 const SKIN_COLORS: Record<string, string> = {
   robot:     '#00e5ff',
@@ -46,6 +52,15 @@ export default function ArenaComponent({
     y: (svgY / H) * H,
   }), [])
 
+  // Dynamic X positions based on current positions
+  const p1Pos = latestTurn?.p1Position ?? 'mid'
+  const p2Pos = latestTurn?.p2Position ?? 'mid'
+  // Use the closer of the two positions to determine spacing
+  const effectivePos = (p1Pos === 'close' || p2Pos === 'close') ? 'close'
+    : (p1Pos === 'far' || p2Pos === 'far') ? 'far' : 'mid'
+  const P1_X = POSITION_X[effectivePos].p1
+  const P2_X = POSITION_X[effectivePos].p2
+
   useEffect(() => {
     if (!latestTurn || !vfxRef.current) return
     if (latestTurn === prevTurnRef.current) return
@@ -57,39 +72,40 @@ export default function ArenaComponent({
     const p1c = SKIN_COLORS[p1Skin] ?? '#00e5ff'
     const p2c = SKIN_COLORS[p2Skin] ?? '#e6261f'
 
+    const pos = (latestTurn.p1Position === 'close' || latestTurn.p2Position === 'close') ? 'close'
+      : (latestTurn.p1Position === 'far' || latestTurn.p2Position === 'far') ? 'far' : 'mid'
+    const cx1 = POSITION_X[pos].p1
+    const cx2 = POSITION_X[pos].p2
+
     // P1 takes damage
     if (p1DmgTaken > 0) {
-      vfx.spawnHitSparks(P1_X, ROBOT_Y - 20, p2c)
-      vfx.showHitNumber(P1_X, ROBOT_Y - 60, p1DmgTaken)
+      vfx.spawnHitSparks(cx1, ROBOT_Y - 20, p2c)
+      vfx.showHitNumber(cx1, ROBOT_Y - 60, p1DmgTaken)
       vfx.shake(6)
     }
 
     // P2 takes damage
     if (p2DmgTaken > 0) {
-      vfx.spawnHitSparks(P2_X, ROBOT_Y - 20, p1c)
-      vfx.showHitNumber(P2_X, ROBOT_Y - 60, p2DmgTaken)
+      vfx.spawnHitSparks(cx2, ROBOT_Y - 20, p1c)
+      vfx.showHitNumber(cx2, ROBOT_Y - 60, p2DmgTaken)
       vfx.shake(6)
     }
 
     // Laser impacts
-    if (p1Action === 'laser' && p2DmgTaken > 0) {
-      vfx.spawnLaserImpact(P2_X, ROBOT_Y - 20, p1c)
-    }
-    if (p2Action === 'laser' && p1DmgTaken > 0) {
-      vfx.spawnLaserImpact(P1_X, ROBOT_Y - 20, p2c)
-    }
+    if (p1Action === 'laser' && p2DmgTaken > 0) vfx.spawnLaserImpact(cx2, ROBOT_Y - 20, p1c)
+    if (p2Action === 'laser' && p1DmgTaken > 0) vfx.spawnLaserImpact(cx1, ROBOT_Y - 20, p2c)
 
     // Combo sparks
-    if (p1Action === 'combo' && p2DmgTaken > 0) vfx.spawnComboSparks(P2_X, ROBOT_Y - 20, p1c)
-    if (p2Action === 'combo' && p1DmgTaken > 0) vfx.spawnComboSparks(P1_X, ROBOT_Y - 20, p2c)
+    if (p1Action === 'combo' && p2DmgTaken > 0) vfx.spawnComboSparks(cx2, ROBOT_Y - 20, p1c)
+    if (p2Action === 'combo' && p1DmgTaken > 0) vfx.spawnComboSparks(cx1, ROBOT_Y - 20, p2c)
 
     // Dodge trail
-    if (p1Action === 'dodge') vfx.spawnDodgeTrail(P1_X, ROBOT_Y - 20, p1c)
-    if (p2Action === 'dodge') vfx.spawnDodgeTrail(P2_X, ROBOT_Y - 20, p2c)
+    if (p1Action === 'dodge') vfx.spawnDodgeTrail(cx1, ROBOT_Y - 20, p1c)
+    if (p2Action === 'dodge') vfx.spawnDodgeTrail(cx2, ROBOT_Y - 20, p2c)
 
     // Repair
-    if (p1Heal > 0) { vfx.spawnRepairParticles(P1_X, ROBOT_Y); vfx.showHealNumber(P1_X, ROBOT_Y - 60, p1Heal) }
-    if (p2Heal > 0) { vfx.spawnRepairParticles(P2_X, ROBOT_Y); vfx.showHealNumber(P2_X, ROBOT_Y - 60, p2Heal) }
+    if (p1Heal > 0) { vfx.spawnRepairParticles(cx1, ROBOT_Y); vfx.showHealNumber(cx1, ROBOT_Y - 60, p1Heal) }
+    if (p2Heal > 0) { vfx.spawnRepairParticles(cx2, ROBOT_Y); vfx.showHealNumber(cx2, ROBOT_Y - 60, p2Heal) }
 
     // Big shake on big hits
     if (p1DmgTaken > 20 || p2DmgTaken > 20) vfx.shake(10)
@@ -97,6 +113,10 @@ export default function ArenaComponent({
 
   const p1ShieldActive = latestTurn?.p1Action === 'shield'
   const p2ShieldActive = latestTurn?.p2Action === 'shield'
+
+  // Position badge labels
+  const POS_LABEL: Record<string, string> = { close: 'CLOSE', mid: 'MID', far: 'FAR' }
+  const POS_COLOR: Record<string, string> = { close: '#ef4444', mid: '#fbbf24', far: '#22c55e' }
 
   return (
     <div className={styles.root}>
@@ -212,6 +232,30 @@ export default function ArenaComponent({
             y={ROBOT_Y}
             shieldActive={p2ShieldActive}
           />
+
+          {/* Position badges */}
+          <text
+            x={P1_X} y={ROBOT_Y + 18}
+            textAnchor="middle"
+            fill={POS_COLOR[p1Pos]}
+            fontSize={9}
+            fontWeight={700}
+            letterSpacing="0.08em"
+            opacity={0.85}
+          >
+            {POS_LABEL[p1Pos]}
+          </text>
+          <text
+            x={P2_X} y={ROBOT_Y + 18}
+            textAnchor="middle"
+            fill={POS_COLOR[p2Pos]}
+            fontSize={9}
+            fontWeight={700}
+            letterSpacing="0.08em"
+            opacity={0.85}
+          >
+            {POS_LABEL[p2Pos]}
+          </text>
 
           {/* Action log */}
           {latestTurn && (

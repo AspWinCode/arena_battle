@@ -110,16 +110,28 @@ export const useBattleStore = create<BattleState>((set) => ({
         break
 
       case 'battle_start':
-        set({
+        set((s) => ({
           phase: 'battle',
           currentRound: msg.payload.round,
+          p1: {
+            name: msg.payload.p1.name,
+            skin: msg.payload.p1.skin,
+            ready: s.p1?.ready ?? true,
+            lang: s.p1?.lang,
+          },
+          p2: {
+            name: msg.payload.p2.name,
+            skin: msg.payload.p2.skin,
+            ready: s.p2?.ready ?? true,
+            lang: s.p2?.lang,
+          },
           p1Hp: msg.payload.p1.hp,
           p2Hp: msg.payload.p2.hp,
           p1MaxHp: msg.payload.p1.hp,
           p2MaxHp: msg.payload.p2.hp,
           turns: [],
           latestTurn: null,
-        })
+        }))
         break
 
       case 'turn_result':

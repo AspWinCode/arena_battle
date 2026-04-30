@@ -51,6 +51,8 @@ export interface TurnResult {
   p2HpAfter: number
   p1Heal: number
   p2Heal: number
+  p1Position: Position
+  p2Position: Position
   log: string
 }
 
