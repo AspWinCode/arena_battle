@@ -26,7 +26,7 @@ const GLADIATOR_HEIGHT = 118
 const GLADIATOR_WIDTH = Math.round(GLADIATOR_HEIGHT * PNG_RATIO)
 const GLADIATOR_X = -GLADIATOR_WIDTH / 2
 const GLADIATOR_Y = -GLADIATOR_HEIGHT
-const GENERIC_SCALE = 0.96
+const GENERIC_SCALE = 0.82
 const GENERIC_FOOT_Y = 51 * GENERIC_SCALE
 const HP_BAR_X = -55
 const HP_BAR_Y = -148
@@ -77,14 +77,32 @@ function GladiatorBody({ action, shieldActive }: {
             keySplines="0.4 0 0.6 1; 0.4 0 0.6 1"
           />
 
-          <image
-            href={GLADIATOR_SPRITE_HREF}
+          <foreignObject
             x={GLADIATOR_X}
             y={GLADIATOR_Y}
             width={GLADIATOR_WIDTH}
             height={GLADIATOR_HEIGHT}
-            preserveAspectRatio="xMidYMax meet"
-          />
+            style={{ overflow: 'visible' }}
+          >
+            <div
+              style={{
+                width: '100%',
+                height: '100%',
+                overflow: 'visible',
+              }}
+            >
+              <img
+                src={GLADIATOR_SPRITE_HREF}
+                alt=""
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  display: 'block',
+                  objectFit: 'contain',
+                }}
+              />
+            </div>
+          </foreignObject>
         </g>
 
         {action && (
