@@ -12,6 +12,20 @@ interface BareSocket {
 }
 
 const rooms = new Map<string, SessionRoom>()
+// Observers that connected before the room was created
+const pendingObservers = new Map<string, Set<BareSocket>>()
+
+export function addRoomObserver(sessionId: string, ws: BareSocket) {
+  const room = rooms.get(sessionId)
+  if (room) {
+    room.addObserver(ws)
+    ws.on('close', () => room.removeObserver(ws))
+  } else {
+    if (!pendingObservers.has(sessionId)) pendingObservers.set(sessionId, new Set())
+    pendingObservers.get(sessionId)!.add(ws)
+    ws.on('close', () => { pendingObservers.get(sessionId)?.delete(ws) })
+  }
+}
 
 export const wsRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.get<{ Params: { sessionId: string } }>(
@@ -81,14 +95,21 @@ export const wsRoutes: FastifyPluginAsync = async (fastify) => {
           joinedRoom = true
 
           if (!rooms.has(sessionId)) {
-            rooms.set(sessionId, new SessionRoom(
+            const newRoom = new SessionRoom(
               sessionId,
               session.level.toLowerCase(),
               (session.lang ?? 'auto') as Lang,
               session.format as 'bo1' | 'bo3' | 'bo5',
               session.timeLimit,
               session.allowedSkins as SkinId[],
-            ))
+            )
+            rooms.set(sessionId, newRoom)
+            // Attach any observers that connected before the room existed
+            pendingObservers.get(sessionId)?.forEach(obs => {
+              newRoom.addObserver(obs)
+              obs.on('close', () => newRoom.removeObserver(obs))
+            })
+            pendingObservers.delete(sessionId)
           }
 
           const room = rooms.get(sessionId)!
@@ -130,6 +151,33 @@ export const wsRoutes: FastifyPluginAsync = async (fastify) => {
 
       ws.on('error', (err: unknown) => {
         fastify.log.error({ err }, '[WS] socket error')
+      })
+    }
+  )
+
+  // ── Admin observer route ───────────────────────────────────────────────────
+  fastify.get<{ Params: { sessionId: string }; Querystring: { token?: string } }>(
+    '/observe/:sessionId',
+    { websocket: true },
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (socket: any, request: any) => {
+      const { sessionId } = request.params as { sessionId: string }
+      const { token } = request.query as { token?: string }
+      const ws = (socket?.socket ?? socket) as BareSocket
+
+      try {
+        fastify.jwt.verify(token ?? '')
+      } catch {
+        ws.send(JSON.stringify({ type: 'error', payload: { code: 'UNAUTHORIZED', message: 'Invalid token' } }))
+        ws.close(4001, 'Unauthorized')
+        return
+      }
+
+      fastify.log.info({ sessionId }, '[WS] admin observer connected')
+      addRoomObserver(sessionId, ws)
+
+      ws.on('error', (err: unknown) => {
+        fastify.log.error({ err }, '[WS] observer error')
       })
     }
   )

@@ -21,7 +21,8 @@ interface PlayerConn {
 }
 
 export class SessionRoom {
-  private players = new Map<1 | 2, PlayerConn>()
+  private players  = new Map<1 | 2, PlayerConn>()
+  private observers = new Set<WsSocket>()
   private timerInterval?: ReturnType<typeof setInterval>
   private codingTimeLeft = 0
 
@@ -67,6 +68,16 @@ export class SessionRoom {
       this.stopCodingTimer()
       this.startBattle()
     }
+  }
+
+  addObserver(ws: WsSocket) {
+    this.observers.add(ws)
+    // Send current lobby state as snapshot
+    this.sendLobbyUpdateTo(ws)
+  }
+
+  removeObserver(ws: WsSocket) {
+    this.observers.delete(ws)
   }
 
   handleDisconnect(slot: 1 | 2) {
@@ -117,7 +128,13 @@ export class SessionRoom {
     const p2 = this.players.get(2)
     if (!p1 || !p2) return
 
-    this.broadcastAll({ type: 'compile_status', payload: { status: 'compiling' } })
+    const p1Lang = p1.lang ?? 'js'
+    const p2Lang = p2.lang ?? 'js'
+
+    this.broadcastAll({
+      type: 'compile_status',
+      payload: { status: 'compiling', p1Done: false, p2Done: false },
+    })
 
     // Mark session active
     await prisma.session.update({
@@ -126,12 +143,25 @@ export class SessionRoom {
     }).catch(() => {})
 
     try {
+      // Compile in parallel, report per-player progress
       const [s1, s2] = await Promise.all([
-        this.compilePlayer(p1),
-        this.compilePlayer(p2),
+        this.compilePlayer(p1).then(s => {
+          this.broadcastAll({
+            type: 'compile_status',
+            payload: { status: 'compiling', lang: p1Lang, p1Done: true, p2Done: false },
+          })
+          return s
+        }),
+        this.compilePlayer(p2).then(s => {
+          this.broadcastAll({
+            type: 'compile_status',
+            payload: { status: 'compiling', lang: p2Lang, p1Done: false, p2Done: true },
+          })
+          return s
+        }),
       ])
 
-      this.broadcastAll({ type: 'compile_status', payload: { status: 'done' } })
+      this.broadcastAll({ type: 'compile_status', payload: { status: 'done', p1Done: true, p2Done: true } })
 
       const { winner, score, rounds } = runMatch(s1, s2, this.format)
 
@@ -218,25 +248,35 @@ export class SessionRoom {
   }
 
   private broadcastLobbyUpdate() {
+    const msg = this.buildLobbyUpdateMsg()
+    this.broadcastAll(msg)
+  }
+
+  private sendLobbyUpdateTo(ws: WsSocket) {
+    if (ws.readyState === 1) ws.send(JSON.stringify(this.buildLobbyUpdateMsg()))
+  }
+
+  private buildLobbyUpdateMsg(): ServerMessage {
     const p1 = this.players.get(1)
     const p2 = this.players.get(2)
-
     const toLobby = (p: PlayerConn | undefined): LobbyPlayer | null =>
       p ? { name: p.name, skin: p.skin, ready: p.ready, lang: p.lang } : null
-
-    this.broadcastAll({
-      type: 'lobby_update',
-      payload: { p1: toLobby(p1), p2: toLobby(p2) },
-    })
+    return { type: 'lobby_update', payload: { p1: toLobby(p1), p2: toLobby(p2) } }
   }
 
   private broadcastAll(msg: ServerMessage) {
-    for (const player of this.players.values()) this.send(player.slot, msg)
+    const raw = JSON.stringify(msg)
+    for (const player of this.players.values()) {
+      if (player.ws.readyState === 1) player.ws.send(raw)
+    }
+    for (const obs of this.observers) {
+      if (obs.readyState === 1) obs.send(raw)
+    }
   }
 
   private send(slot: 1 | 2, msg: ServerMessage) {
     const player = this.players.get(slot)
-    if (player?.ws.readyState === 1 /* WebSocket.OPEN */) {
+    if (player?.ws.readyState === 1) {
       player.ws.send(JSON.stringify(msg))
     }
   }

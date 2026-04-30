@@ -1,8 +1,24 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
+import type { ServerMessage, TurnResult } from '@robocode/shared'
 import { api } from '../../api/client'
 import { useAdminStore } from '../../stores/adminStore'
 import styles from './AdminSessionDetail.module.css'
+
+const WS_BASE = import.meta.env.VITE_WS_URL
+  ?? `${window.location.protocol === 'https:' ? 'wss' : 'ws'}://${window.location.host}`
+
+interface LiveState {
+  connected: boolean
+  compileStatus: 'idle' | 'compiling' | 'done'
+  p1Done: boolean
+  p2Done: boolean
+  p1Hp: number
+  p2Hp: number
+  phase: 'lobby' | 'coding' | 'compiling' | 'battle' | 'done'
+  recentTurns: TurnResult[]
+  currentRound: number
+}
 
 interface SessionDetail {
   id: string
@@ -52,7 +68,12 @@ export default function AdminSessionDetail() {
   const [session, setSession] = useState<SessionDetail | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError]     = useState('')
-  const sessionRef = useRef<SessionDetail | null>(null)
+  const [live, setLive]       = useState<LiveState>({
+    connected: false, compileStatus: 'idle', p1Done: false, p2Done: false,
+    p1Hp: 100, p2Hp: 100, phase: 'lobby', recentTurns: [], currentRound: 1,
+  })
+  const sessionRef  = useRef<SessionDetail | null>(null)
+  const wsRef       = useRef<WebSocket | null>(null)
   sessionRef.current = session
 
   const load = useCallback(async () => {
@@ -70,12 +91,76 @@ export default function AdminSessionDetail() {
     load()
   }, [load])
 
-  // Auto-refresh every 5s while session is active
+  // ── WS observer for real-time monitoring ──────────────────────────────────
+  useEffect(() => {
+    if (!id || !token) return
+
+    const url = `${WS_BASE}/ws/observe/${id}?token=${encodeURIComponent(token)}`
+    const ws = new WebSocket(url)
+    wsRef.current = ws
+
+    ws.onopen = () => setLive(l => ({ ...l, connected: true }))
+    ws.onclose = () => setLive(l => ({ ...l, connected: false }))
+    ws.onerror = () => setLive(l => ({ ...l, connected: false }))
+
+    ws.onmessage = (e) => {
+      try {
+        const msg = JSON.parse(e.data) as ServerMessage
+        setLive(l => {
+          switch (msg.type) {
+            case 'lobby_update':
+              return { ...l, phase: 'lobby' }
+            case 'coding_start':
+              return { ...l, phase: 'coding' }
+            case 'compile_status':
+              if (msg.payload.status === 'compiling') {
+                return {
+                  ...l,
+                  phase: 'compiling',
+                  compileStatus: 'compiling',
+                  p1Done: msg.payload.p1Done ?? l.p1Done,
+                  p2Done: msg.payload.p2Done ?? l.p2Done,
+                }
+              }
+              return { ...l, compileStatus: 'done', p1Done: true, p2Done: true }
+            case 'battle_start':
+              return {
+                ...l,
+                phase: 'battle',
+                currentRound: msg.payload.round,
+                p1Hp: msg.payload.p1.hp,
+                p2Hp: msg.payload.p2.hp,
+                recentTurns: [],
+              }
+            case 'turn_result':
+              return {
+                ...l,
+                p1Hp: msg.payload.p1HpAfter,
+                p2Hp: msg.payload.p2HpAfter,
+                recentTurns: [msg.payload, ...l.recentTurns].slice(0, 5),
+              }
+            case 'match_end':
+              return { ...l, phase: 'done' }
+            default:
+              return l
+          }
+        })
+        // Reload session data on match end
+        if (msg.type === 'match_end') {
+          setTimeout(load, 1000)
+        }
+      } catch { /* ignore */ }
+    }
+
+    return () => { ws.close() }
+  }, [id, token, load])
+
+  // Fallback polling while battle is active (reduces REST load vs 5s)
   useEffect(() => {
     const interval = setInterval(() => {
       const s = sessionRef.current
-      if (s && ['WAITING', 'CODING', 'BATTLE'].includes(s.status)) load()
-    }, 5000)
+      if (s && ['WAITING', 'CODING'].includes(s.status)) load()
+    }, 8000)
     return () => clearInterval(interval)
   }, [load])
 
@@ -156,6 +241,87 @@ export default function AdminSessionDetail() {
           <PlayerCard player={p2} slot={2} wins={wins[1]} />
         </div>
 
+        {/* Live monitoring panel */}
+        <div className={styles.section}>
+          <div className={styles.liveHeader}>
+            <h3 className={styles.sectionTitle} style={{ margin: 0 }}>📡 Live-мониторинг</h3>
+            <span className={live.connected ? styles.liveOn : styles.liveOff}>
+              {live.connected ? '🟢 подключено' : '⚫ нет соединения'}
+            </span>
+          </div>
+
+          {/* Phase badge */}
+          <div className={styles.livePhaseRow}>
+            <span className={styles.livePhaseLabel}>Фаза:</span>
+            <span className={`badge ${
+              live.phase === 'battle'    ? 'badge-battle' :
+              live.phase === 'coding'   ? 'badge-coding' :
+              live.phase === 'compiling'? 'badge-coding' :
+              live.phase === 'done'     ? 'badge-done'   : 'badge-waiting'
+            }`}>
+              {live.phase === 'lobby'     ? 'Лобби' :
+               live.phase === 'coding'   ? 'Написание кода' :
+               live.phase === 'compiling'? 'Компиляция' :
+               live.phase === 'battle'   ? 'Бой' : 'Завершено'}
+            </span>
+            {live.phase === 'battle' && (
+              <span className={styles.liveRound}>Раунд {live.currentRound}</span>
+            )}
+          </div>
+
+          {/* Compile progress */}
+          {live.phase === 'compiling' && (
+            <div className={styles.compileRow}>
+              <div className={styles.compileBar}>
+                <span className={styles.compileLabel}>P1</span>
+                <div className={styles.barTrack}>
+                  <div className={`${styles.barFill} ${live.p1Done ? styles.barDone : styles.barActive}`} />
+                </div>
+                <span className={styles.compileStatus}>{live.p1Done ? '✓' : '⏳'}</span>
+              </div>
+              <div className={styles.compileBar}>
+                <span className={styles.compileLabel}>P2</span>
+                <div className={styles.barTrack}>
+                  <div className={`${styles.barFill} ${live.p2Done ? styles.barDone : styles.barActive}`} />
+                </div>
+                <span className={styles.compileStatus}>{live.p2Done ? '✓' : '⏳'}</span>
+              </div>
+            </div>
+          )}
+
+          {/* Live HP bars */}
+          {(live.phase === 'battle' || live.phase === 'done') && (
+            <div className={styles.hpSection}>
+              <HpBar label="P1" hp={live.p1Hp} />
+              <HpBar label="P2" hp={live.p2Hp} />
+            </div>
+          )}
+
+          {/* Recent turns */}
+          {live.recentTurns.length > 0 && (
+            <div className={styles.turnLog}>
+              <div className={styles.turnLogTitle}>Последние ходы</div>
+              {live.recentTurns.map(t => (
+                <div key={t.turn} className={styles.turnRow}>
+                  <span className={styles.turnNum}>#{t.turn}</span>
+                  <span className={styles.turnAction}>{t.p1Action}</span>
+                  <span className={styles.turnDmg}>
+                    {t.p2DmgTaken > 0 && <span className={styles.dmgRed}>-{t.p2DmgTaken}</span>}
+                    {t.p1Heal > 0 && <span className={styles.dmgGreen}>+{t.p1Heal}</span>}
+                  </span>
+                  <span className={styles.turnVs}>|</span>
+                  <span className={styles.turnAction}>{t.p2Action}</span>
+                  <span className={styles.turnDmg}>
+                    {t.p1DmgTaken > 0 && <span className={styles.dmgRed}>-{t.p1DmgTaken}</span>}
+                    {t.p2Heal > 0 && <span className={styles.dmgGreen}>+{t.p2Heal}</span>}
+                  </span>
+                  <span className={styles.turnHp}>{t.p1HpAfter} vs {t.p2HpAfter} HP</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
         {/* Battle log */}
         {session.battles.length > 0 && (
           <div className={styles.section}>
@@ -195,6 +361,20 @@ function CodeBox({ label, code }: { label: string; code: string }) {
       >
         {copied ? '✓ Скопировано' : '📋 Копировать'}
       </button>
+    </div>
+  )
+}
+
+function HpBar({ label, hp }: { label: string; hp: number }) {
+  const pct = Math.max(0, Math.min(100, hp))
+  const color = pct > 50 ? '#4ade80' : pct > 25 ? '#facc15' : '#f87171'
+  return (
+    <div className={styles.hpBarRow}>
+      <span className={styles.hpLabel}>{label}</span>
+      <div className={styles.hpTrack}>
+        <div className={styles.hpFill} style={{ width: `${pct}%`, background: color }} />
+      </div>
+      <span className={styles.hpValue}>{hp} HP</span>
     </div>
   )
 }

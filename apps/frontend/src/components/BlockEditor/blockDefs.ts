@@ -225,15 +225,48 @@ export const BLOCK_DEFS: BlockDef[] = [
     color: '#59c059',
     slots: [{ id: 'a', type: 'boolean' }],
   },
+
+  // ── Variables ──────────────────────────────────────────────────────────────
+  {
+    id: 'setVar',
+    type: 'command',
+    category: 'variables',
+    label: 'установить',
+    color: '#ff8c1a',
+    slots: [
+      { id: 'name', type: 'varname', default: '' },
+      { id: 'value', type: 'number', default: 0 },
+    ],
+  },
+  {
+    id: 'changeVar',
+    type: 'command',
+    category: 'variables',
+    label: 'изменить',
+    color: '#ff8c1a',
+    slots: [
+      { id: 'name', type: 'varname', default: '' },
+      { id: 'by', type: 'number', default: 1 },
+    ],
+  },
+  {
+    id: 'varReporter',
+    type: 'reporter',
+    category: 'variables',
+    label: '',
+    color: '#ff8c1a',
+    slots: [{ id: 'name', type: 'varname', default: '' }],
+  },
 ]
 
 export const BLOCK_DEF_MAP = new Map(BLOCK_DEFS.map(b => [b.id, b]))
 
 export const CATEGORY_META: Record<string, { label: string; color: string; icon: string }> = {
-  combat:    { label: 'Бой',       color: '#e6261f', icon: '⚔️' },
-  control:   { label: 'Управление',color: '#ffab19', icon: '🔁' },
-  sensing:   { label: 'Сенсоры',   color: '#5cb1d6', icon: '👁' },
-  operators: { label: 'Операторы', color: '#59c059', icon: '➕' },
+  combat:    { label: 'Бой',        color: '#e6261f', icon: '⚔️' },
+  control:   { label: 'Управление', color: '#ffab19', icon: '🔁' },
+  sensing:   { label: 'Сенсоры',    color: '#5cb1d6', icon: '👁' },
+  operators: { label: 'Операторы',  color: '#59c059', icon: '➕' },
+  variables: { label: 'Переменные', color: '#ff8c1a', icon: '📦' },
 }
 
 export const CATEGORIES = Object.keys(CATEGORY_META)

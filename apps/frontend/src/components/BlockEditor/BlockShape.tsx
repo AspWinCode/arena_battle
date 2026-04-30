@@ -10,6 +10,7 @@ interface Props {
   onDropOnSlot?: (instanceId: string, slotId: string, dropped: BlockInstance) => void
   depth?: number
   isDragging?: boolean
+  variables?: string[]
 }
 
 const NOTCH_W = 20
@@ -42,7 +43,7 @@ function PuzzleBottom({ color }: { color: string }) {
   )
 }
 
-export default function BlockShape({ inst, def, onSlotChange, onDropOnSlot, depth = 0, isDragging }: Props) {
+export default function BlockShape({ inst, def, onSlotChange, onDropOnSlot, depth = 0, isDragging, variables = [] }: Props) {
   const color = def.color ?? '#7c3aed'
   const darkerColor = darken(color, 20)
 
@@ -58,7 +59,7 @@ export default function BlockShape({ inst, def, onSlotChange, onDropOnSlot, dept
       <div className={styles.body}>
         {/* Label + slots */}
         <div className={styles.labelRow}>
-          {renderLabel(def, inst, onSlotChange, onDropOnSlot)}
+          {renderLabel(def, inst, onSlotChange, onDropOnSlot, variables)}
         </div>
 
         {/* C-block inner area */}
@@ -77,6 +78,7 @@ export default function BlockShape({ inst, def, onSlotChange, onDropOnSlot, dept
                   def={childDef}
                   onSlotChange={onSlotChange}
                   depth={depth + 1}
+                  variables={variables}
                 />
               )
             })}
@@ -94,16 +96,17 @@ function renderLabel(
   def: BlockDef,
   inst: BlockInstance,
   onSlotChange: (instanceId: string, slotId: string, value: string | number) => void,
-  onDropOnSlot?: (instanceId: string, slotId: string, dropped: BlockInstance) => void,
+  onDropOnSlot: ((instanceId: string, slotId: string, dropped: BlockInstance) => void) | undefined,
+  variables: string[],
 ) {
   if (!def.slots || def.slots.length === 0) {
     return <span className={styles.labelText}>{def.label}</span>
   }
 
   const parts: React.ReactNode[] = []
-  const labelParts = def.label.split('_') // underscore marks slot positions
-  // Simple rendering: label then slots inline
-  parts.push(<span key="label" className={styles.labelText}>{def.label} </span>)
+  if (def.label) {
+    parts.push(<span key="label" className={styles.labelText}>{def.label} </span>)
+  }
 
   for (const slotDef of def.slots) {
     const sv = inst.slots.find(s => s.slotId === slotDef.id)
@@ -116,8 +119,22 @@ function renderLabel(
           className={styles.slotDropdown}
           value={String(value)}
           onChange={e => onSlotChange(inst.instanceId, slotDef.id, e.target.value)}
+          onClick={e => e.stopPropagation()}
         >
           {(slotDef.options ?? []).map(o => <option key={o} value={o}>{o}</option>)}
+        </select>
+      )
+    } else if (slotDef.type === 'varname') {
+      parts.push(
+        <select
+          key={slotDef.id}
+          className={styles.slotDropdown}
+          value={String(value)}
+          onChange={e => onSlotChange(inst.instanceId, slotDef.id, e.target.value)}
+          onClick={e => e.stopPropagation()}
+        >
+          {variables.length === 0 && <option value="">нет переменных</option>}
+          {variables.map(v => <option key={v} value={v}>{v}</option>)}
         </select>
       )
     } else if (slotDef.type === 'number') {

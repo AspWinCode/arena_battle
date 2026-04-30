@@ -1,22 +1,43 @@
 import type { BlockInstance, SlotValue } from './types'
 import { BLOCK_DEF_MAP } from './blockDefs'
 
-// Generates JS code from a block script
 export function generateCode(root: BlockInstance | null): string {
   if (!root) return ''
 
   const lines: string[] = []
   lines.push('function onRoundStart(enemy) {')
 
-  const body = generateBlock(root.next ?? null, 1)
-  lines.push(...body)
+  // Declare all variables used in the script
+  const varNames = collectVarNames(root.next ?? null)
+  if (varNames.size > 0) {
+    lines.push(`  let ${[...varNames].map(v => `${v} = 0`).join(', ')};`)
+  }
 
+  lines.push(...generateBlock(root.next ?? null, 1))
   lines.push('}')
   return lines.join('\n')
 }
 
 function indent(n: number) {
   return '  '.repeat(n)
+}
+
+function sanitizeVarName(name: string): string {
+  if (!name.trim()) return '__var'
+  return name.trim().replace(/^(\d)/, '_$1').replace(/[^\wЀ-ӿ]/g, '_')
+}
+
+function collectVarNames(inst: BlockInstance | null, acc: Set<string> = new Set()): Set<string> {
+  if (!inst) return acc
+  if (inst.defId === 'setVar' || inst.defId === 'changeVar') {
+    const slot = inst.slots.find(s => s.slotId === 'name')
+    if (slot?.value && typeof slot.value === 'string' && slot.value.trim()) {
+      acc.add(sanitizeVarName(slot.value))
+    }
+  }
+  if (inst.next) collectVarNames(inst.next, acc)
+  inst.body?.forEach(b => collectVarNames(b, acc))
+  return acc
 }
 
 function slotValue(sv: SlotValue | undefined): string {
@@ -30,9 +51,6 @@ function slotValue(sv: SlotValue | undefined): string {
 }
 
 function generateExpression(inst: BlockInstance): string {
-  const def = BLOCK_DEF_MAP.get(inst.defId)
-  if (!def) return '0'
-
   const s = (id: string) => slotValue(inst.slots.find(s => s.slotId === id))
 
   switch (inst.defId) {
@@ -47,6 +65,10 @@ function generateExpression(inst: BlockInstance): string {
     case 'and':             return `(${s('a')} && ${s('b')})`
     case 'or':              return `(${s('a')} || ${s('b')})`
     case 'not':             return `!(${s('a')})`
+    case 'varReporter': {
+      const name = inst.slots.find(s => s.slotId === 'name')?.value
+      return name && typeof name === 'string' ? sanitizeVarName(name) : '__var'
+    }
     default:                return '0'
   }
 }
@@ -86,17 +108,27 @@ function generateBlock(inst: BlockInstance | null, depth: number): string[] {
     case 'moveBackward':
       lines.push(`${ind}moveBackward(${s('n')});`)
       break
+    case 'setVar': {
+      const name = inst.slots.find(sv => sv.slotId === 'name')?.value
+      const varName = name && typeof name === 'string' ? sanitizeVarName(name) : '__var'
+      lines.push(`${ind}${varName} = ${s('value')};`)
+      break
+    }
+    case 'changeVar': {
+      const name = inst.slots.find(sv => sv.slotId === 'name')?.value
+      const varName = name && typeof name === 'string' ? sanitizeVarName(name) : '__var'
+      lines.push(`${ind}${varName} += ${s('by')};`)
+      break
+    }
     case 'if': {
-      const cond = s('cond')
-      lines.push(`${ind}if (${cond}) {`)
+      lines.push(`${ind}if (${s('cond')}) {`)
       lines.push(...generateBlocks(inst.body ?? [], depth + 1))
       lines.push(`${ind}}`)
       break
     }
     case 'ifElse': {
-      const cond = s('cond')
       const half = Math.floor((inst.body ?? []).length / 2)
-      lines.push(`${ind}if (${cond}) {`)
+      lines.push(`${ind}if (${s('cond')}) {`)
       lines.push(...generateBlocks((inst.body ?? []).slice(0, half), depth + 1))
       lines.push(`${ind}} else {`)
       lines.push(...generateBlocks((inst.body ?? []).slice(half), depth + 1))
@@ -120,7 +152,6 @@ function generateBlock(inst: BlockInstance | null, depth: number): string[] {
       break
     case 'whenRoundStarts':
     case 'whenHit':
-      // hat blocks — skip, just continue to next
       break
   }
 

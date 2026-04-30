@@ -1,6 +1,26 @@
+import { createHash } from 'node:crypto'
 import type { Strategy, Lang } from '@robocode/shared'
 import { runJS } from './js-runner.js'
 import { buildStrategy } from './build-strategy.js'
+
+// ── Strategy cache (keyed by SHA-256 of lang:code) ─────────────────────────
+const MAX_CACHE = 500
+const strategyCache = new Map<string, Strategy>()
+
+function cacheKey(code: string, lang: string): string {
+  return createHash('sha256').update(`${lang}:${code}`).digest('hex')
+}
+
+function cacheGet(code: string, lang: string): Strategy | undefined {
+  return strategyCache.get(cacheKey(code, lang))
+}
+
+function cachePut(code: string, lang: string, strategy: Strategy): void {
+  if (strategyCache.size >= MAX_CACHE) {
+    strategyCache.delete(strategyCache.keys().next().value!)
+  }
+  strategyCache.set(cacheKey(code, lang), strategy)
+}
 
 const IMAGES: Record<string, string> = {
   py:   process.env.SANDBOX_PYTHON_IMAGE ?? 'robocode/sandbox-python:latest',
@@ -21,11 +41,18 @@ export async function runInSandbox(code: string, lang: Lang): Promise<Strategy> 
     throw new Error('Code too long (max 5000 characters)')
   }
 
-  if (lang === 'js' || lang === 'auto') {
-    return runJS(code)
+  const cached = cacheGet(code, lang)
+  if (cached) {
+    console.log(`[sandbox] cache hit ${lang} ${cacheKey(code, lang).slice(0, 8)}`)
+    return cached
   }
 
-  return runDockerSandbox(code, lang)
+  const strategy = lang === 'js' || lang === 'auto'
+    ? await runJS(code)
+    : await runDockerSandbox(code, lang)
+
+  cachePut(code, lang, strategy)
+  return strategy
 }
 
 async function runDockerSandbox(code: string, lang: string): Promise<Strategy> {

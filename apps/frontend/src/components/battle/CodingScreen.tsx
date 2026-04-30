@@ -2,6 +2,7 @@ import { useState } from 'react'
 import type { Lang } from '@robocode/shared'
 import { useBattleStore } from '../../stores/battleStore'
 import CodeEditor from '../CodeEditor/CodeEditor'
+import BlockEditor from '../BlockEditor/BlockEditor'
 import styles from './CodingScreen.module.css'
 
 const LANG_LABELS: Record<Lang, string> = {
@@ -89,7 +90,42 @@ export default function CodingScreen({ onReady }: { onReady: (code: string, lang
   const currentCode = code || DEFAULT_TEMPLATES[lang] || ''
 
   if (sessionLevel === 'blocks') {
-    return <div className={styles.root}>Блочный редактор (в разработке)</div>
+    return (
+      <div className={styles.root} style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+        {/* Header (same as text editor) */}
+        <div className={styles.header}>
+          <div className={styles.players}>
+            <span>{myInfo?.skin === 'robot' ? '🤖' : myInfo?.skin === 'gladiator' ? '⚔️' : myInfo?.skin === 'boxer' ? '🥊' : '🚀'} {myInfo?.name ?? 'Ты'}</span>
+            <span className={styles.vs}>VS</span>
+            <span>{opponentInfo ? `${opponentInfo.skin === 'robot' ? '🤖' : opponentInfo.skin === 'gladiator' ? '⚔️' : opponentInfo.skin === 'boxer' ? '🥊' : '🚀'} ${opponentInfo.name}` : '⏳ Ожидание...'}</span>
+          </div>
+          <div className={`${styles.timer} ${isUrgent ? styles.timerUrgent : ''}`}>
+            ⏱ {minutes}:{seconds.toString().padStart(2, '0')}
+          </div>
+          <div className={styles.actions}>
+            <button
+              className={`btn btn-primary ${styles.readyBtn}`}
+              onClick={handleReady}
+              disabled={submitted || !currentCode.trim()}
+            >
+              {submitted ? (
+                <>✅ {opponentInfo?.ready ? 'Оба готовы!' : 'Ожидаем противника...'}</>
+              ) : (
+                '⚔️ ГОТОВ К БОЮ'
+              )}
+            </button>
+          </div>
+        </div>
+        {/* Block Editor fills remaining space */}
+        <div style={{ flex: 1, minHeight: 0 }}>
+          <BlockEditor
+            onChange={v => setCode(v)}
+            skin={myInfo?.skin ?? 'robot'}
+            onSkinChange={() => {}}
+          />
+        </div>
+      </div>
+    )
   }
 
   return (

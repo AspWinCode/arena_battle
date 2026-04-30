@@ -43,8 +43,12 @@ export default function ArenaComponent({
   p1Hp, p2Hp, p1MaxHp, p2MaxHp,
   latestTurn, round,
 }: Props) {
-  const vfxRef = useRef<VFXHandle>(null)
+  const vfxRef      = useRef<VFXHandle>(null)
   const prevTurnRef = useRef<TurnResult | null>(null)
+  const prevP1Hp    = useRef(p1MaxHp)
+  const prevP2Hp    = useRef(p2MaxHp)
+  const prevP1Pos   = useRef<string>('mid')
+  const prevP2Pos   = useRef<string>('mid')
 
   // Convert SVG coords to canvas coords (they're same scale here)
   const svgToCanvas = useCallback((svgX: number, svgY: number) => ({
@@ -77,6 +81,32 @@ export default function ArenaComponent({
     const cx1 = POSITION_X[pos].p1
     const cx2 = POSITION_X[pos].p2
 
+    // Death detection
+    if (prevP1Hp.current > 0 && p1Hp === 0) {
+      vfx.spawnDeathExplosion(cx1, ROBOT_Y - 60, p1c)
+      vfx.shake(14)
+    }
+    if (prevP2Hp.current > 0 && p2Hp === 0) {
+      vfx.spawnDeathExplosion(cx2, ROBOT_Y - 60, p2c)
+      vfx.shake(14)
+    }
+    prevP1Hp.current = p1Hp
+    prevP2Hp.current = p2Hp
+
+    // Movement trail (position change)
+    const p1CurPos = latestTurn.p1Position ?? 'mid'
+    const p2CurPos = latestTurn.p2Position ?? 'mid'
+    if (p1CurPos !== prevP1Pos.current) {
+      const dir = p1CurPos === 'close' || (p1CurPos === 'mid' && prevP1Pos.current === 'far') ? 'forward' : 'backward'
+      vfx.spawnMoveTrail(cx1, ROBOT_Y - 20, p1c, dir)
+    }
+    if (p2CurPos !== prevP2Pos.current) {
+      const dir = p2CurPos === 'close' || (p2CurPos === 'mid' && prevP2Pos.current === 'far') ? 'forward' : 'backward'
+      vfx.spawnMoveTrail(cx2, ROBOT_Y - 20, p2c, dir)
+    }
+    prevP1Pos.current = p1CurPos
+    prevP2Pos.current = p2CurPos
+
     // P1 takes damage
     if (p1DmgTaken > 0) {
       vfx.spawnHitSparks(cx1, ROBOT_Y - 20, p2c)
@@ -89,6 +119,15 @@ export default function ArenaComponent({
       vfx.spawnHitSparks(cx2, ROBOT_Y - 20, p1c)
       vfx.showHitNumber(cx2, ROBOT_Y - 60, p2DmgTaken)
       vfx.shake(6)
+    }
+
+    // Shield block: attacker hit shield (no damage to defender)
+    const attackActions: (ActionName | undefined)[] = ['attack', 'laser', 'combo']
+    if (attackActions.includes(p1Action) && p2Action === 'shield' && p2DmgTaken === 0) {
+      vfx.spawnShieldBlock(cx2, ROBOT_Y - 30, p2c)
+    }
+    if (attackActions.includes(p2Action) && p1Action === 'shield' && p1DmgTaken === 0) {
+      vfx.spawnShieldBlock(cx1, ROBOT_Y - 30, p1c)
     }
 
     // Laser impacts
@@ -109,10 +148,12 @@ export default function ArenaComponent({
 
     // Big shake on big hits
     if (p1DmgTaken > 20 || p2DmgTaken > 20) vfx.shake(10)
-  }, [latestTurn, p1Skin, p2Skin])
+  }, [latestTurn, p1Skin, p2Skin, p1Hp, p2Hp])
 
   const p1ShieldActive = latestTurn?.p1Action === 'shield'
   const p2ShieldActive = latestTurn?.p2Action === 'shield'
+  const p1Dead = p1Hp <= 0
+  const p2Dead = p2Hp <= 0
 
   // Position badge labels
   const POS_LABEL: Record<string, string> = { close: 'CLOSE', mid: 'MID', far: 'FAR' }
@@ -220,6 +261,7 @@ export default function ArenaComponent({
             x={P1_X}
             y={ROBOT_Y}
             shieldActive={p1ShieldActive}
+            isDead={p1Dead}
           />
           <RobotSVG
             skinId={p2Skin}
@@ -231,6 +273,7 @@ export default function ArenaComponent({
             x={P2_X}
             y={ROBOT_Y}
             shieldActive={p2ShieldActive}
+            isDead={p2Dead}
           />
 
           {/* Position badges */}

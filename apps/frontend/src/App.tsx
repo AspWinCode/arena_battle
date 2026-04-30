@@ -1,6 +1,8 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
 import JoinPage from './pages/JoinPage'
 import BattlePage from './pages/BattlePage'
+import LearnPage from './pages/LearnPage'
+import LearningBattlePage from './pages/LearningBattlePage'
 import AdminLoginPage from './pages/admin/AdminLoginPage'
 import AdminDashboard from './pages/admin/AdminDashboard'
 import AdminSessionNew from './pages/admin/AdminSessionNew'
@@ -13,6 +15,8 @@ export default function App() {
       <Route path="/" element={<Navigate to="/join" replace />} />
       <Route path="/join" element={<JoinPage />} />
       <Route path="/battle/:sessionId" element={<BattlePage />} />
+      <Route path="/learn" element={<LearnPage />} />
+      <Route path="/learn/:missionId" element={<LearningBattlePage />} />
 
       <Route path="/admin/login" element={<AdminLoginPage />} />
       <Route

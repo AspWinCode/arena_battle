@@ -1,4 +1,4 @@
-.PHONY: install dev build test docker-up docker-down sandboxes seed-admin
+.PHONY: install dev build test test-unit test-e2e docker-up docker-down docker-prod sandboxes seed-admin
 
 install:
 	npm install
@@ -12,6 +12,15 @@ build:
 test:
 	npm run test
 
+test-unit:
+	cd apps/backend && npx vitest run
+
+test-e2e:
+	cd tests/e2e && npx playwright test --config=playwright.config.ts
+
+test-e2e-ui:
+	cd tests/e2e && npx playwright test --config=playwright.config.ts --ui
+
 # Docker
 docker-up:
 	docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d
@@ -21,6 +30,9 @@ docker-down:
 
 docker-build:
 	docker compose -f docker-compose.yml -f docker-compose.dev.yml build
+
+docker-prod:
+	docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
 
 # Sandbox images
 sandboxes:

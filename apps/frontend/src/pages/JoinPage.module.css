@@ -221,9 +221,35 @@
   transform: none !important;
 }
 
+.bottomLinks {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.learnLink {
+  display: inline-block;
+  font-size: 14px;
+  font-weight: 700;
+  color: #a855f7;
+  text-decoration: none;
+  padding: 10px 20px;
+  border: 1px solid rgba(168,85,247,.3);
+  border-radius: var(--radius-lg);
+  background: rgba(168,85,247,.06);
+  transition: background .2s, border-color .2s;
+}
+
+.learnLink:hover {
+  background: rgba(168,85,247,.12);
+  border-color: rgba(168,85,247,.5);
+}
+
 .adminLink {
   font-size: 13px;
   color: var(--text-muted);
+  margin: 0;
 }
 
 .adminLink a {
