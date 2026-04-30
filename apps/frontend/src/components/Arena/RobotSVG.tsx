@@ -20,16 +20,16 @@ const SKIN_COLORS: Record<SkinId, { primary: string; secondary: string; accent: 
 }
 
 const GL = '#f1cf68'
-const PNG_RATIO = 1537 / 1023
-const GLADIATOR_SPRITE_HREF = '/skins/gladiator.png?v=3'
-const GLADIATOR_HEIGHT = 96
+const PNG_RATIO = 738 / 763
+const GLADIATOR_SPRITE_HREF = '/skins/gladiator.png?v=4'
+const GLADIATOR_HEIGHT = 118
 const GLADIATOR_WIDTH = Math.round(GLADIATOR_HEIGHT * PNG_RATIO)
 const GLADIATOR_X = -GLADIATOR_WIDTH / 2
 const GLADIATOR_Y = -GLADIATOR_HEIGHT
 const GENERIC_SCALE = 0.96
 const GENERIC_FOOT_Y = 51 * GENERIC_SCALE
 const HP_BAR_X = -55
-const HP_BAR_Y = -132
+const HP_BAR_Y = -148
 
 function GladiatorBody({ action, shieldActive }: {
   action?: ActionName | null
