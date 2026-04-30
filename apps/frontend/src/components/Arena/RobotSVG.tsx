@@ -19,90 +19,91 @@ const SKIN_COLORS: Record<SkinId, { primary: string; secondary: string; accent: 
   cosmonaut: { primary: '#f0f9ff', secondary: '#1a2a3a', accent: '#bae6fd' },
 }
 
-// ── Gladiator colour palette (matches the chibi reference) ──────────────────
-const H  = '#1c1a1f'   // helmet dark
-const HM = '#48454f'   // helmet mid
-const G  = '#b48925'   // gold base
-const GL = '#f1cf68'   // gold light
-const SK = '#e0b07b'   // skin
-const SD = '#bb8456'   // skin shadow
-const LB = '#7f4619'   // leather brown
-const LD = '#43220a'   // leather dark
-const RD = '#92262b'   // red kilt
-const RK = '#671015'   // red kilt dark
-const BS = '#b9bec8'   // blade silver
-const BE = '#f3f5f8'   // blade edge light
-const BD = '#6f7584'   // blade dark
+const GL = '#f1cf68'
+const PNG_RATIO = 1537 / 1023
+const GLADIATOR_HEIGHT = 168
+const GLADIATOR_WIDTH = Math.round(GLADIATOR_HEIGHT * PNG_RATIO)
+const GLADIATOR_X = -GLADIATOR_WIDTH / 2
+const GLADIATOR_Y = -GLADIATOR_HEIGHT
+const GENERIC_SCALE = 1.6
+const GENERIC_FOOT_Y = 51 * GENERIC_SCALE
+const HP_BAR_X = -55
+const HP_BAR_Y = -190
 
-/*
-  Gladiator uses a PNG sprite placed in /public/skins/gladiator.png
-  The PNG must have a TRANSPARENT background.
-  Faces RIGHT; Player 2 is mirrored by the parent scale(-1,1).
-*/
 function GladiatorBody({ action, shieldActive }: {
   action?: ActionName | null
   shieldActive?: boolean
 }) {
   const attacking = action === 'attack' || action === 'combo' || action === 'laser'
 
-  // PNG is 1537x1023 (landscape, ratio 1.503:1).
-  // Container must match PNG ratio exactly so 'meet' fills it without letterboxing.
-  // Target height 270 SVG units → width = round(270 * 1537/1023) = 406
-  const SH = 270
-  const SW = 406
-  const SX = -203   // ─SW/2, centres sprite
-  const SY = -SH    // feet at y=0
-
   return (
     <g>
-      {/* Shield shimmer */}
       {shieldActive && (
-        <ellipse cx={0} cy={-SH * 0.45} rx={SW * 0.52} ry={SH * 0.52}
-          fill="none" stroke={GL} strokeWidth={2.5} strokeDasharray="5 3">
+        <ellipse
+          cx={0}
+          cy={-GLADIATOR_HEIGHT * 0.48}
+          rx={GLADIATOR_WIDTH * 0.42}
+          ry={GLADIATOR_HEIGHT * 0.45}
+          fill="none"
+          stroke={GL}
+          strokeWidth={2.5}
+          strokeDasharray="5 3"
+        >
           <animate attributeName="opacity" values="0.72;0.25;0.72" dur="0.85s" repeatCount="indefinite" />
-          <animate attributeName="rx" values={`${SW*0.52};${SW*0.56};${SW*0.52}`} dur="0.85s" repeatCount="indefinite" />
+          <animate attributeName="rx" values={`${GLADIATOR_WIDTH * 0.42};${GLADIATOR_WIDTH * 0.45};${GLADIATOR_WIDTH * 0.42}`} dur="0.85s" repeatCount="indefinite" />
         </ellipse>
       )}
 
-      {/* ── Sprite group: breathe + attack ── */}
       <g>
-        {/* Idle breathing */}
-        <animateTransform attributeName="transform" type="translate"
-          values="0,0; 0,-3; 0,0" dur="2.2s" repeatCount="indefinite"
-          calcMode="spline" keySplines="0.45 0 0.55 1; 0.45 0 0.55 1" />
+        <animateTransform
+          attributeName="transform"
+          type="translate"
+          values="0,0; 0,-3; 0,0"
+          dur="2.2s"
+          repeatCount="indefinite"
+          calcMode="spline"
+          keySplines="0.45 0 0.55 1; 0.45 0 0.55 1"
+        />
 
-        {/* Attack lunge */}
         <g>
-          <animateTransform attributeName="transform" type="rotate"
-            values={attacking ? '-12 0 -20; 10 0 -20; -12 0 -20' : '0 0 0; 0 0 0; 0 0 0'}
-            dur={attacking ? '0.34s' : '1s'} repeatCount="indefinite"
-            calcMode="spline" keySplines="0.4 0 0.6 1; 0.4 0 0.6 1" />
-
-          {/* ── PNG sprite ── */}
-          <image
-            href="/skins/gladiator.png"
-            x={SX}
-            y={SY}
-            width={SW}
-            height={SH}
-            preserveAspectRatio="xMidYMax meet"
+          <animateTransform
+            attributeName="transform"
+            type="rotate"
+            values={attacking ? '-7 0 -20; 5 0 -20; -7 0 -20' : '0 0 0; 0 0 0; 0 0 0'}
+            dur={attacking ? '0.34s' : '1s'}
+            repeatCount="indefinite"
+            calcMode="spline"
+            keySplines="0.4 0 0.6 1; 0.4 0 0.6 1"
           />
 
-        </g>{/* /attack lunge */}
+          <image
+            href="/skins/gladiator.png"
+            x={GLADIATOR_X}
+            y={GLADIATOR_Y}
+            width={GLADIATOR_WIDTH}
+            height={GLADIATOR_HEIGHT}
+            preserveAspectRatio="xMidYMax meet"
+          />
+        </g>
 
-        {/* Action label next to sprite */}
         {action && (
-          <text x={SW * 0.45} y={SY + SH * 0.4}
-            fill={GL} fontSize={10} fontWeight={800} fontFamily="monospace" textAnchor="start">
+          <text
+            x={GLADIATOR_WIDTH * 0.28}
+            y={GLADIATOR_Y + GLADIATOR_HEIGHT * 0.4}
+            fill={GL}
+            fontSize={10}
+            fontWeight={800}
+            fontFamily="monospace"
+            textAnchor="start"
+          >
             {action.toUpperCase()}
           </text>
         )}
-      </g>{/* /breathe */}
+      </g>
     </g>
   )
 }
 
-/* ── Generic body for robot / boxer / cosmonaut ─────────────────────────────── */
 function GenericBody({ skinId, action, shieldActive }: {
   skinId: SkinId
   action?: ActionName | null
@@ -119,23 +120,30 @@ function GenericBody({ skinId, action, shieldActive }: {
       )}
 
       <rect x={-14} y={28} width={10} height={20} rx={4} fill={c.secondary} stroke={c.primary} strokeWidth={1.5} />
-      <rect x={4}   y={28} width={10} height={20} rx={4} fill={c.secondary} stroke={c.primary} strokeWidth={1.5} />
+      <rect x={4} y={28} width={10} height={20} rx={4} fill={c.secondary} stroke={c.primary} strokeWidth={1.5} />
       <rect x={-17} y={44} width={14} height={7} rx={3} fill={c.primary} />
-      <rect x={3}   y={44} width={14} height={7} rx={3} fill={c.primary} />
+      <rect x={3} y={44} width={14} height={7} rx={3} fill={c.primary} />
       <rect x={-18} y={-2} width={36} height={32} rx={6} fill={c.secondary} stroke={c.primary} strokeWidth={2} />
-      <rect x={-8}  y={6}  width={16} height={10} rx={3} fill={c.primary} opacity={0.3} />
+      <rect x={-8} y={6} width={16} height={10} rx={3} fill={c.primary} opacity={0.3} />
       <circle cx={0} cy={11} r={4} fill={c.accent} opacity={0.8}>
         <animate attributeName="opacity" values="0.8;0.4;0.8" dur="1.5s" repeatCount="indefinite" />
       </circle>
 
-      <rect x={-28} y={0} width={12} height={22} rx={5}
-        fill={c.secondary} stroke={c.primary} strokeWidth={1.5}
-        transform={action === 'attack' || action === 'combo' ? 'rotate(-30, -22, 0)' : ''} />
+      <rect
+        x={-28}
+        y={0}
+        width={12}
+        height={22}
+        rx={5}
+        fill={c.secondary}
+        stroke={c.primary}
+        strokeWidth={1.5}
+        transform={action === 'attack' || action === 'combo' ? 'rotate(-30, -22, 0)' : ''}
+      />
       <rect x={16} y={0} width={12} height={22} rx={5} fill={c.secondary} stroke={c.primary} strokeWidth={1.5} />
-      <circle cx={-22} cy={24} r={6} fill={c.primary}
-        transform={action === 'attack' || action === 'combo' ? 'translate(10,-8)' : ''} />
-      <circle cx={22}  cy={24} r={6} fill={c.primary} />
-      <rect x={-6}  y={-10} width={12} height={10} rx={3} fill={c.secondary} stroke={c.primary} strokeWidth={1} />
+      <circle cx={-22} cy={24} r={6} fill={c.primary} transform={action === 'attack' || action === 'combo' ? 'translate(10,-8)' : ''} />
+      <circle cx={22} cy={24} r={6} fill={c.primary} />
+      <rect x={-6} y={-10} width={12} height={10} rx={3} fill={c.secondary} stroke={c.primary} strokeWidth={1} />
       <rect x={-20} y={-42} width={40} height={34} rx={8} fill={c.secondary} stroke={c.primary} strokeWidth={2} />
       <rect x={-14} y={-34} width={10} height={8} rx={3} fill={c.accent}>
         <animate attributeName="opacity" values="1;0.2;1" dur="3s" repeatCount="indefinite" />
@@ -157,32 +165,30 @@ function GenericBody({ skinId, action, shieldActive }: {
   )
 }
 
-/* ── Main export ─────────────────────────────────────────────────────────────── */
-const ROBOT_SCALE = 2.2
-
 export default function RobotSVG({ skinId, flip, action, hp, maxHp, name, x, y, shieldActive }: Props) {
-  const hpPct  = Math.max(0, Math.min(100, (hp / maxHp) * 100))
+  const hpPct = Math.max(0, Math.min(100, (hp / maxHp) * 100))
   const hpColor = hpPct > 50 ? '#22c55e' : hpPct > 25 ? '#fbbf24' : '#ef4444'
 
   return (
     <g transform={`translate(${x}, ${y})`}>
-      {/* HP bar – never flipped */}
-      <g transform="translate(-55, -285)">
+      <g transform={`translate(${HP_BAR_X}, ${HP_BAR_Y})`}>
         <rect x={0} y={0} width={110} height={10} rx={4} fill="#1a1a35" />
         <rect x={0} y={0} width={hpPct * 1.1} height={10} rx={4} fill={hpColor} />
-        <text x={55} y={24}  textAnchor="middle" fill="#94a3b8" fontSize={12} fontWeight={600}>{name}</text>
-        <text x={55} y={-5}  textAnchor="middle" fill={hpColor} fontSize={12} fontWeight={700}>{hp}</text>
+        <text x={55} y={24} textAnchor="middle" fill="#94a3b8" fontSize={12} fontWeight={600}>{name}</text>
+        <text x={55} y={-5} textAnchor="middle" fill={hpColor} fontSize={12} fontWeight={700}>{hp}</text>
       </g>
 
-      {/* Gladiator is intrinsically sized via SW/SH — only mirror for P2.
-          Generic skins use ROBOT_SCALE transform. */}
+      <ellipse cx={0} cy={0} rx={34} ry={6} fill="#020617" opacity={0.4} />
+
       {skinId === 'gladiator' ? (
         <g transform={flip ? 'scale(-1,1)' : undefined}>
           <GladiatorBody action={action} shieldActive={shieldActive} />
         </g>
       ) : (
-        <g transform={flip ? `scale(${-ROBOT_SCALE}, ${ROBOT_SCALE})` : `scale(${ROBOT_SCALE})`}>
-          <GenericBody skinId={skinId} action={action} shieldActive={shieldActive} />
+        <g transform={`translate(0, ${-GENERIC_FOOT_Y})`}>
+          <g transform={flip ? `scale(${-GENERIC_SCALE}, ${GENERIC_SCALE})` : `scale(${GENERIC_SCALE})`}>
+            <GenericBody skinId={skinId} action={action} shieldActive={shieldActive} />
+          </g>
         </g>
       )}
     </g>
