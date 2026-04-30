@@ -100,10 +100,6 @@ export default function ArenaComponent({
 
   return (
     <div className={styles.root}>
-      {/* !! DEPLOY TEST - REMOVE AFTER CONFIRM !! */}
-      <div style={{ background: '#ff0000', color: '#fff', textAlign: 'center', fontWeight: 'bold', padding: '4px', fontSize: '14px' }}>
-        🔴 DEPLOY OK — BUILD #{Math.floor(Date.now() / 1000) % 10000}
-      </div>
       {/* Round badge */}
       <div className={styles.roundBadge}>Раунд {round}</div>
 
