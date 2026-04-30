@@ -170,7 +170,7 @@ const ROBOT_SCALE = 2.8
 // (видимая фигурка занимает лишь ~10% от bbox PNG). Масштабируем
 // агрессивно вокруг точки ног (local 0,0), прозрачные края
 // уходят за пределы арены и обрезаются overflow:hidden.
-const GLADIATOR_SCALE = 4.0
+const GLADIATOR_SCALE = 5.5
 
 export default function RobotSVG({ skinId, flip, action, hp, maxHp, name, x, y, shieldActive }: Props) {
   const hpPct  = Math.max(0, Math.min(100, (hp / maxHp) * 100))
