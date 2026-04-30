@@ -73,3 +73,94 @@ model Battle {
   createdAt DateTime @default(now())
   session   Session  @relation(fields: [sessionId], references: [id])
 }
+
+// ─── Tournament system ────────────────────────────────────────────────────────
+
+enum TournamentStatus {
+  DRAFT
+  REGISTRATION
+  CLOSED
+  ACTIVE
+  DONE
+}
+
+enum ApplicationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum MatchStatus {
+  PENDING
+  SCHEDULED
+  IN_PROGRESS
+  DONE
+}
+
+model Tournament {
+  id                   String            @id @default(cuid())
+  name                 String
+  description          String?           @db.Text
+  startDate            DateTime
+  registrationDeadline DateTime
+  bracketGeneratedAt   DateTime?
+  maxParticipants      Int               @default(16)
+  status               TournamentStatus  @default(DRAFT)
+  format               String            @default("bo3")
+  level                Level             @default(CODE)
+  createdAt            DateTime          @default(now())
+
+  applications         TournamentApplication[]
+  matches              TournamentMatch[]
+}
+
+model TournamentApplication {
+  id               String            @id @default(cuid())
+  tournamentId     String
+  tournament       Tournament        @relation(fields: [tournamentId], references: [id])
+
+  playerName       String
+  playerEmail      String
+  experienceLevel  String            @default("beginner")
+  programmingYears Int               @default(0)
+  preferredLang    String            @default("js")
+  about            String?           @db.Text
+
+  status           ApplicationStatus @default(PENDING)
+  skillScore       Float?
+  adminNote        String?
+  seed             Int?
+
+  createdAt        DateTime          @default(now())
+
+  matchesAsP1      TournamentMatch[] @relation("Match_P1")
+  matchesAsP2      TournamentMatch[] @relation("Match_P2")
+  wonMatches       TournamentMatch[] @relation("Match_Winner")
+
+  @@unique([tournamentId, playerEmail])
+}
+
+model TournamentMatch {
+  id           String                  @id @default(cuid())
+  tournamentId String
+  tournament   Tournament              @relation(fields: [tournamentId], references: [id])
+
+  round        Int
+  position     Int
+
+  p1Id         String?
+  p2Id         String?
+  p1           TournamentApplication?  @relation("Match_P1", fields: [p1Id], references: [id])
+  p2           TournamentApplication?  @relation("Match_P2", fields: [p2Id], references: [id])
+
+  winnerId     String?
+  winner       TournamentApplication?  @relation("Match_Winner", fields: [winnerId], references: [id])
+
+  sessionId    String?
+  status       MatchStatus             @default(PENDING)
+  scheduledAt  DateTime?
+
+  createdAt    DateTime                @default(now())
+
+  @@unique([tournamentId, round, position])
+}

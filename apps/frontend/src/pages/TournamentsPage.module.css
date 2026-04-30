@@ -1,0 +1,76 @@
+.root {
+  min-height: 100vh;
+  background: var(--bg-dark);
+  position: relative;
+  overflow-x: hidden;
+}
+
+.bg { position: fixed; inset: 0; pointer-events: none; z-index: 0; }
+.bgGlow1 {
+  position: absolute; top: -200px; left: -200px;
+  width: 600px; height: 600px;
+  background: radial-gradient(circle, rgba(250,204,21,.12) 0%, transparent 70%);
+  border-radius: 50%;
+}
+.bgGlow2 {
+  position: absolute; bottom: -100px; right: -100px;
+  width: 500px; height: 500px;
+  background: radial-gradient(circle, rgba(249,115,22,.08) 0%, transparent 70%);
+  border-radius: 50%;
+}
+
+.content {
+  position: relative; z-index: 1;
+  max-width: 1100px; margin: 0 auto;
+  padding: 36px 24px 60px;
+}
+
+.back { font-size: 13px; color: var(--text-muted); text-decoration: none; display: inline-block; margin-bottom: 16px; }
+.back:hover { color: var(--accent); }
+
+.title { font-size: 32px; font-weight: 900; margin: 0 0 8px; }
+.subtitle { font-size: 15px; color: var(--text-muted); margin: 0 0 32px; }
+
+.loading, .empty {
+  padding: 60px; text-align: center; color: var(--text-muted);
+  display: flex; flex-direction: column; align-items: center; gap: 12px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 20px;
+}
+
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  display: flex; flex-direction: column; gap: 12px;
+  transition: border-color .2s, transform .15s;
+}
+.card:hover { border-color: #facc15; transform: translateY(-2px); }
+
+.cardTop { display: flex; align-items: center; justify-content: space-between; }
+.levelIcon { font-size: 24px; }
+.statusBadge {
+  font-size: 11px; font-weight: 700; border: 1px solid; border-radius: 99px;
+  padding: 3px 10px; letter-spacing: .04em;
+}
+
+.cardTitle { font-size: 20px; font-weight: 800; margin: 0; }
+.cardDesc  { font-size: 13px; color: var(--text-muted); margin: 0; line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+
+.cardMeta  { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+.metaItem  { display: flex; flex-direction: column; gap: 2px; }
+.metaLabel { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--text-muted); }
+.metaVal   { font-size: 13px; font-weight: 600; }
+.daysLeft  { color: var(--accent); font-size: 11px; }
+
+.fillBar   { display: flex; align-items: center; gap: 10px; }
+.fillTrack { flex: 1; height: 6px; background: var(--bg-mid); border-radius: 99px; overflow: hidden; }
+.fillFill  { height: 100%; background: #facc15; border-radius: 99px; transition: width .4s; }
+.fillLabel { font-size: 11px; color: var(--text-muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
+
+.deadline  { font-size: 12px; color: #f97316; margin: 0; }

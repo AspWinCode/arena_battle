@@ -9,7 +9,9 @@ import fastifyWebsocket from '@fastify/websocket'
 import { authRoutes } from './routes/auth.js'
 import { sessionRoutes } from './routes/sessions.js'
 import { resultRoutes } from './routes/results.js'
+import { tournamentRoutes } from './routes/tournaments.js'
 import { wsRoutes } from './ws/index.js'
+import { checkAndGeneratePendingBrackets } from './tournament/tournament-service.js'
 
 export async function buildServer() {
   const server = Fastify({
@@ -57,12 +59,20 @@ export async function buildServer() {
   })
 
   // Routes
-  await server.register(authRoutes, { prefix: '/api/v1/auth' })
-  await server.register(sessionRoutes, { prefix: '/api/v1/session' })
-  await server.register(resultRoutes, { prefix: '/api/v1/session' })
-  await server.register(wsRoutes, { prefix: '/ws' })
+  await server.register(authRoutes,      { prefix: '/api/v1/auth' })
+  await server.register(sessionRoutes,   { prefix: '/api/v1/session' })
+  await server.register(resultRoutes,    { prefix: '/api/v1/session' })
+  await server.register(tournamentRoutes,{ prefix: '/api/v1/tournament' })
+  await server.register(wsRoutes,        { prefix: '/ws' })
 
   server.get('/health', async () => ({ status: 'ok', ts: Date.now() }))
+
+  // Cron: check every hour if any tournament needs bracket auto-generation (T-10 days)
+  setInterval(() => {
+    checkAndGeneratePendingBrackets().catch(e =>
+      server.log.error({ err: e }, '[cron] bracket-check failed')
+    )
+  }, 60 * 60 * 1000)
 
   return server
 }

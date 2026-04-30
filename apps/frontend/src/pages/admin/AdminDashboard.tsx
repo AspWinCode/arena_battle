@@ -80,6 +80,9 @@ export default function AdminDashboard() {
           <span className={styles.logo}>🤖 RoboCode Admin</span>
         </div>
         <div className={styles.headerRight}>
+          <Link to="/admin/tournaments" className="btn btn-ghost" style={{ fontSize: 13 }}>
+            🏆 Турниры
+          </Link>
           <Link to="/admin/session/new" className="btn btn-primary" style={{ fontSize: 13 }}>
             + Новая сессия
           </Link>

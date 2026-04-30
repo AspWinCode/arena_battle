@@ -246,6 +246,29 @@
   border-color: rgba(168,85,247,.5);
 }
 
+.publicLinks {
+  display: flex;
+  gap: 10px;
+}
+
+.tournamentLink {
+  display: inline-block;
+  font-size: 14px;
+  font-weight: 700;
+  color: #facc15;
+  text-decoration: none;
+  padding: 10px 20px;
+  border: 1px solid rgba(250,204,21,.3);
+  border-radius: var(--radius-lg);
+  background: rgba(250,204,21,.06);
+  transition: background .2s, border-color .2s;
+}
+
+.tournamentLink:hover {
+  background: rgba(250,204,21,.12);
+  border-color: rgba(250,204,21,.5);
+}
+
 .adminLink {
   font-size: 13px;
   color: var(--text-muted);
