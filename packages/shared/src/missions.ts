@@ -26,21 +26,36 @@ export const MISSIONS: Mission[] = [
     id: 'mission-01',
     order: 1,
     title: 'Первый бой',
-    description: 'Противник атакует по прямой. Просто нажми атаку!',
+    description: 'Противник атакует по прямой. Напиши первую стратегию!',
     story: 'Деревянный манекен стоит в центре арены. Он всегда атакует одинаково. Покажи, что умеешь!',
     difficulty: 1,
     opponentName: 'Манекен',
     opponentSkin: 'robot',
     opponentStrategy: { primary: 'attack', lowHp: 'attack', onHit: 'attack', style: 'Standard', position: 'close' },
     tutorial: [
-      { title: 'Привет!', body: 'Это редактор кода. Здесь ты пишешь команды своему роботу.', highlight: 'editor' },
-      { title: 'Функция onRoundStart', body: 'Каждый ход вызывается функция onRoundStart. Напиши в ней что делать!', highlight: 'editor', codeHint: 'function onRoundStart(enemy) {\n  return attack();\n}' },
-      { title: 'Запусти бой!', body: 'Нажми кнопку "Запустить бой" и посмотри что будет.', highlight: 'ready-btn' },
+      {
+        title: 'Привет, боец!',
+        body: 'Это редактор кода. Ты пишешь функцию strategy(ctx) — она вызывается каждый ход и должна вернуть действие.',
+        highlight: 'editor',
+      },
+      {
+        title: 'Объект ctx',
+        body: 'ctx содержит всё что нужно: ctx.myHp, ctx.enemyHp, ctx.enemyLastAction, ctx.cooldowns. Верни название действия строкой.',
+        highlight: 'editor',
+        codeHint: `function strategy(ctx) {\n  return 'attack';\n}`,
+      },
+      {
+        title: 'Запусти бой!',
+        body: 'Нажми кнопку "Запустить бой" и посмотри результат.',
+        highlight: 'ready-btn',
+      },
     ],
-    starterCode: `function onRoundStart(enemy) {
-  // Противник: простой манекен
-  // Твоя задача: атаковать!
-  return attack();
+    starterCode: `// Функция strategy(ctx) вызывается каждый ход.
+// Верни название действия: 'attack', 'laser', 'shield', 'dodge', 'combo', 'repair'
+
+function strategy(ctx) {
+  // Манекен слабый — просто атакуй!
+  return 'attack';
 }`,
   },
 
@@ -55,15 +70,25 @@ export const MISSIONS: Mission[] = [
     opponentSkin: 'robot',
     opponentStrategy: { primary: 'laser', lowHp: 'laser', onHit: 'dodge', style: 'Aggressive', position: 'far' },
     tutorial: [
-      { title: 'enemy.lastAction', body: 'Узнай что сделал противник в прошлый ход через enemy.lastAction.', highlight: 'editor' },
-      { title: 'Уклонение', body: 'Если противник стрелял лазером — уклонись! Используй dodge().', highlight: 'editor', codeHint: `if (enemy.lastAction === 'laser') {\n  return dodge('roll');\n}` },
+      {
+        title: 'ctx.enemyLastAction',
+        body: 'Узнай что сделал противник в прошлый ход через ctx.enemyLastAction.',
+        highlight: 'editor',
+      },
+      {
+        title: 'Уклонение',
+        body: 'Если противник стрелял лазером — уклонись! Лазер снайпера делает 25 урона, dodge делает 0.',
+        highlight: 'editor',
+        codeHint: `if (ctx.enemyLastAction === 'laser') {\n  return 'dodge';\n}`,
+      },
     ],
-    starterCode: `function onRoundStart(enemy) {
-  if (enemy.lastAction === 'laser') {
-    // Уклонись от следующего выстрела
-    return dodge('roll');
+    starterCode: `function strategy(ctx) {
+  // Если враг только что выстрелил лазером — уклонись!
+  if (ctx.enemyLastAction === 'laser') {
+    return 'dodge';
   }
-  return attack();
+  // Иначе сближайся и атакуй
+  return 'attack';
 }`,
   },
 
@@ -72,22 +97,33 @@ export const MISSIONS: Mission[] = [
     order: 3,
     title: 'Щитоносец',
     description: 'Противник прячется за щитом. Найди слабое место!',
-    story: 'Гладиатор с большим щитом блокирует каждую атаку. Но щит не вечен!',
+    story: 'Гладиатор с большим щитом блокирует каждую атаку. Но щит не вечен — combo пробивает его!',
     difficulty: 2,
     opponentName: 'Щитоносец',
     opponentSkin: 'gladiator',
     opponentStrategy: { primary: 'shield', lowHp: 'attack', onHit: 'shield', style: 'Defensive', position: 'mid' },
     tutorial: [
-      { title: 'Проверяй щит', body: 'enemy.shieldActive покажет, активен ли щит противника прямо сейчас.', highlight: 'editor' },
-      { title: 'Лазер пробивает щит', body: 'Атака в щит не работает — попробуй лазер или combo!', codeHint: `if (enemy.shieldActive) {\n  return laser();\n}` },
+      {
+        title: 'Проверяй последнее действие',
+        body: 'ctx.enemyLastAction === "shield" означает что враг только что поставил щит. Атака слабеет до 8 урона!',
+        highlight: 'editor',
+      },
+      {
+        title: 'Combo пробивает щит',
+        body: 'combo наносит 12 урона даже через щит. А laser и combo во второй ход — уже без защиты.',
+        codeHint: `if (ctx.enemyLastAction === 'shield') {\n  return 'combo'; // пробиваем щит!\n}`,
+      },
     ],
-    starterCode: `function onRoundStart(enemy) {
-  if (enemy.shieldActive) {
-    // Щит активен — используй лазер
-    return laser();
+    starterCode: `function strategy(ctx) {
+  // Враг поставил щит — пробиваем combo
+  if (ctx.enemyLastAction === 'shield') {
+    return 'combo';
   }
-  // Щита нет — атакуй!
-  return attack();
+  // Враг атакует — ставим щит в ответ
+  if (ctx.enemyLastAction === 'attack') {
+    return 'shield';
+  }
+  return 'attack';
 }`,
   },
 
@@ -95,23 +131,31 @@ export const MISSIONS: Mission[] = [
     id: 'mission-04',
     order: 4,
     title: 'Боксёрский клуб',
-    description: 'Быстрые удары в ближнем бою. Нужна стратегия!',
-    story: 'Боксёр-молния атакует combo на ближней дистанции. Отойди назад и используй лазер!',
+    description: 'Быстрый combo-боец. Следи за перезарядкой!',
+    story: 'Боксёр-молния атакует combo на ближней дистанции. Уклоняйся и бей лазером!',
     difficulty: 2,
     opponentName: 'Боксёр',
     opponentSkin: 'boxer',
     opponentStrategy: { primary: 'combo', lowHp: 'attack', onHit: 'combo', style: 'Aggressive', position: 'close' },
     tutorial: [
-      { title: 'Позиция важна!', body: 'Лазер наносит больше урона с дальней дистанции. Уклоняйся чтобы отойти.', highlight: 'editor' },
-      { title: 'Комбо-счётчик', body: 'enemy.cooldowns.combo показывает сколько ходов до следующего combo.', codeHint: `if (enemy.cooldowns.combo > 0) {\n  return laser(); // комбо на перезарядке!\n}` },
+      {
+        title: 'ctx.cooldowns',
+        body: 'ctx.cooldowns.combo покажет сколько ходов до следующего combo. 0 = готово, >0 = перезарядка.',
+        highlight: 'editor',
+      },
+      {
+        title: 'Атакуй в окно перезарядки',
+        body: 'Combo у врага на CD 4 хода — у тебя есть 4 хода для свободной атаки!',
+        codeHint: `if (ctx.cooldowns.combo > 0) {\n  return 'laser'; // combo на перезарядке!\n}`,
+      },
     ],
-    starterCode: `function onRoundStart(enemy) {
-  // Если враг может сделать combo — уклонись
-  if (enemy.cooldowns.combo === 0) {
-    return dodge('back');
+    starterCode: `function strategy(ctx) {
+  // Combo врага на перезарядке — стреляем лазером
+  if (ctx.cooldowns.combo > 0) {
+    return 'laser';
   }
-  // Иначе атакуй с безопасного расстояния
-  return laser();
+  // Combo скоро будет — уклоняемся
+  return 'dodge';
 }`,
   },
 
@@ -120,25 +164,34 @@ export const MISSIONS: Mission[] = [
     order: 5,
     title: 'Целитель',
     description: 'Противник лечится. Прерви его восстановление!',
-    story: 'Космонавт использует аптечки и уходит от боя. Атакуй пока он лечится!',
+    story: 'Космонавт использует аптечки и уходит от боя. Когда враг лечится — он беззащитен!',
     difficulty: 2,
     opponentName: 'Медик',
     opponentSkin: 'cosmonaut',
     opponentStrategy: { primary: 'repair', lowHp: 'repair', onHit: 'shield', style: 'Defensive', position: 'mid' },
     tutorial: [
-      { title: 'Repair уязвим', body: 'Когда противник лечится (repair) — он беззащитен. Это момент для combo!', highlight: 'editor' },
-      { title: 'Следи за HP', body: 'enemy.hp покажет сколько здоровья у врага.', codeHint: `if (enemy.lastAction === 'repair') {\n  return combo(); // наказываем за лечение!\n}` },
+      {
+        title: 'Repair = 0 брони',
+        body: 'Когда противник делает repair — он не защищается. Combo наносит 25 урона по лечащемуся противнику!',
+        highlight: 'editor',
+      },
+      {
+        title: 'ctx.enemyHp',
+        body: 'ctx.enemyHp покажет сколько HP у врага. Если много — он будет лечиться снова.',
+        codeHint: `if (ctx.enemyLastAction === 'repair') {\n  return 'combo'; // наказываем!\n}`,
+      },
     ],
-    starterCode: `function onRoundStart(enemy) {
-  // Если враг только что лечился — атакуй combo
-  if (enemy.lastAction === 'repair') {
-    return combo();
+    starterCode: `function strategy(ctx) {
+  // Враг только что лечился — максимальный урон!
+  if (ctx.enemyLastAction === 'repair') {
+    return 'combo';
   }
-  // Если враг слабый — добей
-  if (enemy.hp < 30) {
-    return laser();
+  // Враг почти мёртв — добиваем лазером
+  if (ctx.enemyHp < 25) {
+    return 'laser';
   }
-  return attack();
+  // Ждём момент
+  return 'attack';
 }`,
   },
 
@@ -146,25 +199,39 @@ export const MISSIONS: Mission[] = [
     id: 'mission-06',
     order: 6,
     title: 'Зеркальный боец',
-    description: 'Противник копирует твой стиль. Будь непредсказуем!',
-    story: 'Этот робот учится на твоих ходах и пытается контратаковать. Чередуй атаки!',
+    description: 'Противник адаптируется. Будь непредсказуем — никаких повторов!',
+    story: 'Этот робот учится на твоих ходах. ⚠️ Новое правило: 3+ одинаковых хода подряд = урон ×0.5!',
     difficulty: 3,
     opponentName: 'Зеркало',
     opponentSkin: 'robot',
     opponentStrategy: { primary: 'attack', lowHp: 'combo', onHit: 'dodge', style: 'Balanced', position: 'mid' },
     tutorial: [
-      { title: 'Чередование', body: 'Не используй одно и то же действие подряд — противник адаптируется.', highlight: 'editor' },
-      { title: 'Случайность', body: 'Math.random() помогает быть непредсказуемым!', codeHint: `if (Math.random() > 0.5) {\n  return attack();\n} else {\n  return laser();\n}` },
+      {
+        title: '⚠️ Штраф за повторы',
+        body: 'Если ты используешь одно и то же действие 3+ раза подряд, твой урон снижается вдвое! ctx.myRepeatCount покажет счётчик.',
+        highlight: 'editor',
+      },
+      {
+        title: 'Чередуй действия',
+        body: 'Используй ctx.myRepeatCount чтобы знать когда пора менять тактику.',
+        codeHint: `if (ctx.myRepeatCount >= 2) {\n  return 'dodge'; // разбиваем серию\n}`,
+      },
     ],
-    starterCode: `function onRoundStart(enemy) {
-  if (enemy.hp < 30) {
-    return combo();
+    starterCode: `function strategy(ctx) {
+  // Если атаковал 2 раза подряд — пора менять тактику
+  if (ctx.myRepeatCount >= 2) {
+    // Чередуем: уклон или лазер
+    if (ctx.myLastAction === 'dodge') {
+      return 'laser';
+    }
+    return 'dodge';
   }
-  // Чередуй атаки чтобы быть непредсказуемым
-  if (Math.random() > 0.5) {
-    return attack();
+
+  if (ctx.enemyHp < 30) {
+    return 'combo';
   }
-  return laser();
+
+  return 'attack';
 }`,
   },
 
@@ -172,23 +239,34 @@ export const MISSIONS: Mission[] = [
     id: 'mission-07',
     order: 7,
     title: 'Берсерк',
-    description: 'Яростный противник не думает о защите. Используй это!',
-    story: 'Гладиатор-берсерк атакует без остановки. Но он никогда не защищается — поставь щит!',
+    description: 'Яростный combo-спамер. Контратакуй щитом!',
+    story: 'Гладиатор-берсерк атакует combo без остановки. Он никогда не защищается — используй это!',
     difficulty: 3,
     opponentName: 'Берсерк',
     opponentSkin: 'gladiator',
     opponentStrategy: { primary: 'combo', lowHp: 'combo', onHit: 'combo', style: 'Aggressive', position: 'close' },
     tutorial: [
-      { title: 'Щит контрит combo', body: 'Shield поглощает часть урона от combo. Используй его когда враг бесится!', highlight: 'editor' },
-      { title: 'Контратака', body: 'После того как поставил щит — атакуй combo в ответ.', codeHint: `// shield → counter-attack pattern` },
+      {
+        title: 'Shield vs Combo',
+        body: 'Shield поглощает часть урона от combo (0 вместо 22). После щита — combo на перезарядке 4 хода!',
+        highlight: 'editor',
+      },
+      {
+        title: 'Контратака в окно',
+        body: 'Поставь щит → враг тратит combo → атакуй laser пока combo на CD.',
+        codeHint: `// shield → counter pattern`,
+      },
     ],
-    starterCode: `function onRoundStart(enemy) {
-  // Берсерк всегда делает combo — ставь щит через раз
-  if (enemy.lastAction === 'combo') {
-    return shield();
+    starterCode: `function strategy(ctx) {
+  // Combo готово у врага — ставим щит
+  if (ctx.cooldowns.combo === 0) {
+    return 'shield';
   }
-  // После щита — контратака!
-  return combo();
+  // Combo на перезарядке — атакуем!
+  if (ctx.cooldowns.combo > 0) {
+    return 'laser';
+  }
+  return 'attack';
 }`,
   },
 
@@ -196,31 +274,46 @@ export const MISSIONS: Mission[] = [
     id: 'mission-08',
     order: 8,
     title: 'Адаптивный боец',
-    description: 'Противник меняет тактику. Нужна гибкая стратегия!',
-    story: 'Опытный боксёр умеет всё: атаковать, защищаться, лечиться. Читай его ходы!',
+    description: 'Противник меняет тактику. Нужна полная стратегия!',
+    story: 'Опытный боксёр умеет всё: атаковать, защищаться, лечиться. Читай его ходы и реагируй!',
     difficulty: 4,
     opponentName: 'Ветеран',
     opponentSkin: 'boxer',
     opponentStrategy: { primary: 'attack', lowHp: 'repair', onHit: 'shield', style: 'Balanced', position: 'mid' },
     tutorial: [
-      { title: 'Полный контроль', body: 'Проверяй HP врага, его последнее действие и cooldowns — принимай решения!', highlight: 'editor' },
-      { title: 'Дерево условий', body: 'Используй несколько if/else для разных ситуаций.', codeHint: `// hp + lastAction + cooldowns → решение` },
+      {
+        title: 'Полный контекст',
+        body: 'ctx содержит: myHp, enemyHp, turn, enemyLastAction, cooldowns (все 6 действий), myRepeatCount. Используй всё!',
+        highlight: 'editor',
+      },
+      {
+        title: 'Дерево решений',
+        body: 'Строй условия от наиболее критичных (своё HP) к тактическим (читай ходы врага).',
+        codeHint: `// myHp → enemyHp → enemyLastAction → cooldowns`,
+      },
     ],
-    starterCode: `function onRoundStart(enemy) {
-  // Враг почти мёртв — добей
-  if (enemy.hp < 25) {
-    return combo();
+    starterCode: `function strategy(ctx) {
+  // Критично: своё HP низкое — лечимся
+  if (ctx.myHp < 25 && ctx.cooldowns.repair === 0) {
+    return 'repair';
   }
-  // Враг лечится — атакуй combo
-  if (enemy.lastAction === 'repair') {
-    return combo();
+
+  // Враг лечится — максимальный урон
+  if (ctx.enemyLastAction === 'repair') {
+    return 'combo';
   }
-  // Враг только что ударил — уклонись
-  if (enemy.lastAction === 'attack') {
-    return dodge('left');
+
+  // Враг почти мёртв — добиваем
+  if (ctx.enemyHp < 20) {
+    return ctx.cooldowns.combo === 0 ? 'combo' : 'laser';
   }
-  // По умолчанию — атака
-  return attack();
+
+  // Избегаем штрафа за повторы
+  if (ctx.myRepeatCount >= 2) {
+    return 'dodge';
+  }
+
+  return 'attack';
 }`,
   },
 
@@ -228,27 +321,42 @@ export const MISSIONS: Mission[] = [
     id: 'mission-09',
     order: 9,
     title: 'Снайпер-призрак',
-    description: 'Дальний боец с уклонениями. Нужен laser + combo!',
-    story: 'Космонавт держится на дистанции, стреляет лазером и уходит от ударов. Поймай его!',
+    description: 'Дальний уклонист. Нужен точный тайминг!',
+    story: 'Космонавт держится на дистанции, стреляет лазером и уходит от ударов. Поймай его в момент перезарядки!',
     difficulty: 4,
     opponentName: 'Призрак',
     opponentSkin: 'cosmonaut',
     opponentStrategy: { primary: 'laser', lowHp: 'dodge', onHit: 'dodge', style: 'Evasive', position: 'far' },
     tutorial: [
-      { title: 'Сближение', body: 'attack() перемещает тебя ближе. Потом используй combo на близкой дистанции.', highlight: 'editor' },
-      { title: 'Перезарядка', body: 'После laser у врага cooldown 3 хода — это твой шанс атаковать!', codeHint: `if (enemy.cooldowns.laser > 0) {\n  return combo();\n}` },
+      {
+        title: 'Позиция',
+        body: 'ctx.myPosition и ctx.enemyPosition: close/mid/far. Laser наносит +15% с far. Attack с far = 0 урона!',
+        highlight: 'editor',
+      },
+      {
+        title: 'Момент для атаки',
+        body: 'После laser у врага 3 хода CD. Это твоё окно! Combo с close даёт +20% урона.',
+        codeHint: `if (ctx.cooldowns.laser > 0) {\n  return 'combo'; // враг разряжен!\n}`,
+      },
     ],
-    starterCode: `function onRoundStart(enemy) {
-  // Лазер на перезарядке — combo!
-  if (enemy.cooldowns.laser > 0) {
-    return combo();
+    starterCode: `function strategy(ctx) {
+  // Лазер на перезарядке — атакуем combo
+  if (ctx.cooldowns.laser > 0) {
+    return ctx.cooldowns.combo === 0 ? 'combo' : 'attack';
   }
+
   // Уклоняемся от лазера
-  if (enemy.lastAction === 'laser') {
-    return dodge('roll');
+  if (ctx.enemyLastAction === 'laser') {
+    return 'dodge';
   }
+
+  // Наше HP низкое — лечимся
+  if (ctx.myHp < 30 && ctx.cooldowns.repair === 0) {
+    return 'repair';
+  }
+
   // Сближаемся
-  return attack();
+  return 'attack';
 }`,
   },
 
@@ -256,36 +364,55 @@ export const MISSIONS: Mission[] = [
     id: 'mission-10',
     order: 10,
     title: 'Чемпион Арены',
-    description: 'Финальный бос. Используй всё что знаешь!',
-    story: 'Действующий чемпион арены. Он умеет всё и делает это идеально. Покажи ему что ты научился!',
+    description: 'Финальный босс. Используй всё что знаешь!',
+    story: 'Действующий чемпион арены. Он использует каждый твой промах. Напиши лучший код!',
     difficulty: 5,
     opponentName: 'Чемпион',
     opponentSkin: 'gladiator',
     opponentStrategy: { primary: 'laser', lowHp: 'combo', onHit: 'dodge', style: 'Aggressive', position: 'far' },
     tutorial: [
-      { title: 'Финальный бой!', body: 'Чемпион использует все свои умения. Напиши наилучший код!', highlight: 'editor' },
-      { title: 'Ты готов', body: 'Ты прошёл 9 миссий. Теперь применй всё — читай ходы, адаптируйся, побеждай!', highlight: 'arena' },
+      {
+        title: 'Финальный бой!',
+        body: 'Чемпион использует laser + combo + dodge. Читай его ходы, управляй HP, ломай его паттерны.',
+        highlight: 'editor',
+      },
+      {
+        title: 'Ты готов',
+        body: 'Ты прошёл 9 миссий и знаешь всё: ctx.cooldowns, ctx.myRepeatCount, позиции, HP. Покажи лучшую стратегию!',
+        highlight: 'arena',
+      },
     ],
-    starterCode: `function onRoundStart(enemy) {
-  // Финальная стратегия — здесь твой лучший код!
-
-  if (enemy.hp < 30) {
-    return combo();
+    starterCode: `function strategy(ctx) {
+  // ── Критические ситуации ──────────────────────────
+  if (ctx.myHp < 25 && ctx.cooldowns.repair === 0) {
+    return 'repair';
   }
 
-  if (enemy.lastAction === 'laser') {
-    return dodge('roll');
+  // ── Добиваем врага ────────────────────────────────
+  if (ctx.enemyHp < 20) {
+    return ctx.cooldowns.combo === 0 ? 'combo' : 'laser';
   }
 
-  if (enemy.shieldActive) {
-    return laser();
+  // ── Читаем ходы чемпиона ──────────────────────────
+  if (ctx.enemyLastAction === 'laser') {
+    return 'dodge'; // уклон от следующего
   }
 
-  if (enemy.cooldowns.laser > 0) {
-    return combo();
+  if (ctx.enemyLastAction === 'dodge') {
+    return ctx.cooldowns.laser === 0 ? 'laser' : 'attack';
   }
 
-  return attack();
+  // ── Избегаем штрафа за повторы ────────────────────
+  if (ctx.myRepeatCount >= 2) {
+    return ctx.myLastAction === 'dodge' ? 'laser' : 'dodge';
+  }
+
+  // ── Используем combo в окне перезарядки ──────────
+  if (ctx.cooldowns.combo === 0 && ctx.cooldowns.laser > 0) {
+    return 'combo';
+  }
+
+  return 'laser';
 }`,
   },
 ]

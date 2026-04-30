@@ -13,21 +13,67 @@ export type DodgeDir = 'left' | 'right' | 'back' | 'roll'
 
 // ─── Strategy ─────────────────────────────────────────────────────────────────
 
+/**
+ * Context passed to the user's strategy(ctx) function every turn.
+ * All values are read-only snapshots of the current battle state.
+ */
+export interface StrategyContext {
+  /** Your current HP (0–100) */
+  myHp: number
+  /** Enemy's current HP (0–100) */
+  enemyHp: number
+  /** Current turn number (1–20) */
+  turn: number
+  /** Your last action, or null on turn 1 */
+  myLastAction: ActionName | null
+  /** Enemy's last action, or null on turn 1 */
+  enemyLastAction: ActionName | null
+  /**
+   * Remaining cooldown turns for each action.
+   * 0 = available, >0 = locked.
+   */
+  cooldowns: {
+    attack: number
+    laser: number
+    shield: number
+    dodge: number
+    combo: number
+    repair: number
+  }
+  /** Your position: 'close' | 'mid' | 'far' */
+  myPosition: Position
+  /** Enemy position: 'close' | 'mid' | 'far' */
+  enemyPosition: Position
+  /**
+   * How many turns in a row you've used the same action.
+   * ≥ 3 triggers the repeat penalty (50% damage output).
+   */
+  myRepeatCount: number
+}
+
 export interface Strategy {
   primary: ActionName
   lowHp: ActionName
   onHit: ActionName
   style: 'Aggressive' | 'Defensive' | 'Evasive' | 'Balanced' | 'Standard'
   position: Position
+  /**
+   * Optional dynamic function called every turn.
+   * When present, overrides primary/lowHp/onHit.
+   * Should return a valid ActionName; engine validates and falls back if needed.
+   */
+  fn?: (ctx: StrategyContext) => ActionName
 }
 
 // ─── Player State ─────────────────────────────────────────────────────────────
 
 export interface Cooldowns {
+  attack: number
   laser: number
   combo: number
   repair: number
   shield: number
+  dodge: number
 }
 
 export interface PlayerState {

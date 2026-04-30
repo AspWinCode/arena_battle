@@ -1,4 +1,4 @@
-import type { Strategy } from '@robocode/shared'
+import type { Strategy, StrategyContext } from '@robocode/shared'
 import { buildStrategy, type ActionCall } from './build-strategy.js'
 
 const ACTION_NAMES = [
@@ -16,9 +16,104 @@ export const ACTION_BRIDGE_SOURCE = ACTION_NAMES.map(name => `
 globalThis.${name} = (...args) => {
   const ref = globalThis.__bridge_${name};
   ref.applySync(undefined, args, { arguments: { copy: true } });
-  return { action: '${name}', args };
+  return '${name}';
 };
 `).join('\n')
+
+/** Check if user code defines a strategy(ctx) function */
+function hasDynamicStrategy(code: string): boolean {
+  return /function\s+strategy\s*\(/.test(code)
+    || /(?:const|let|var)\s+strategy\s*=\s*(?:function|\(|ctx\s*=>)/.test(code)
+}
+
+// ── Dynamic strategy: strategy(ctx) function executed per-turn ───────────────
+
+async function buildDynamicStrategy(code: string): Promise<Strategy> {
+  let ivm: typeof import('isolated-vm') | null = null
+  try {
+    ivm = await import('isolated-vm')
+  } catch {
+    console.warn('[sandbox] isolated-vm not available, using fallback')
+    return buildStrategy([])
+  }
+
+  const Isolate = (ivm as any).Isolate ?? (ivm as any).default?.Isolate
+  if (!Isolate) return buildStrategy([])
+
+  const isolate = new Isolate({ memoryLimit: 32 })
+  const vmCtx = await isolate.createContext()
+
+  try {
+    // Compile user code so `strategy` function is defined in the context
+    const script = await isolate.compileScript(code)
+    await script.run(vmCtx, { timeout: 100 })
+
+    // Verify the strategy function exists and is callable
+    const strategyRef = await vmCtx.global.get('strategy', { reference: true })
+    if (!strategyRef || strategyRef.typeof !== 'function') {
+      isolate.dispose()
+      return buildStrategy([])
+    }
+
+    const VALID = new Set(['attack', 'laser', 'shield', 'dodge', 'combo', 'repair'])
+
+    // Build the fn closure — captures the isolate and ref
+    const fn = (ctx: StrategyContext): import('@robocode/shared').ActionName => {
+      try {
+        // isolated-vm requires serializable args; StrategyContext is a plain object
+        const result = strategyRef.applySync(undefined, [ctx], {
+          arguments: { copy: true },
+          result:    { copy: true },
+          timeout: 10,
+        })
+        if (typeof result === 'string' && VALID.has(result)) {
+          return result as import('@robocode/shared').ActionName
+        }
+      } catch {
+        // user code errored — engine will fall back
+      }
+      return 'attack'
+    }
+
+    // Also run a test to derive static fallbacks
+    const testCalls: ActionCall[] = []
+    const makeBridge = (n: string) => new (
+      (ivm as any).Reference ?? (ivm as any).default?.Reference
+    )((...args: unknown[]) => { testCalls.push({ action: n }) })
+
+    for (const n of ACTION_NAMES) {
+      await vmCtx.global.set(`__bridge_${n}`, makeBridge(n))
+    }
+
+    // Run test scenarios to fill static fallbacks (used if fn throws on turn 1)
+    const testScript = await isolate.compileScript(`
+      ;(function(){
+        var e1 = { myHp:80, enemyHp:60, turn:1, myLastAction:null, enemyLastAction:null,
+          cooldowns:{attack:0,laser:0,shield:0,dodge:0,combo:0,repair:0},
+          myPosition:'mid', enemyPosition:'mid', myRepeatCount:0 };
+        var e2 = { myHp:25, enemyHp:80, turn:5, myLastAction:'attack', enemyLastAction:'laser',
+          cooldowns:{attack:0,laser:0,shield:0,dodge:0,combo:0,repair:0},
+          myPosition:'mid', enemyPosition:'far', myRepeatCount:0 };
+        if (typeof strategy === 'function') { strategy(e1); strategy(e2); }
+      })();
+    `)
+    await testScript.run(vmCtx, { timeout: 50 }).catch(() => {})
+
+    const base = buildStrategy(testCalls)
+    base.fn = fn
+
+    // Don't dispose isolate here — fn closure needs it alive
+    // It will be GC'd when the session ends and `fn` is no longer referenced
+    return base
+
+  } catch (err) {
+    console.warn('[sandbox] dynamic strategy build error:', err)
+    isolate.dispose()
+    return buildStrategy([])
+  }
+}
+
+// ── Static strategy: legacy onRoundStart(enemy) call pattern ────────────────
 
 const TEST_CODE_SUFFIX = `
 ;(function(){
@@ -29,8 +124,7 @@ const TEST_CODE_SUFFIX = `
 })();
 `
 
-export async function runJS(code: string): Promise<Strategy> {
-  // Dynamic import to avoid build errors when isolated-vm is not installed
+async function buildStaticStrategy(code: string): Promise<Strategy> {
   let ivm: typeof import('isolated-vm') | null = null
   try {
     ivm = await import('isolated-vm')
@@ -39,16 +133,12 @@ export async function runJS(code: string): Promise<Strategy> {
     return buildStrategy([])
   }
 
-  const Isolate = (ivm as any).Isolate ?? (ivm as any).default?.Isolate
-  if (!Isolate) {
-    console.warn('[sandbox] Isolate constructor not found in isolated-vm export')
-    return buildStrategy([])
-  }
-
+  const Isolate  = (ivm as any).Isolate  ?? (ivm as any).default?.Isolate
   const Reference = (ivm as any).Reference ?? (ivm as any).default?.Reference
+  if (!Isolate) return buildStrategy([])
+
   const isolate = new Isolate({ memoryLimit: 32 })
   const ctx = await isolate.createContext()
-
   const results: ActionCall[] = []
 
   const makeRef = (action: string) =>
@@ -74,4 +164,13 @@ export async function runJS(code: string): Promise<Strategy> {
   }
 
   return buildStrategy(results)
+}
+
+// ── Main export ───────────────────────────────────────────────────────────────
+
+export async function runJS(code: string): Promise<Strategy> {
+  if (hasDynamicStrategy(code)) {
+    return buildDynamicStrategy(code)
+  }
+  return buildStaticStrategy(code)
 }

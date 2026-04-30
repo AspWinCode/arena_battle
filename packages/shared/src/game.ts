@@ -79,6 +79,14 @@ export const COOLDOWNS: Record<ActionName, number> = {
 export const MAX_HP = 100
 export const MAX_TURNS = 20
 
+/**
+ * Repeat-action penalty: if you use the SAME action this many turns in a row,
+ * your damage output is multiplied by REPEAT_DAMAGE_FACTOR.
+ * Forces players to mix actions instead of spamming attack.
+ */
+export const REPEAT_PENALTY_AFTER = 3
+export const REPEAT_DAMAGE_FACTOR = 0.5
+
 // Positional modifiers
 export function applyPositionModifier(
   action: ActionName,
