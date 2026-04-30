@@ -188,3 +188,60 @@
   gap: 10px;
   justify-content: center;
 }
+
+.codeActions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+/* ── QR Modal ─────────────────────────────────────────────────── */
+.qrOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.qrModal {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 32px 40px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  min-width: 300px;
+}
+
+.qrTitle {
+  font-size: 14px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--text-muted);
+}
+
+.qrCode {
+  background: #fff;
+  padding: 12px;
+  border-radius: 8px;
+}
+
+.qrCodeText {
+  font-family: 'Courier New', monospace;
+  font-size: 26px;
+  font-weight: 900;
+  color: var(--accent);
+  letter-spacing: .2em;
+}
+
+.qrHint {
+  font-size: 12px;
+  color: var(--text-muted);
+}

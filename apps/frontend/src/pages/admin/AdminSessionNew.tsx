@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { QRCodeSVG } from 'qrcode.react'
 import { api } from '../../api/client'
 import { useAdminStore } from '../../stores/adminStore'
 import styles from './AdminSessionNew.module.css'
@@ -23,6 +24,7 @@ export default function AdminSessionNew() {
   const [loading, setLoading]     = useState(false)
   const [error, setError]         = useState('')
   const [created, setCreated]     = useState<CreatedSession | null>(null)
+  const [qrModal, setQrModal]     = useState<{ code: string; player: string } | null>(null)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -45,36 +47,59 @@ export default function AdminSessionNew() {
   }
 
   if (created) {
+    const joinBase = `${window.location.origin}/join`
+
     return (
       <div className={styles.root}>
+        {/* QR Modal */}
+        {qrModal && (
+          <div className={styles.qrOverlay} onClick={() => setQrModal(null)}>
+            <div className={styles.qrModal} onClick={e => e.stopPropagation()}>
+              <div className={styles.qrTitle}>QR — {qrModal.player}</div>
+              <div className={styles.qrCode}>
+                <QRCodeSVG
+                  value={`${joinBase}?code=${qrModal.code}`}
+                  size={220}
+                  bgColor="#ffffff"
+                  fgColor="#0a0a1a"
+                  level="M"
+                />
+              </div>
+              <div className={styles.qrCodeText}>{qrModal.code}</div>
+              <div className={styles.qrHint}>Наведи камеру телефона для перехода</div>
+              <button className="btn btn-ghost" onClick={() => setQrModal(null)}>✕ Закрыть</button>
+            </div>
+          </div>
+        )}
+
         <div className={styles.successCard}>
           <div className={styles.successIcon}>🎉</div>
           <h2 className={styles.successTitle}>Сессия создана!</h2>
           <p className={styles.successSubtitle}>Раздайте коды игрокам</p>
 
           <div className={styles.codesGrid}>
-            <div className={styles.codeBox}>
-              <div className={styles.codeLabel}>Игрок 1</div>
-              <div className={styles.bigCode}>{created.code1}</div>
-              <button
-                className="btn btn-ghost"
-                style={{ fontSize: 12 }}
-                onClick={() => navigator.clipboard.writeText(created.code1)}
-              >
-                📋 Скопировать
-              </button>
-            </div>
-            <div className={styles.codeBox}>
-              <div className={styles.codeLabel}>Игрок 2</div>
-              <div className={styles.bigCode}>{created.code2}</div>
-              <button
-                className="btn btn-ghost"
-                style={{ fontSize: 12 }}
-                onClick={() => navigator.clipboard.writeText(created.code2)}
-              >
-                📋 Скопировать
-              </button>
-            </div>
+            {[{ label: 'Игрок 1', code: created.code1 }, { label: 'Игрок 2', code: created.code2 }].map(({ label, code }) => (
+              <div key={code} className={styles.codeBox}>
+                <div className={styles.codeLabel}>{label}</div>
+                <div className={styles.bigCode}>{code}</div>
+                <div className={styles.codeActions}>
+                  <button
+                    className="btn btn-ghost"
+                    style={{ fontSize: 12 }}
+                    onClick={() => navigator.clipboard.writeText(code)}
+                  >
+                    📋 Скопировать
+                  </button>
+                  <button
+                    className="btn btn-ghost"
+                    style={{ fontSize: 12 }}
+                    onClick={() => setQrModal({ code, player: label })}
+                  >
+                    📱 QR-код
+                  </button>
+                </div>
+              </div>
+            ))}
           </div>
 
           <div className={styles.successActions}>
