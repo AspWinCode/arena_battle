@@ -21,14 +21,15 @@ const SKIN_COLORS: Record<SkinId, { primary: string; secondary: string; accent: 
 
 const GL = '#f1cf68'
 const PNG_RATIO = 1537 / 1023
-const GLADIATOR_HEIGHT = 168
+const GLADIATOR_SPRITE_HREF = '/skins/gladiator.png?v=3'
+const GLADIATOR_HEIGHT = 132
 const GLADIATOR_WIDTH = Math.round(GLADIATOR_HEIGHT * PNG_RATIO)
 const GLADIATOR_X = -GLADIATOR_WIDTH / 2
 const GLADIATOR_Y = -GLADIATOR_HEIGHT
-const GENERIC_SCALE = 1.6
+const GENERIC_SCALE = 1.28
 const GENERIC_FOOT_Y = 51 * GENERIC_SCALE
 const HP_BAR_X = -55
-const HP_BAR_Y = -190
+const HP_BAR_Y = -158
 
 function GladiatorBody({ action, shieldActive }: {
   action?: ActionName | null
@@ -77,7 +78,7 @@ function GladiatorBody({ action, shieldActive }: {
           />
 
           <image
-            href="/skins/gladiator.png"
+            href={GLADIATOR_SPRITE_HREF}
             x={GLADIATOR_X}
             y={GLADIATOR_Y}
             width={GLADIATOR_WIDTH}
@@ -88,8 +89,8 @@ function GladiatorBody({ action, shieldActive }: {
 
         {action && (
           <text
-            x={GLADIATOR_WIDTH * 0.28}
-            y={GLADIATOR_Y + GLADIATOR_HEIGHT * 0.4}
+            x={GLADIATOR_WIDTH * 0.18}
+            y={GLADIATOR_Y + GLADIATOR_HEIGHT * 0.42}
             fill={GL}
             fontSize={10}
             fontWeight={800}
@@ -178,7 +179,7 @@ export default function RobotSVG({ skinId, flip, action, hp, maxHp, name, x, y, 
         <text x={55} y={-5} textAnchor="middle" fill={hpColor} fontSize={12} fontWeight={700}>{hp}</text>
       </g>
 
-      <ellipse cx={0} cy={0} rx={34} ry={6} fill="#020617" opacity={0.4} />
+      <ellipse cx={0} cy={0} rx={28} ry={5} fill="#020617" opacity={0.36} />
 
       {skinId === 'gladiator' ? (
         <g transform={flip ? 'scale(-1,1)' : undefined}>
