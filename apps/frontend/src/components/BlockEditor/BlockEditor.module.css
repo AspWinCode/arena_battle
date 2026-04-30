@@ -6,6 +6,14 @@
   position: relative;
 }
 
+/* ── Main area (canvas + sprite bar) ─────────────────────────────── */
+.mainArea {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
 /* ── Palette ──────────────────────────────────────────────────── */
 .palette {
   width: 220px;
@@ -73,6 +81,7 @@
   position: relative;
   overflow: hidden;
   background: #080818;
+  min-height: 0;
 }
 
 .grid {
@@ -146,3 +155,97 @@
   background: var(--bg-card);
   border-color: var(--border);
 }
+
+/* ── Variables palette extras ────────────────────────────────────── */
+.makeVarBtn {
+  width: 100%;
+  padding: 7px 10px;
+  background: color-mix(in srgb, #ff8c1a 15%, transparent);
+  border: 1px solid color-mix(in srgb, #ff8c1a 40%, transparent);
+  border-radius: var(--radius);
+  color: #ff8c1a;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  text-align: left;
+  transition: background .12s;
+}
+.makeVarBtn:hover { background: color-mix(in srgb, #ff8c1a 25%, transparent); }
+
+.paletteDivider {
+  height: 1px;
+  background: var(--border);
+  margin: 4px 0;
+}
+
+/* ── Sprite selector bar ─────────────────────────────────────────── */
+.spriteBar {
+  height: 68px;
+  flex-shrink: 0;
+  background: var(--bg-card);
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 16px;
+  overflow-x: auto;
+}
+
+.spriteBarLabel {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.skinCard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 6px 10px;
+  border-radius: var(--radius);
+  background: transparent;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all .12s;
+  color: var(--text-muted);
+}
+.skinCard:hover { background: var(--bg-hover); color: var(--text); }
+.skinCardActive {
+  background: color-mix(in srgb, var(--accent) 15%, transparent);
+  border-color: color-mix(in srgb, var(--accent) 50%, transparent);
+  color: var(--text);
+}
+
+.skinIcon  { font-size: 20px; line-height: 1; }
+.skinLabel { font-size: 10px; font-weight: 600; }
+
+/* ── Context menu ────────────────────────────────────────────────── */
+.contextMenu {
+  position: fixed;
+  z-index: 10000;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 4px;
+  min-width: 160px;
+  box-shadow: 0 8px 24px rgba(0,0,0,.5);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.contextItem {
+  width: 100%;
+  text-align: left;
+  padding: 7px 12px;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  color: var(--text);
+  font-size: 13px;
+  cursor: pointer;
+  transition: background .1s;
+}
+.contextItem:hover { background: var(--bg-hover); }

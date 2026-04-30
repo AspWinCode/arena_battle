@@ -10,6 +10,7 @@ interface Props {
   x: number
   y: number
   shieldActive?: boolean
+  isDead?: boolean
 }
 
 const SKIN_COLORS: Record<SkinId, { primary: string; secondary: string; accent: string }> = {
@@ -34,6 +35,8 @@ const GENERIC_FOOT_Y = 51 * GENERIC_SCALE
 const HP_BAR_X = -55
 const HP_BAR_Y = -220
 
+// ── Gladiator (PNG sprite) ──────────────────────────────────────────────────
+
 function GladiatorBody({ action, shieldActive }: {
   action?: ActionName | null
   shieldActive?: boolean
@@ -44,63 +47,65 @@ function GladiatorBody({ action, shieldActive }: {
     <g>
       {shieldActive && (
         <ellipse
-          cx={0}
-          cy={-GLADIATOR_HEIGHT * 0.52}
-          rx={GLADIATOR_WIDTH * 0.36}
-          ry={GLADIATOR_HEIGHT * 0.38}
-          fill="none"
-          stroke={GL}
-          strokeWidth={2.5}
-          strokeDasharray="5 3"
+          cx={0} cy={-GLADIATOR_HEIGHT * 0.52}
+          rx={GLADIATOR_WIDTH * 0.36} ry={GLADIATOR_HEIGHT * 0.38}
+          fill="none" stroke={GL} strokeWidth={2.5} strokeDasharray="5 3"
         >
           <animate attributeName="opacity" values="0.72;0.25;0.72" dur="0.85s" repeatCount="indefinite" />
           <animate attributeName="rx" values={`${GLADIATOR_WIDTH * 0.36};${GLADIATOR_WIDTH * 0.39};${GLADIATOR_WIDTH * 0.36}`} dur="0.85s" repeatCount="indefinite" />
         </ellipse>
       )}
 
+      {/* Idle bob */}
       <g>
         <animateTransform
-          attributeName="transform"
-          type="translate"
-            values="0,0; 0,-2; 0,0"
-          dur="2.2s"
-          repeatCount="indefinite"
-          calcMode="spline"
-          keySplines="0.45 0 0.55 1; 0.45 0 0.55 1"
+          attributeName="transform" type="translate"
+          values="0,0; 0,-2; 0,0" dur="2.2s" repeatCount="indefinite"
+          calcMode="spline" keySplines="0.45 0 0.55 1; 0.45 0 0.55 1"
         />
 
+        {/* Attack swing */}
         <g>
           <animateTransform
-            attributeName="transform"
-            type="rotate"
+            attributeName="transform" type="rotate"
             values={attacking ? '-7 0 -20; 5 0 -20; -7 0 -20' : '0 0 0; 0 0 0; 0 0 0'}
             dur={attacking ? '0.34s' : '1s'}
-            repeatCount="indefinite"
-            calcMode="spline"
+            repeatCount="indefinite" calcMode="spline"
             keySplines="0.4 0 0.6 1; 0.4 0 0.6 1"
           />
 
           <g transform={`translate(${GLADIATOR_X}, ${GLADIATOR_Y}) scale(${GLADIATOR_SCALE})`}>
             <image
-              x={0}
-              y={0}
-              width={GLADIATOR_SOURCE_WIDTH}
-              height={GLADIATOR_SOURCE_HEIGHT}
-              href={GLADIATOR_SPRITE_HREF}
-              preserveAspectRatio="none"
+              x={0} y={0}
+              width={GLADIATOR_SOURCE_WIDTH} height={GLADIATOR_SOURCE_HEIGHT}
+              href={GLADIATOR_SPRITE_HREF} preserveAspectRatio="none"
             />
           </g>
         </g>
 
+        {/* Laser spear overlay */}
+        {action === 'laser' && (
+          <line
+            x1={GLADIATOR_WIDTH * 0.2} y1={-GLADIATOR_HEIGHT * 0.4}
+            x2={GLADIATOR_WIDTH * 0.8} y2={-GLADIATOR_HEIGHT * 0.4}
+            stroke={GL} strokeWidth={3} strokeLinecap="round"
+          >
+            <animate attributeName="opacity" values="0.9;0.3;0.9" dur="0.2s" repeatCount="indefinite" />
+          </line>
+        )}
+
+        {/* Repair potion bubble */}
+        {action === 'repair' && (
+          <circle cx={GLADIATOR_WIDTH * 0.1} cy={-GLADIATOR_HEIGHT * 0.7} r={10} fill="#22c55e" opacity={0.7}>
+            <animate attributeName="cy" values={`${-GLADIATOR_HEIGHT * 0.7};${-GLADIATOR_HEIGHT * 0.8};${-GLADIATOR_HEIGHT * 0.7}`} dur="0.5s" repeatCount="3" />
+            <animate attributeName="opacity" values="0.7;0;0.7" dur="0.5s" repeatCount="3" />
+          </circle>
+        )}
+
         {action && (
           <text
-            x={GLADIATOR_WIDTH * 0.2}
-            y={GLADIATOR_Y + GLADIATOR_HEIGHT * 0.46}
-            fill={GL}
-            fontSize={10}
-            fontWeight={800}
-            fontFamily="monospace"
-            textAnchor="start"
+            x={GLADIATOR_WIDTH * 0.2} y={GLADIATOR_Y + GLADIATOR_HEIGHT * 0.46}
+            fill={GL} fontSize={10} fontWeight={800} fontFamily="monospace" textAnchor="start"
           >
             {action.toUpperCase()}
           </text>
@@ -110,58 +115,196 @@ function GladiatorBody({ action, shieldActive }: {
   )
 }
 
+// ── Generic body (Robot / Boxer / Cosmonaut) ────────────────────────────────
+
 function GenericBody({ skinId, action, shieldActive }: {
   skinId: SkinId
   action?: ActionName | null
   shieldActive?: boolean
 }) {
   const c = SKIN_COLORS[skinId]
+  const isAttacking = action === 'attack' || action === 'combo'
+  const isLaser     = action === 'laser'
+  const isDodging   = action === 'dodge'
+  const isRepair    = action === 'repair'
+  const isShield    = action === 'shield'
+
+  // Arm X offset: boxer punches further
+  const armExtend = skinId === 'boxer' && isAttacking ? 14 : 0
+  const armGlowR  = skinId === 'boxer' && isAttacking ? 10 : 6
 
   return (
     <g>
-      {shieldActive && (
-        <ellipse cx={0} cy={-20} rx={40} ry={55} fill={`${c.primary}15`} stroke={c.primary} strokeWidth={2} strokeDasharray="4 2">
-          <animate attributeName="opacity" values="0.8;0.3;0.8" dur="0.8s" repeatCount="indefinite" />
+      {/* Idle bob */}
+      <animateTransform
+        attributeName="transform" type="translate"
+        values="0,0; 0,-3; 0,0" dur="2.2s" repeatCount="indefinite"
+        calcMode="spline" keySplines="0.45 0 0.55 1; 0.45 0 0.55 1"
+      />
+
+      {/* ── Shield overlays ── */}
+      {(shieldActive || isShield) && skinId === 'robot' && (
+        // Robot: rectangular energy grid
+        <g opacity={0.7}>
+          <rect x={-44} y={-60} width={88} height={90} rx={4} fill="none" stroke={c.primary} strokeWidth={1.5} strokeDasharray="6 3">
+            <animate attributeName="opacity" values="0.8;0.3;0.8" dur="0.7s" repeatCount="indefinite" />
+          </rect>
+          <rect x={-44} y={-60} width={88} height={90} rx={4} fill={`${c.primary}08`} />
+        </g>
+      )}
+      {(shieldActive || isShield) && skinId === 'boxer' && (
+        // Boxer: arms-up guard cross
+        <g>
+          <ellipse cx={0} cy={-10} rx={38} ry={52} fill={`${c.primary}12`} stroke={c.primary} strokeWidth={2}>
+            <animate attributeName="opacity" values="0.8;0.3;0.8" dur="0.7s" repeatCount="indefinite" />
+          </ellipse>
+          <line x1={-20} y1={-40} x2={20} y2={0} stroke={c.primary} strokeWidth={4} strokeLinecap="round" opacity={0.6} />
+          <line x1={20} y1={-40} x2={-20} y2={0} stroke={c.primary} strokeWidth={4} strokeLinecap="round" opacity={0.6} />
+        </g>
+      )}
+      {(shieldActive || isShield) && skinId === 'cosmonaut' && (
+        // Cosmonaut: spherical bubble
+        <ellipse cx={0} cy={-20} rx={50} ry={65} fill={`${c.primary}10`} stroke={c.primary} strokeWidth={2}>
+          <animate attributeName="opacity" values="0.8;0.3;0.8" dur="0.9s" repeatCount="indefinite" />
+          <animate attributeName="ry" values="65;70;65" dur="0.9s" repeatCount="indefinite" />
         </ellipse>
       )}
 
+      {/* ── Legs ── */}
       <rect x={-14} y={28} width={10} height={20} rx={4} fill={c.secondary} stroke={c.primary} strokeWidth={1.5} />
-      <rect x={4} y={28} width={10} height={20} rx={4} fill={c.secondary} stroke={c.primary} strokeWidth={1.5} />
+      <rect x={4}   y={28} width={10} height={20} rx={4} fill={c.secondary} stroke={c.primary} strokeWidth={1.5} />
       <rect x={-17} y={44} width={14} height={7} rx={3} fill={c.primary} />
-      <rect x={3} y={44} width={14} height={7} rx={3} fill={c.primary} />
+      <rect x={3}   y={44} width={14} height={7} rx={3} fill={c.primary} />
+
+      {/* Cosmonaut dodge: jet flames at feet */}
+      {skinId === 'cosmonaut' && isDodging && (
+        <>
+          <ellipse cx={-10} cy={50} rx={5} ry={9} fill="#f97316" opacity={0.75}>
+            <animate attributeName="ry" values="9;14;9" dur="0.12s" repeatCount="indefinite" />
+            <animate attributeName="opacity" values="0.75;0.4;0.75" dur="0.12s" repeatCount="indefinite" />
+          </ellipse>
+          <ellipse cx={10} cy={50} rx={5} ry={9} fill="#fbbf24" opacity={0.75}>
+            <animate attributeName="ry" values="9;14;9" dur="0.12s" repeatCount="indefinite" begin="0.06s" />
+            <animate attributeName="opacity" values="0.75;0.4;0.75" dur="0.12s" repeatCount="indefinite" begin="0.06s" />
+          </ellipse>
+        </>
+      )}
+
+      {/* ── Torso ── */}
       <rect x={-18} y={-2} width={36} height={32} rx={6} fill={c.secondary} stroke={c.primary} strokeWidth={2} />
       <rect x={-8} y={6} width={16} height={10} rx={3} fill={c.primary} opacity={0.3} />
+
+      {/* Robot: laser chest reactor glow */}
+      {skinId === 'robot' && isLaser && (
+        <circle cx={0} cy={11} r={12} fill={c.primary} opacity={0}>
+          <animate attributeName="opacity" values="0;0.5;0" dur="0.3s" repeatCount="indefinite" />
+          <animate attributeName="r" values="12;20;12" dur="0.3s" repeatCount="indefinite" />
+        </circle>
+      )}
+
+      {/* Cosmonaut: helmet laser glow */}
+      {skinId === 'cosmonaut' && isLaser && (
+        <circle cx={0} cy={-28} r={18} fill={c.accent} opacity={0}>
+          <animate attributeName="opacity" values="0;0.6;0" dur="0.25s" repeatCount="indefinite" />
+        </circle>
+      )}
+
       <circle cx={0} cy={11} r={4} fill={c.accent} opacity={0.8}>
         <animate attributeName="opacity" values="0.8;0.4;0.8" dur="1.5s" repeatCount="indefinite" />
       </circle>
 
+      {/* ── Left arm (active/attacking arm) ── */}
       <rect
-        x={-28}
-        y={0}
-        width={12}
-        height={22}
-        rx={5}
-        fill={c.secondary}
-        stroke={c.primary}
-        strokeWidth={1.5}
-        transform={action === 'attack' || action === 'combo' ? 'rotate(-30, -22, 0)' : ''}
+        x={-28 - armExtend} y={0}
+        width={12 + (armExtend > 0 ? 6 : 0)} height={22} rx={5}
+        fill={c.secondary} stroke={c.primary} strokeWidth={1.5}
+        transform={isAttacking ? 'rotate(-30, -22, 0)' : isDodging ? 'rotate(15, -22, 11)' : ''}
       />
+      {/* Fist */}
+      <circle
+        cx={-22 - armExtend} cy={24} r={armGlowR}
+        fill={c.primary}
+        transform={isAttacking ? 'translate(10,-8)' : ''}
+      />
+      {/* Boxer attack: extra glove glow */}
+      {skinId === 'boxer' && isAttacking && (
+        <circle cx={-22 - armExtend + 10} cy={16} r={14} fill={c.primary} opacity={0.35}>
+          <animate attributeName="r" values="14;18;14" dur="0.2s" repeatCount="indefinite" />
+        </circle>
+      )}
+      {/* Boxer laser: glove energy blast */}
+      {skinId === 'boxer' && isLaser && (
+        <rect x={-50} y={4} width={30} height={8} rx={4} fill={c.primary} opacity={0.8}>
+          <animate attributeName="opacity" values="0.8;0.3;0.8" dur="0.2s" repeatCount="indefinite" />
+          <animate attributeName="width" values="30;50;30" dur="0.2s" repeatCount="indefinite" />
+        </rect>
+      )}
+
+      {/* ── Right arm ── */}
       <rect x={16} y={0} width={12} height={22} rx={5} fill={c.secondary} stroke={c.primary} strokeWidth={1.5} />
-      <circle cx={-22} cy={24} r={6} fill={c.primary} transform={action === 'attack' || action === 'combo' ? 'translate(10,-8)' : ''} />
       <circle cx={22} cy={24} r={6} fill={c.primary} />
+
+      {/* ── Head ── */}
       <rect x={-6} y={-10} width={12} height={10} rx={3} fill={c.secondary} stroke={c.primary} strokeWidth={1} />
       <rect x={-20} y={-42} width={40} height={34} rx={8} fill={c.secondary} stroke={c.primary} strokeWidth={2} />
+      {/* Eye panels */}
       <rect x={-14} y={-34} width={10} height={8} rx={3} fill={c.accent}>
         <animate attributeName="opacity" values="1;0.2;1" dur="3s" repeatCount="indefinite" />
       </rect>
       <rect x={4} y={-34} width={10} height={8} rx={3} fill={c.accent}>
         <animate attributeName="opacity" values="1;0.2;1" dur="3s" begin="0.1s" repeatCount="indefinite" />
       </rect>
+
+      {/* Cosmonaut: helmet visor */}
+      {skinId === 'cosmonaut' && (
+        <rect x={-16} y={-38} width={32} height={20} rx={8} fill={c.accent} opacity={0.15} />
+      )}
+
       <line x1={0} y1={-42} x2={0} y2={-52} stroke={c.primary} strokeWidth={2} />
       <circle cx={0} cy={-54} r={3} fill={c.accent}>
         <animate attributeName="opacity" values="1;0;1" dur="1s" repeatCount="indefinite" />
       </circle>
 
+      {/* ── Repair overlays ── */}
+      {isRepair && skinId === 'robot' && (
+        // Robot: wrench tool
+        <g transform="translate(22, -30)">
+          <line x1={0} y1={0} x2={14} y2={-14} stroke={c.primary} strokeWidth={3} strokeLinecap="round">
+            <animate attributeName="y2" values="-14;-18;-14" dur="0.4s" repeatCount="3" />
+          </line>
+          <circle cx={14} cy={-14} r={5} fill="none" stroke={c.primary} strokeWidth={2} />
+        </g>
+      )}
+      {isRepair && skinId === 'boxer' && (
+        // Boxer: bandage X cross
+        <g transform="translate(0, -30)">
+          <line x1={-8} y1={-8} x2={8} y2={8} stroke="#22c55e" strokeWidth={4} strokeLinecap="round">
+            <animate attributeName="opacity" values="1;0.3;1" dur="0.3s" repeatCount="indefinite" />
+          </line>
+          <line x1={8} y1={-8} x2={-8} y2={8} stroke="#22c55e" strokeWidth={4} strokeLinecap="round">
+            <animate attributeName="opacity" values="1;0.3;1" dur="0.3s" repeatCount="indefinite" />
+          </line>
+        </g>
+      )}
+      {isRepair && skinId === 'cosmonaut' && (
+        // Cosmonaut: medkit + cross
+        <g transform="translate(24, -20)">
+          <rect x={-8} y={-8} width={16} height={16} rx={3} fill="#22c55e" opacity={0.9} />
+          <rect x={-2} y={-8} width={4} height={16} fill="#fff" />
+          <rect x={-8} y={-2} width={16} height={4} fill="#fff" />
+        </g>
+      )}
+
+      {/* General floating + on repair */}
+      {isRepair && (
+        <text x={28} y={-55} fill="#22c55e" fontSize={18} fontWeight={900} textAnchor="middle" opacity={0.9}>
+          <animate attributeName="y" values="-50;-70;-50" dur="0.6s" repeatCount="3" />
+          <animate attributeName="opacity" values="0.9;0;0.9" dur="0.6s" repeatCount="3" />
+          +
+        </text>
+      )}
+
+      {/* Action label */}
       {action && (
         <text x={20} y={-65} textAnchor="start" fill={c.primary} fontSize={11} fontWeight={700}>
           {action.toUpperCase()}
@@ -171,12 +314,15 @@ function GenericBody({ skinId, action, shieldActive }: {
   )
 }
 
-export default function RobotSVG({ skinId, flip, action, hp, maxHp, name, x, y, shieldActive }: Props) {
-  const hpPct = Math.max(0, Math.min(100, (hp / maxHp) * 100))
+// ── Main export ────────────────────────────────────────────────────────────────
+
+export default function RobotSVG({ skinId, flip, action, hp, maxHp, name, x, y, shieldActive, isDead }: Props) {
+  const hpPct   = Math.max(0, Math.min(100, (hp / maxHp) * 100))
   const hpColor = hpPct > 50 ? '#22c55e' : hpPct > 25 ? '#fbbf24' : '#ef4444'
 
   return (
     <g transform={`translate(${x}, ${y})`}>
+      {/* HP bar (always visible, even when dead) */}
       <g transform={`translate(${HP_BAR_X}, ${HP_BAR_Y})`}>
         <rect x={0} y={0} width={110} height={10} rx={4} fill="#1a1a35" />
         <rect x={0} y={0} width={hpPct * 1.1} height={10} rx={4} fill={hpColor} />
@@ -184,19 +330,31 @@ export default function RobotSVG({ skinId, flip, action, hp, maxHp, name, x, y, 
         <text x={55} y={-5} textAnchor="middle" fill={hpColor} fontSize={12} fontWeight={700}>{hp}</text>
       </g>
 
+      {/* Ground shadow */}
       <ellipse cx={0} cy={0} rx={22} ry={4} fill="#020617" opacity={0.32} />
 
-      {skinId === 'gladiator' ? (
-        <g transform={flip ? 'scale(-1,1)' : undefined}>
-          <GladiatorBody action={action} shieldActive={shieldActive} />
-        </g>
-      ) : (
-        <g transform={`translate(0, ${-GENERIC_FOOT_Y})`}>
-          <g transform={flip ? `scale(${-GENERIC_SCALE}, ${GENERIC_SCALE})` : `scale(${GENERIC_SCALE})`}>
-            <GenericBody skinId={skinId} action={action} shieldActive={shieldActive} />
+      {/* Robot body — fades out on death */}
+      <g
+        style={{
+          opacity: isDead ? 0 : 1,
+          transform: isDead ? 'scale(1.15)' : 'scale(1)',
+          transition: isDead ? 'opacity 0.65s 0.1s, transform 0.4s' : 'none',
+          transformBox: 'fill-box',
+          transformOrigin: 'center',
+        }}
+      >
+        {skinId === 'gladiator' ? (
+          <g transform={flip ? 'scale(-1,1)' : undefined}>
+            <GladiatorBody action={action} shieldActive={shieldActive} />
           </g>
-        </g>
-      )}
+        ) : (
+          <g transform={`translate(0, ${-GENERIC_FOOT_Y})`}>
+            <g transform={flip ? `scale(${-GENERIC_SCALE}, ${GENERIC_SCALE})` : `scale(${GENERIC_SCALE})`}>
+              <GenericBody skinId={skinId} action={action} shieldActive={shieldActive} />
+            </g>
+          </g>
+        )}
+      </g>
     </g>
   )
 }

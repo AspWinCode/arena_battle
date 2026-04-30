@@ -1,6 +1,6 @@
 export type BlockType = 'hat' | 'command' | 'c-block' | 'reporter' | 'predicate' | 'cap'
 
-export type SlotType = 'number' | 'string' | 'dropdown' | 'boolean' | 'reporter'
+export type SlotType = 'number' | 'string' | 'dropdown' | 'boolean' | 'reporter' | 'varname'
 
 export interface SlotDef {
   id: string

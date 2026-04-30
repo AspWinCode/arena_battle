@@ -1,0 +1,276 @@
+.root {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+  background: var(--bg-dark);
+}
+
+/* Header */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 20px;
+  background: var(--bg-card);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  gap: 16px;
+}
+
+.headerLeft { display: flex; align-items: center; gap: 16px; }
+.headerRight { display: flex; align-items: center; gap: 16px; }
+
+.back {
+  font-size: 12px;
+  color: var(--text-muted);
+  text-decoration: none;
+  white-space: nowrap;
+}
+.back:hover { color: var(--accent); }
+
+.missionInfo { display: flex; flex-direction: column; }
+
+.missionNum {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--text-muted);
+}
+
+.missionTitle { font-size: 16px; font-weight: 800; margin: 0; }
+
+.vs {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.vsLabel {
+  color: var(--text-muted);
+  font-size: 11px;
+}
+
+/* Body layout */
+.body {
+  display: grid;
+  grid-template-columns: 1fr 380px;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* Editor pane */
+.editorPane {
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid var(--border);
+  overflow: hidden;
+}
+
+.storyBox {
+  padding: 10px 16px;
+  background: var(--bg-mid);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.storyText {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin: 0;
+  line-height: 1.5;
+}
+
+.editorWrap { flex: 1; min-height: 0; }
+
+.codeError {
+  padding: 8px 16px;
+  font-size: 12px;
+  color: #f87171;
+  background: rgba(248,113,113,.08);
+  border-top: 1px solid rgba(248,113,113,.2);
+}
+
+.editorActions {
+  padding: 12px 16px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.resultActions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* Right pane */
+.rightPane {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Idle panel */
+.idlePanel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 24px;
+  text-align: center;
+}
+
+.idleIcon { font-size: 64px; }
+
+.idleText { font-size: 14px; color: var(--text-muted); margin: 0; }
+
+.apiHints {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: center;
+  max-width: 320px;
+  margin-top: 8px;
+}
+
+.apiTitle {
+  width: 100%;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--text-muted);
+}
+
+.apiChip {
+  background: var(--bg-mid);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 3px 8px;
+  font-size: 11px;
+  font-family: monospace;
+  color: var(--accent);
+}
+
+/* Battle pane */
+.battlePane {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 16px;
+  gap: 12px;
+}
+
+/* Score row */
+.scoreRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.scoreItem {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.scoreMid {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 20px;
+  font-weight: 900;
+}
+
+.scoreNum { color: var(--accent); }
+.scoreDash { color: var(--text-muted); }
+
+.hpTrack {
+  height: 8px;
+  background: var(--bg-mid);
+  border-radius: 99px;
+  overflow: hidden;
+}
+
+.hpFill {
+  height: 100%;
+  border-radius: 99px;
+  transition: width .3s, background .3s;
+}
+
+.hpNum { font-size: 11px; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+
+/* Turn display */
+.turnDisplay {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--bg-mid);
+  border-radius: var(--radius);
+  padding: 10px;
+}
+
+.turnVs { font-size: 20px; flex-shrink: 0; }
+
+.turnCard {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.turnLabel { font-size: 10px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; }
+.turnIcon  { font-size: 24px; }
+.turnAction { font-size: 12px; font-weight: 700; }
+.turnDmg   { font-size: 12px; color: #f87171; font-weight: 700; }
+.turnHeal  { font-size: 12px; color: #4ade80; font-weight: 700; }
+
+/* Turn log */
+.turnLog {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.logRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-family: monospace;
+  padding: 4px 6px;
+  border-radius: var(--radius);
+}
+.logRow:nth-child(odd) { background: var(--bg-mid); }
+
+.logTurn   { color: var(--text-muted); min-width: 28px; }
+.logAction { font-weight: 700; min-width: 46px; }
+.logVs     { color: var(--border); }
+.logDmg    { color: #f87171; font-weight: 700; }
+
+/* Result banner */
+.resultBanner {
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  text-align: center;
+  font-size: 22px;
+  font-weight: 900;
+  flex-shrink: 0;
+}
+
+.bannerWin  { background: rgba(74,222,128,.12); border: 1px solid rgba(74,222,128,.35); color: #4ade80; }
+.bannerLose { background: rgba(248,113,113,.12); border: 1px solid rgba(248,113,113,.35); color: #f87171; }
+.bannerDraw { background: rgba(250,204,21,.08);  border: 1px solid rgba(250,204,21,.3);   color: #facc15; }
+
+.resultSub { font-size: 13px; font-weight: 400; opacity: .8; margin-top: 6px; }

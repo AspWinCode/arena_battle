@@ -133,9 +133,14 @@ export default function JoinPage() {
           </button>
         </form>
 
-        <p className={styles.adminLink}>
-          Организатор? <a href="/admin">Панель управления →</a>
-        </p>
+        <div className={styles.bottomLinks}>
+          <a href="/learn" className={styles.learnLink}>
+            🎓 Режим обучения — 10 миссий
+          </a>
+          <p className={styles.adminLink}>
+            Организатор? <a href="/admin">Панель управления →</a>
+          </p>
+        </div>
       </div>
     </div>
   )

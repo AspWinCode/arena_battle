@@ -210,3 +210,153 @@
 
 .roundVs    { color: var(--border); }
 .roundWin   { color: var(--green); font-weight: 700; }
+
+/* ── Live monitoring ───────────────────────────────────────────── */
+.liveHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.liveOn  { font-size: 12px; color: #4ade80; font-weight: 600; }
+.liveOff { font-size: 12px; color: var(--text-muted); }
+
+.livePhaseRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.livePhaseLabel { font-size: 12px; color: var(--text-muted); }
+
+.liveRound {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--accent);
+  margin-left: 4px;
+}
+
+/* Compile bars */
+.compileRow {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.compileBar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.compileLabel {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-muted);
+  min-width: 20px;
+}
+
+.barTrack {
+  flex: 1;
+  height: 6px;
+  background: var(--bg-mid);
+  border-radius: 99px;
+  overflow: hidden;
+}
+
+.barFill {
+  height: 100%;
+  border-radius: 99px;
+  transition: width 0.4s;
+}
+
+.barDone   { width: 100%; background: #4ade80; }
+.barActive { width: 50%; background: var(--accent); animation: pulse 1s infinite alternate; }
+
+@keyframes pulse {
+  from { opacity: 0.5; }
+  to   { opacity: 1; }
+}
+
+.compileStatus { font-size: 14px; min-width: 20px; text-align: center; }
+
+/* HP bars */
+.hpSection {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.hpBarRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.hpLabel {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-muted);
+  min-width: 20px;
+}
+
+.hpTrack {
+  flex: 1;
+  height: 10px;
+  background: var(--bg-mid);
+  border-radius: 99px;
+  overflow: hidden;
+}
+
+.hpFill {
+  height: 100%;
+  border-radius: 99px;
+  transition: width 0.3s, background 0.3s;
+}
+
+.hpValue {
+  font-size: 12px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  min-width: 48px;
+  text-align: right;
+}
+
+/* Turn log */
+.turnLog {
+  border-top: 1px solid var(--border);
+  padding-top: 12px;
+}
+
+.turnLogTitle {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+
+.turnRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 8px;
+  border-radius: var(--radius);
+  font-size: 12px;
+  font-family: monospace;
+}
+
+.turnRow:nth-child(odd) { background: var(--bg-mid); }
+
+.turnNum    { color: var(--text-muted); min-width: 28px; }
+.turnAction { font-weight: 700; min-width: 56px; }
+.turnVs     { color: var(--border); }
+.turnDmg    { min-width: 36px; }
+.turnHp     { color: var(--text-muted); margin-left: auto; }
+.dmgRed     { color: #f87171; font-weight: 700; }
+.dmgGreen   { color: #4ade80; font-weight: 700; }

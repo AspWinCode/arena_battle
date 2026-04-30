@@ -1,0 +1,182 @@
+.root {
+  min-height: 100vh;
+  background: var(--bg-dark);
+  position: relative;
+  overflow-x: hidden;
+}
+
+.bg {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.bgGlow1 {
+  position: absolute;
+  top: -200px; left: -200px;
+  width: 600px; height: 600px;
+  background: radial-gradient(circle, rgba(99,102,241,.15) 0%, transparent 70%);
+  border-radius: 50%;
+}
+
+.bgGlow2 {
+  position: absolute;
+  bottom: -100px; right: -100px;
+  width: 500px; height: 500px;
+  background: radial-gradient(circle, rgba(236,72,153,.10) 0%, transparent 70%);
+  border-radius: 50%;
+}
+
+.content {
+  position: relative;
+  z-index: 1;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 36px 24px 60px;
+}
+
+/* Header */
+.back {
+  font-size: 13px;
+  color: var(--text-muted);
+  text-decoration: none;
+  display: inline-block;
+  margin-bottom: 16px;
+}
+.back:hover { color: var(--accent); }
+
+.titleRow {
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.title { font-size: 32px; font-weight: 900; margin: 0; }
+
+.progress {
+  font-size: 14px;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.subtitle {
+  margin: 8px 0 20px;
+  color: var(--text-muted);
+  font-size: 15px;
+}
+
+/* Progress bar */
+.progressBar {
+  height: 6px;
+  background: var(--bg-card);
+  border-radius: 99px;
+  overflow: hidden;
+  margin-bottom: 32px;
+}
+
+.progressFill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent), #a855f7);
+  border-radius: 99px;
+  transition: width 0.5s;
+}
+
+/* Mission grid */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 16px;
+}
+
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  position: relative;
+  transition: border-color .2s, transform .15s;
+}
+
+.card:not(.cardLocked):hover {
+  border-color: var(--accent);
+  transform: translateY(-2px);
+}
+
+.cardLocked {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.cardDone {
+  border-color: rgba(74,222,128,.35);
+}
+
+.cardNum {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-muted);
+  letter-spacing: .05em;
+}
+
+.cardOpponent {
+  display: flex;
+  align-items: center;
+}
+
+.opponentIcon { font-size: 36px; }
+
+.cardBody { flex: 1; }
+
+.cardTitle { font-size: 17px; font-weight: 800; margin: 0 0 6px; }
+
+.cardDesc { font-size: 13px; color: var(--text-muted); margin: 0 0 10px; line-height: 1.5; }
+
+.cardMeta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.diffBadge {
+  font-size: 11px;
+  font-weight: 700;
+  border: 1px solid;
+  border-radius: 99px;
+  padding: 2px 8px;
+}
+
+.diffDots {
+  display: flex;
+  gap: 3px;
+  align-items: center;
+}
+
+.dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+}
+
+.stars {
+  font-size: 16px;
+  margin-top: 6px;
+  letter-spacing: 2px;
+}
+
+.cardFooter { margin-top: 4px; }
+
+.lockMsg {
+  font-size: 12px;
+  color: var(--text-muted);
+  display: block;
+  text-align: center;
+  padding: 8px;
+}
