@@ -53,7 +53,7 @@ function GladiatorBody({ action, shieldActive }: {
 
   // SH — высота персонажа в SVG-единицах (арена = 380).
   // Боксёр занимает ~290 ед. Подбери по вкусу.
-  const SH = 260
+  const SH = 120
   const SW = SH * CROP_W / CROP_H  // 699/727 ≈ 0.96, почти квадрат
   const SX = -SW / 2
   const SY = -SH   // ноги at y=0
@@ -175,7 +175,7 @@ function GenericBody({ skinId, action, shieldActive }: {
 }
 
 /* ── Main export ─────────────────────────────────────────────────────────────── */
-const ROBOT_SCALE = 2.8
+const ROBOT_SCALE = 1.6
 // PNG-спрайт гладиатора имеет огромное прозрачное поле по краям
 // (видимая фигурка занимает лишь ~10% от bbox PNG). Масштабируем
 // агрессивно вокруг точки ног (local 0,0), прозрачные края
