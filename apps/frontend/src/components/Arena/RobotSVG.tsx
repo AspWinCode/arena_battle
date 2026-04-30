@@ -45,13 +45,18 @@ function GladiatorBody({ action, shieldActive }: {
 }) {
   const attacking = action === 'attack' || action === 'combo' || action === 'laser'
 
-  // PNG is 1537x1023 (landscape, ratio 1.503:1).
-  // PNG имеет ~12% прозрачного отступа снизу — компенсируем через FOOT_OFFSET.
-  const SH = 380
-  const SW = 571
-  const SX = -SW / 2   // centres sprite
-  const FOOT_OFFSET = 38  // визуальные ноги выше нижнего края PNG → смещаем спрайт вниз
-  const SY = -SH + FOOT_OFFSET
+  // Кроп-рамка персонажа в PNG 1537×1023 (px).
+  // Если персонаж срезан или смещён — подправь CROP_* значения.
+  const CROP_X = 380    // левый край зоны персонажа
+  const CROP_Y = 200    // верхний край (над шлемом)
+  const CROP_W = 780    // ширина зоны
+  const CROP_H = 780    // высота зоны (ноги ~в самом низу)
+
+  // Размер отображения в SVG-единицах (аспект = CROP_W/CROP_H)
+  const SH = 290
+  const SW = SH * CROP_W / CROP_H  // сохраняем аспект кропа
+  const SX = -SW / 2
+  const SY = -SH   // ноги at y=0
 
   return (
     <g>
@@ -82,21 +87,26 @@ function GladiatorBody({ action, shieldActive }: {
             dur={attacking ? '0.34s' : '1s'} repeatCount="indefinite"
             calcMode="spline" keySplines="0.4 0 0.6 1; 0.4 0 0.6 1" />
 
-          {/* ── PNG sprite ── */}
-          <image
-            href="/skins/gladiator.png"
-            x={SX}
-            y={SY}
-            width={SW}
-            height={SH}
+          {/* ── PNG sprite: вложенный svg кропает прозрачные поля ── */}
+          <svg
+            x={SX} y={SY}
+            width={SW} height={SH}
+            viewBox={`${CROP_X} ${CROP_Y} ${CROP_W} ${CROP_H}`}
+            overflow="hidden"
             preserveAspectRatio="xMidYMax meet"
-          />
+          >
+            <image
+              href="/skins/gladiator.png"
+              x={0} y={0}
+              width={1537} height={1023}
+            />
+          </svg>
 
         </g>{/* /attack lunge */}
 
-        {/* Action label next to sprite */}
+        {/* Action label */}
         {action && (
-          <text x={SW * 0.45} y={SY + SH * 0.4}
+          <text x={SW * 0.5 + 4} y={-SH * 0.6}
             fill={GL} fontSize={10} fontWeight={800} fontFamily="monospace" textAnchor="start">
             {action.toUpperCase()}
           </text>
@@ -170,7 +180,7 @@ const ROBOT_SCALE = 2.8
 // (видимая фигурка занимает лишь ~10% от bbox PNG). Масштабируем
 // агрессивно вокруг точки ног (local 0,0), прозрачные края
 // уходят за пределы арены и обрезаются overflow:hidden.
-const GLADIATOR_SCALE = 5.5
+const GLADIATOR_SCALE = 1.0   // кроп убирает поля, scale для доп. подстройки
 
 export default function RobotSVG({ skinId, flip, action, hp, maxHp, name, x, y, shieldActive }: Props) {
   const hpPct  = Math.max(0, Math.min(100, (hp / maxHp) * 100))
