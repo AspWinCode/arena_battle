@@ -141,6 +141,16 @@ export const sessionRoutes: FastifyPluginAsync = async (fastify) => {
       return reply.status(409).send({ error: 'Slot already taken', code: 'SLOT_TAKEN' })
     }
 
+    // Try to extract userId from optional user Bearer token
+    let userId: string | undefined
+    const authHeader = request.headers.authorization
+    if (authHeader?.startsWith('Bearer ')) {
+      try {
+        const payload = fastify.jwt.verify<{ userId: string; type: string }>(authHeader.slice(7))
+        if (payload.type === 'user' && payload.userId) userId = payload.userId
+      } catch { /* not a user token — that's fine */ }
+    }
+
     // Create player
     await prisma.player.create({
       data: {
@@ -148,6 +158,7 @@ export const sessionRoutes: FastifyPluginAsync = async (fastify) => {
         slot,
         name,
         skin,
+        ...(userId ? { userId } : {}),
       },
     })
 

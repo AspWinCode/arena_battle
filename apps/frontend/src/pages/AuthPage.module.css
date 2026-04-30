@@ -1,0 +1,279 @@
+/* ── Layout ──────────────────────────────────────────────────────────── */
+.root {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  position: relative;
+  overflow: hidden;
+}
+
+.bg {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.glow1 {
+  position: absolute;
+  top: -200px;
+  left: -200px;
+  width: 600px;
+  height: 600px;
+  background: radial-gradient(circle, rgba(0,229,255,.12) 0%, transparent 70%);
+  border-radius: 50%;
+}
+
+.glow2 {
+  position: absolute;
+  bottom: -200px;
+  right: -200px;
+  width: 500px;
+  height: 500px;
+  background: radial-gradient(circle, rgba(124,58,237,.1) 0%, transparent 70%);
+  border-radius: 50%;
+}
+
+/* ── Card ────────────────────────────────────────────────────────────── */
+.card {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 480px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 36px;
+  box-shadow: 0 8px 40px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.05);
+  animation: fadeUp .35s ease forwards;
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* ── Logo / Header ───────────────────────────────────────────────────── */
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 28px;
+}
+
+.title {
+  font-size: 24px;
+  font-weight: 800;
+  background: linear-gradient(135deg, #00e5ff, #7c3aed);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin: 0;
+  line-height: 1.2;
+}
+
+.sub {
+  color: var(--text-muted);
+  font-size: 13px;
+  margin: 4px 0 0;
+}
+
+/* ── Steps indicator ─────────────────────────────────────────────────── */
+.steps {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  margin-bottom: 24px;
+}
+
+.step {
+  flex: 1;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  padding: 8px 4px;
+  border-bottom: 2px solid var(--border);
+  transition: all .2s;
+}
+
+.stepActive {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
+.stepLine {
+  width: 32px;
+  height: 2px;
+  background: var(--border);
+  flex-shrink: 0;
+}
+
+/* ── Form ────────────────────────────────────────────────────────────── */
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .07em;
+  color: var(--text-muted);
+}
+
+.input {
+  width: 100%;
+  background: var(--bg-mid);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: var(--radius);
+  padding: 10px 14px;
+  font-size: 14px;
+  transition: border-color .15s, box-shadow .15s;
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(0,229,255,.12);
+}
+
+.select {
+  width: 100%;
+  background: var(--bg-mid);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: var(--radius);
+  padding: 10px 14px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: border-color .15s;
+}
+
+.select:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+/* ── Avatar Grid ─────────────────────────────────────────────────────── */
+.avatarGrid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 8px;
+}
+
+.avatarBtn {
+  background: var(--bg-mid);
+  border: 2px solid var(--border);
+  border-radius: var(--radius);
+  padding: 8px;
+  font-size: 20px;
+  cursor: pointer;
+  transition: all .15s;
+  line-height: 1;
+}
+
+.avatarBtn:hover {
+  border-color: var(--accent);
+  background: var(--bg-hover);
+}
+
+.avatarActive {
+  border-color: var(--accent) !important;
+  background: rgba(0,229,255,.08) !important;
+  box-shadow: 0 0 12px rgba(0,229,255,.2);
+}
+
+/* ── Skin Row ────────────────────────────────────────────────────────── */
+.skinRow {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+
+.skinBtn {
+  background: var(--bg-mid);
+  border: 2px solid var(--border);
+  border-radius: var(--radius);
+  padding: 10px 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  transition: all .15s;
+}
+
+.skinBtn:hover {
+  border-color: var(--accent);
+  color: var(--text);
+  background: var(--bg-hover);
+}
+
+.skinActive {
+  border-color: var(--accent) !important;
+  color: var(--text) !important;
+  background: rgba(0,229,255,.08) !important;
+  box-shadow: 0 0 12px rgba(0,229,255,.15);
+}
+
+.skinBtn span:first-child { font-size: 22px; }
+
+/* ── Actions ─────────────────────────────────────────────────────────── */
+.formActions {
+  display: flex;
+  gap: 12px;
+  margin-top: 4px;
+}
+
+.formActions > button {
+  flex: 1;
+}
+
+/* ── Error / Info ────────────────────────────────────────────────────── */
+.error {
+  background: rgba(230,38,31,.15);
+  border: 1px solid rgba(230,38,31,.4);
+  border-radius: var(--radius);
+  padding: 10px 14px;
+  font-size: 13px;
+  color: #fca5a5;
+}
+
+/* ── Switch link ─────────────────────────────────────────────────────── */
+.switch {
+  text-align: center;
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-top: 20px;
+}
+
+.switch a {
+  color: var(--accent);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.switch a:hover { text-decoration: underline; }

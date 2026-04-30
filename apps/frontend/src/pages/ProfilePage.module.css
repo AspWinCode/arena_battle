@@ -1,0 +1,427 @@
+/* ── Root ─────────────────────────────────────────────────────────────── */
+.root {
+  min-height: 100vh;
+  background: var(--bg);
+}
+
+.loadingWrap {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: var(--text-muted);
+}
+
+.spinner {
+  font-size: 36px;
+  animation: spin 1.5s linear infinite;
+  display: inline-block;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Hero ─────────────────────────────────────────────────────────────── */
+.hero {
+  background: linear-gradient(135deg, rgba(0,229,255,.06) 0%, rgba(124,58,237,.08) 100%);
+  border-bottom: 1px solid var(--border);
+  padding: 40px 24px;
+}
+
+.heroInner {
+  max-width: 860px;
+  margin: 0 auto;
+  display: flex;
+  align-items: flex-start;
+  gap: 24px;
+}
+
+.avatarBig {
+  font-size: 72px;
+  line-height: 1;
+  filter: drop-shadow(0 0 20px rgba(0,229,255,.3));
+  flex-shrink: 0;
+}
+
+.heroInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.displayName {
+  font-size: 28px;
+  font-weight: 800;
+  margin: 0 0 4px;
+  background: linear-gradient(135deg, #e2e8f0, #94a3b8);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.username {
+  color: var(--text-muted);
+  font-size: 14px;
+  margin: 0 0 8px;
+}
+
+.bio {
+  color: var(--text-muted);
+  font-size: 14px;
+  margin: 0 0 12px;
+  line-height: 1.5;
+}
+
+.heroBadges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.badge {
+  background: rgba(0,229,255,.08);
+  border: 1px solid rgba(0,229,255,.2);
+  border-radius: 100px;
+  padding: 4px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.heroActions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+/* ── Quick stats ─────────────────────────────────────────────────────── */
+.quickStats {
+  max-width: 860px;
+  margin: 24px auto;
+  padding: 0 24px;
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 12px;
+}
+
+.statBox {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px 12px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.statVal {
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--accent);
+  line-height: 1;
+}
+
+.statLbl {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+}
+
+/* ── Tabs ─────────────────────────────────────────────────────────────── */
+.tabs {
+  max-width: 860px;
+  margin: 0 auto 24px;
+  padding: 0 24px;
+  display: flex;
+  gap: 4px;
+  border-bottom: 1px solid var(--border);
+}
+
+.tab {
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  padding: 10px 18px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all .15s;
+  margin-bottom: -1px;
+}
+
+.tab:hover { color: var(--text); }
+
+.tabActive {
+  color: var(--accent) !important;
+  border-bottom-color: var(--accent);
+}
+
+/* ── Content area ────────────────────────────────────────────────────── */
+.content {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 0 24px 48px;
+}
+
+/* ── Achievements grid ───────────────────────────────────────────────── */
+.achievementsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 14px;
+}
+
+.achCard {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+  transition: border-color .2s;
+}
+
+.achUnlocked {
+  border-color: rgba(0,229,255,.25);
+  box-shadow: 0 0 12px rgba(0,229,255,.05);
+}
+
+.achLocked { opacity: .45; }
+
+.achIcon { font-size: 28px; flex-shrink: 0; }
+
+.achTitle {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 3px;
+}
+
+.achDesc {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+/* ── Battle history ──────────────────────────────────────────────────── */
+.historyList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.empty {
+  color: var(--text-muted);
+  text-align: center;
+  padding: 40px 0;
+}
+
+.empty a {
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.historyRow {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 18px;
+  border-left-width: 3px;
+}
+
+.historyWon  { border-left-color: #4ade80; }
+.historyLost { border-left-color: #f87171; }
+
+.historyResult { font-size: 22px; flex-shrink: 0; }
+
+.historyInfo {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.historyName {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.historyMeta {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.historyScore {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+}
+
+/* ── Tournament applications ─────────────────────────────────────────── */
+.appRow {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px 18px;
+}
+
+.appInfo {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.appTournName {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+  text-decoration: none;
+}
+
+.appTournName:hover { color: var(--accent); }
+
+.appMeta { font-size: 12px; color: var(--text-muted); }
+.appNote { font-size: 12px; color: var(--text-muted); font-style: italic; }
+
+.appStatus {
+  font-size: 13px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+/* ── Settings ────────────────────────────────────────────────────────── */
+.settingsForm {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+.settingsSection {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+}
+
+.sectionTitle {
+  font-size: 14px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .07em;
+  color: var(--text-muted);
+  margin: 0 0 16px;
+}
+
+.settingsGrid {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.settingsRow {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 16px;
+}
+
+.settingsField {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.settingsLabel {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--text-muted);
+}
+
+.settingsInput,
+.settingsTextarea,
+.settingsSelect {
+  background: var(--bg-mid);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: var(--radius);
+  padding: 9px 12px;
+  font-size: 14px;
+  width: 100%;
+  transition: border-color .15s;
+  font-family: inherit;
+}
+
+.settingsInput:focus,
+.settingsTextarea:focus,
+.settingsSelect:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(0,229,255,.1);
+}
+
+.settingsTextarea { resize: vertical; }
+
+/* ── Avatar grid ─────────────────────────────────────────────────────── */
+.avatarGrid {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 8px;
+}
+
+.avatarBtn {
+  background: var(--bg-mid);
+  border: 2px solid var(--border);
+  border-radius: var(--radius);
+  padding: 8px;
+  font-size: 20px;
+  cursor: pointer;
+  transition: all .15s;
+  line-height: 1;
+}
+
+.avatarBtn:hover { border-color: var(--accent); }
+
+.avatarActive {
+  border-color: var(--accent) !important;
+  background: rgba(0,229,255,.08) !important;
+}
+
+.settingsActions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 16px;
+}
+
+.saveMsg {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+/* ── Responsive ──────────────────────────────────────────────────────── */
+@media (max-width: 640px) {
+  .quickStats { grid-template-columns: repeat(3, 1fr); }
+  .heroInner  { flex-direction: column; }
+  .heroActions { flex-direction: row; }
+  .avatarGrid { grid-template-columns: repeat(6, 1fr); }
+}

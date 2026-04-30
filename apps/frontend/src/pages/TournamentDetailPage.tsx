@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { api } from '../api/client'
 import BracketView from '../components/tournament/BracketView'
+import { useUserStore } from '../stores/userStore'
 import styles from './TournamentDetailPage.module.css'
 
 interface TournamentDetail {
@@ -34,14 +35,19 @@ const APPLY_LANGS = ['js', 'py', 'cpp', 'java'] as const
 
 export default function TournamentDetailPage() {
   const { id } = useParams<{ id: string }>()
+  const { user } = useUserStore()
   const [tournament, setTournament] = useState<TournamentDetail | null>(null)
   const [loading, setLoading] = useState(true)
   const [tab, setTab] = useState<'bracket' | 'participants' | 'apply'>('bracket')
 
-  // Application form state
+  // Application form state — pre-fill from user profile if logged in
   const [form, setForm] = useState({
-    playerName: '', playerEmail: '', experienceLevel: 'beginner' as 'beginner' | 'intermediate' | 'advanced',
-    programmingYears: 0, preferredLang: 'js' as typeof APPLY_LANGS[number], about: '',
+    playerName: user?.displayName ?? '',
+    playerEmail: '',
+    experienceLevel: (user?.experienceLevel ?? 'beginner') as 'beginner' | 'intermediate' | 'advanced',
+    programmingYears: user?.programmingYears ?? 0,
+    preferredLang: (user?.preferredLang ?? 'js') as typeof APPLY_LANGS[number],
+    about: '',
   })
   const [submitting, setSubmitting] = useState(false)
   const [applyResult, setApplyResult] = useState<{ ok: boolean; message: string } | null>(null)

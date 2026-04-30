@@ -28,6 +28,27 @@ model Admin {
   createdAt DateTime  @default(now())
 }
 
+// ─── User accounts ────────────────────────────────────────────────────────────
+
+model User {
+  id               String   @id @default(cuid())
+  email            String   @unique
+  username         String   @unique
+  displayName      String
+  passwordHash     String
+  bio              String?  @db.Text
+  avatar           String   @default("🤖")
+  preferredLang    String   @default("js")
+  preferredSkin    String   @default("robot")
+  experienceLevel  String   @default("beginner")
+  programmingYears Int      @default(0)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  players      Player[]
+  applications TournamentApplication[]
+}
+
 model Session {
   id          String   @id @default(cuid())
   adminId     String
@@ -56,8 +77,10 @@ model Player {
   lang      String?
   code      String?  @db.Text
   strategy  Json?
+  userId    String?
   createdAt DateTime @default(now())
   session   Session  @relation(fields: [sessionId], references: [id])
+  user      User?    @relation(fields: [userId], references: [id])
 
   @@unique([sessionId, slot])
 }
@@ -131,6 +154,8 @@ model TournamentApplication {
   adminNote        String?
   seed             Int?
 
+  userId           String?
+  user             User?             @relation(fields: [userId], references: [id])
   createdAt        DateTime          @default(now())
 
   matchesAsP1      TournamentMatch[] @relation("Match_P1")

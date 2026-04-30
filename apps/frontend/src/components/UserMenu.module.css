@@ -1,0 +1,144 @@
+.authLinks {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.authLink {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-decoration: none;
+  padding: 6px 14px;
+  border-radius: var(--radius);
+  transition: color .15s;
+}
+
+.authLink:hover { color: var(--text); }
+
+.authLinkPrimary {
+  background: rgba(0,229,255,.1);
+  border: 1px solid rgba(0,229,255,.25);
+  color: var(--accent);
+}
+
+.authLinkPrimary:hover {
+  background: rgba(0,229,255,.18);
+  color: var(--accent);
+}
+
+/* ── Trigger ─────────────────────────────────────────────────────────── */
+.wrap {
+  position: relative;
+}
+
+.trigger {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--bg-mid);
+  border: 1px solid var(--border);
+  border-radius: 100px;
+  padding: 5px 14px 5px 6px;
+  cursor: pointer;
+  transition: border-color .15s, background .15s;
+}
+
+.trigger:hover {
+  border-color: rgba(0,229,255,.4);
+  background: var(--bg-hover);
+}
+
+.avatar {
+  font-size: 22px;
+  line-height: 1;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.name {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chevron {
+  font-size: 9px;
+  color: var(--text-muted);
+}
+
+/* ── Dropdown ────────────────────────────────────────────────────────── */
+.dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  min-width: 220px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 12px 40px rgba(0,0,0,.6);
+  z-index: 100;
+  overflow: hidden;
+  animation: dropIn .15s ease;
+}
+
+@keyframes dropIn {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: none; }
+}
+
+.dropHeader {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+}
+
+.dropAvatar { font-size: 28px; }
+
+.dropName {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.dropUser {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.dropDivider {
+  height: 1px;
+  background: var(--border);
+  margin: 2px 0;
+}
+
+.dropItem {
+  display: block;
+  width: 100%;
+  padding: 10px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  text-decoration: none;
+  transition: background .12s;
+}
+
+.dropItem:hover {
+  background: var(--bg-hover);
+}
+
+.dropItemDanger { color: #f87171; }
+.dropItemDanger:hover { background: rgba(248,113,113,.08); }

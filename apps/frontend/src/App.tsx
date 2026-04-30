@@ -5,6 +5,10 @@ import LearnPage from './pages/LearnPage'
 import LearningBattlePage from './pages/LearningBattlePage'
 import TournamentsPage from './pages/TournamentsPage'
 import TournamentDetailPage from './pages/TournamentDetailPage'
+import RegisterPage from './pages/RegisterPage'
+import LoginPage from './pages/LoginPage'
+import ProfilePage from './pages/ProfilePage'
+import PublicProfilePage from './pages/PublicProfilePage'
 import AdminLoginPage from './pages/admin/AdminLoginPage'
 import AdminDashboard from './pages/admin/AdminDashboard'
 import AdminSessionNew from './pages/admin/AdminSessionNew'
@@ -24,6 +28,12 @@ export default function App() {
       <Route path="/learn/:missionId" element={<LearningBattlePage />} />
       <Route path="/tournaments" element={<TournamentsPage />} />
       <Route path="/tournaments/:id" element={<TournamentDetailPage />} />
+
+      {/* User auth & profiles */}
+      <Route path="/register" element={<RegisterPage />} />
+      <Route path="/login"    element={<LoginPage />} />
+      <Route path="/profile"  element={<ProfilePage />} />
+      <Route path="/profile/:username" element={<PublicProfilePage />} />
 
       <Route path="/admin/login" element={<AdminLoginPage />} />
       <Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />

@@ -1,8 +1,10 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import type { SkinId, JoinSessionResponse } from '@robocode/shared'
 import { api } from '../api/client'
 import { useBattleStore } from '../stores/battleStore'
+import { useUserStore } from '../stores/userStore'
+import UserMenu from '../components/UserMenu'
 import styles from './JoinPage.module.css'
 
 const SKINS: { id: SkinId; label: string; icon: string; color: string }[] = [
@@ -13,14 +15,23 @@ const SKINS: { id: SkinId; label: string; icon: string; color: string }[] = [
 ]
 
 export default function JoinPage() {
-  const navigate = useNavigate()
+  const navigate   = useNavigate()
   const setSession = useBattleStore(s => s.setSession)
+  const { user, token } = useUserStore()
 
   const [name, setName]         = useState('')
   const [code, setCode]         = useState('')
   const [skin, setSkin]         = useState<SkinId>('robot')
   const [loading, setLoading]   = useState(false)
   const [error, setError]       = useState('')
+
+  // Pre-fill from user profile if logged in
+  useEffect(() => {
+    if (user) {
+      if (!name) setName(user.displayName)
+      setSkin((user.preferredSkin as SkinId) ?? 'robot')
+    }
+  }, [user]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleCodeInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     setCode(e.target.value.toUpperCase().slice(0, 6))
@@ -38,7 +49,7 @@ export default function JoinPage() {
         sessionCode: code,
         name: name.trim(),
         skin,
-      })
+      }, token ?? undefined)
 
       // 'code' level is a placeholder — real level arrives via WS 'connected' message
       setSession(res.sessionId, res.playerSlot, 'code', ['robot', 'gladiator', 'boxer', 'cosmonaut'], res.wsToken, name.trim(), skin)
@@ -137,6 +148,9 @@ export default function JoinPage() {
           <div className={styles.publicLinks}>
             <a href="/learn" className={styles.learnLink}>🎓 Обучение</a>
             <a href="/tournaments" className={styles.tournamentLink}>🏆 Турниры</a>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'center' }}>
+            <UserMenu />
           </div>
           <p className={styles.adminLink}>
             Организатор? <a href="/admin">Панель управления →</a>
