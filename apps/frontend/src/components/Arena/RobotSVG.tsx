@@ -45,16 +45,16 @@ function GladiatorBody({ action, shieldActive }: {
 }) {
   const attacking = action === 'attack' || action === 'combo' || action === 'laser'
 
-  // Кроп-рамка персонажа в PNG 1537×1023 (px).
-  // Если персонаж срезан или смещён — подправь CROP_* значения.
-  const CROP_X = 250    // левый край зоны персонажа
-  const CROP_Y = 60     // верхний край (выше шлема с плюмажем)
-  const CROP_W = 1050   // ширина зоны (вся фигура)
-  const CROP_H = 950    // высота зоны (ноги внизу)
+  // Новый PNG 699×727 — уже обрезан по границам персонажа.
+  const CROP_X = 0
+  const CROP_Y = 0
+  const CROP_W = 699
+  const CROP_H = 727
 
-  // Размер отображения в SVG-единицах (аспект = CROP_W/CROP_H)
-  const SH = 30
-  const SW = SH * CROP_W / CROP_H  // сохраняем аспект кропа
+  // SH — высота персонажа в SVG-единицах (арена = 380).
+  // Боксёр занимает ~290 ед. Подбери по вкусу.
+  const SH = 260
+  const SW = SH * CROP_W / CROP_H  // 699/727 ≈ 0.96, почти квадрат
   const SX = -SW / 2
   const SY = -SH   // ноги at y=0
 
