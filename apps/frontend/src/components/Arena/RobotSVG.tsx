@@ -22,14 +22,14 @@ const SKIN_COLORS: Record<SkinId, { primary: string; secondary: string; accent: 
 const GL = '#f1cf68'
 const PNG_RATIO = 1537 / 1023
 const GLADIATOR_SPRITE_HREF = '/skins/gladiator.png?v=3'
-const GLADIATOR_HEIGHT = 132
+const GLADIATOR_HEIGHT = 96
 const GLADIATOR_WIDTH = Math.round(GLADIATOR_HEIGHT * PNG_RATIO)
 const GLADIATOR_X = -GLADIATOR_WIDTH / 2
 const GLADIATOR_Y = -GLADIATOR_HEIGHT
-const GENERIC_SCALE = 1.28
+const GENERIC_SCALE = 0.96
 const GENERIC_FOOT_Y = 51 * GENERIC_SCALE
 const HP_BAR_X = -55
-const HP_BAR_Y = -158
+const HP_BAR_Y = -132
 
 function GladiatorBody({ action, shieldActive }: {
   action?: ActionName | null
@@ -42,16 +42,16 @@ function GladiatorBody({ action, shieldActive }: {
       {shieldActive && (
         <ellipse
           cx={0}
-          cy={-GLADIATOR_HEIGHT * 0.48}
-          rx={GLADIATOR_WIDTH * 0.42}
-          ry={GLADIATOR_HEIGHT * 0.45}
+          cy={-GLADIATOR_HEIGHT * 0.52}
+          rx={GLADIATOR_WIDTH * 0.36}
+          ry={GLADIATOR_HEIGHT * 0.38}
           fill="none"
           stroke={GL}
           strokeWidth={2.5}
           strokeDasharray="5 3"
         >
           <animate attributeName="opacity" values="0.72;0.25;0.72" dur="0.85s" repeatCount="indefinite" />
-          <animate attributeName="rx" values={`${GLADIATOR_WIDTH * 0.42};${GLADIATOR_WIDTH * 0.45};${GLADIATOR_WIDTH * 0.42}`} dur="0.85s" repeatCount="indefinite" />
+          <animate attributeName="rx" values={`${GLADIATOR_WIDTH * 0.36};${GLADIATOR_WIDTH * 0.39};${GLADIATOR_WIDTH * 0.36}`} dur="0.85s" repeatCount="indefinite" />
         </ellipse>
       )}
 
@@ -59,7 +59,7 @@ function GladiatorBody({ action, shieldActive }: {
         <animateTransform
           attributeName="transform"
           type="translate"
-          values="0,0; 0,-3; 0,0"
+            values="0,0; 0,-2; 0,0"
           dur="2.2s"
           repeatCount="indefinite"
           calcMode="spline"
@@ -89,8 +89,8 @@ function GladiatorBody({ action, shieldActive }: {
 
         {action && (
           <text
-            x={GLADIATOR_WIDTH * 0.18}
-            y={GLADIATOR_Y + GLADIATOR_HEIGHT * 0.42}
+            x={GLADIATOR_WIDTH * 0.2}
+            y={GLADIATOR_Y + GLADIATOR_HEIGHT * 0.46}
             fill={GL}
             fontSize={10}
             fontWeight={800}
@@ -179,7 +179,7 @@ export default function RobotSVG({ skinId, flip, action, hp, maxHp, name, x, y, 
         <text x={55} y={-5} textAnchor="middle" fill={hpColor} fontSize={12} fontWeight={700}>{hp}</text>
       </g>
 
-      <ellipse cx={0} cy={0} rx={28} ry={5} fill="#020617" opacity={0.36} />
+      <ellipse cx={0} cy={0} rx={22} ry={4} fill="#020617" opacity={0.32} />
 
       {skinId === 'gladiator' ? (
         <g transform={flip ? 'scale(-1,1)' : undefined}>
