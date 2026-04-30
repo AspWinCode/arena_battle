@@ -20,10 +20,10 @@ const SKIN_COLORS: Record<SkinId, { primary: string; secondary: string; accent: 
 }
 
 const GL = '#f1cf68'
-const GLADIATOR_SOURCE_WIDTH = 699
-const GLADIATOR_SOURCE_HEIGHT = 727
+const GLADIATOR_SOURCE_WIDTH = 853
+const GLADIATOR_SOURCE_HEIGHT = 900
 const PNG_RATIO = GLADIATOR_SOURCE_WIDTH / GLADIATOR_SOURCE_HEIGHT
-const GLADIATOR_SPRITE_HREF = '/skins/gladiator.png?v=5'
+const GLADIATOR_SPRITE_HREF = '/skins/gladiator.png?v=6'
 const GLADIATOR_HEIGHT = 80
 const GLADIATOR_WIDTH = Math.round(GLADIATOR_HEIGHT * PNG_RATIO)
 const GLADIATOR_X = -GLADIATOR_WIDTH / 2
