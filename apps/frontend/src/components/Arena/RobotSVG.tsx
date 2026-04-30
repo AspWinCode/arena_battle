@@ -53,7 +53,7 @@ function GladiatorBody({ action, shieldActive }: {
   const CROP_H = 950    // высота зоны (ноги внизу)
 
   // Размер отображения в SVG-единицах (аспект = CROP_W/CROP_H)
-  const SH = 90
+  const SH = 30
   const SW = SH * CROP_W / CROP_H  // сохраняем аспект кропа
   const SX = -SW / 2
   const SY = -SH   // ноги at y=0
