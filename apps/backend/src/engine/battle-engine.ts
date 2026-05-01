@@ -1,30 +1,25 @@
 import {
-  DAMAGE_MATRIX,
-  REPAIR_AMOUNT,
-  COOLDOWNS,
-  MAX_HP,
-  MAX_TURNS,
-  REPEAT_PENALTY_AFTER,
-  REPEAT_DAMAGE_FACTOR,
+  MAX_HP, MAX_STAMINA, MAX_RAGE, MAX_TURNS,
+  STAMINA_REGEN, STAMINA_COSTS,
+  STAMINA_THRESHOLD_HEAVY, STAMINA_THRESHOLD_ATTACK, STAMINA_THRESHOLD_LASER,
+  ATTACK_EXHAUSTED_DAMAGE,
+  RAGE_PER_DAMAGE, SPECIAL_RAGE_COST,
+  BASE_DAMAGE, SHIELD_ABSORB,
+  DODGE_LASER_EVADE_CHANCE, DODGE_SPECIAL_ABSORB,
+  REPEAT_PENALTY_AFTER, REPEAT_DAMAGE_FACTOR,
+  COOLDOWNS, REPAIR_AMOUNT,
   applyPositionModifier,
 } from '@robocode/shared'
 import type {
-  Strategy,
-  StrategyContext,
-  ActionName,
-  PlayerState,
-  TurnResult,
-  RoundResult,
-  Position,
+  Strategy, StrategyContext, ActionName, PlayerState, TurnResult, RoundResult, Position,
 } from '@robocode/shared'
 
-const VALID_ACTIONS = new Set<ActionName>(['attack', 'laser', 'shield', 'dodge', 'combo', 'repair'])
+const VALID_ACTIONS = new Set<ActionName>(['attack', 'heavy', 'laser', 'shield', 'dodge', 'repair', 'special'])
 
 function isValidAction(v: unknown): v is ActionName {
   return typeof v === 'string' && VALID_ACTIONS.has(v as ActionName)
 }
 
-// Extended state tracks repeat count (not in shared PlayerState to avoid breaking types)
 interface ExtState extends PlayerState {
   repeatCount: number
 }
@@ -42,8 +37,10 @@ export class BattleEngine {
   private initState(strategy: Strategy): ExtState {
     return {
       hp: MAX_HP,
+      stamina: MAX_STAMINA,
+      rage: 0,
       position: strategy.position ?? 'mid',
-      cooldowns: { attack: 0, laser: 0, combo: 0, repair: 0, shield: 0, dodge: 0 },
+      cooldowns: { attack: 0, heavy: 0, laser: 0, shield: 0, dodge: 0, repair: 0, special: 0 },
       lastAction: null,
       shieldActive: false,
       strategy,
@@ -70,8 +67,7 @@ export class BattleEngine {
       this.p2.hp > this.p1.hp ? 2 : 0
 
     return {
-      round: roundNumber,
-      winner,
+      round: roundNumber, winner,
       p1Hp: Math.max(0, this.p1.hp),
       p2Hp: Math.max(0, this.p2.hp),
       reason: (this.p1.hp <= 0 || this.p2.hp <= 0) ? 'ko' : 'time',
@@ -79,66 +75,81 @@ export class BattleEngine {
     }
   }
 
+  // ── Context builder for strategy.fn ────────────────────────────────────────
+
   private buildContext(self: ExtState, enemy: ExtState, turn: number): StrategyContext {
     return {
-      myHp:           self.hp,
-      enemyHp:        enemy.hp,
+      myHp:      self.hp,
+      myStamina: self.stamina,
+      myRage:    self.rage,
+      enemyHp:      enemy.hp,
+      enemyStamina: enemy.stamina,
+      enemyRage:    enemy.rage,
       turn,
-      myLastAction:   self.lastAction,
+      myLastAction:    self.lastAction,
       enemyLastAction: enemy.lastAction,
-      cooldowns: {
-        attack: self.cooldowns.attack ?? 0,
-        laser:  self.cooldowns.laser,
-        shield: self.cooldowns.shield,
-        dodge:  self.cooldowns.dodge ?? 0,
-        combo:  self.cooldowns.combo,
-        repair: self.cooldowns.repair,
-      },
+      cooldowns: { ...self.cooldowns },
       myPosition:    self.position,
       enemyPosition: enemy.position,
       myRepeatCount: self.repeatCount,
     }
   }
 
+  // ── Action selection ────────────────────────────────────────────────────────
+
   private pickAction(self: ExtState, enemy: ExtState, turn: number): ActionName {
     const { strategy, cooldowns } = self
 
-    // ── Dynamic function strategy (CODE / PRO level) ──────────────────
+    // Dynamic strategy.fn (CODE / PRO level)
     if (strategy.fn) {
       try {
         const ctx = this.buildContext(self, enemy, turn)
         const chosen = strategy.fn(ctx)
-        if (isValidAction(chosen)) {
-          const cd = cooldowns[chosen as keyof typeof cooldowns] ?? 0
-          if (cd === 0) return chosen
-          // chosen is on cooldown — fall through to static
+        if (isValidAction(chosen) && this.isActionAvailable(self, chosen)) {
+          return chosen
         }
-      } catch {
-        // user code threw — fall through to static fallback
-      }
+      } catch { /* fall through */ }
     }
 
-    // ── Static strategy (BLOCKS level / fallback) ─────────────────────
+    // Static strategy (BLOCKS / fallback)
+    // Special attack: use if rage is full
+    if (self.rage >= SPECIAL_RAGE_COST && isActionAvailable(self, 'special')) return 'special'
+
     if (enemy.hp < 30) {
       const act = strategy.lowHp
-      if (act === 'laser'  && cooldowns.laser  > 0) return cooldowns.combo === 0 ? 'combo' : 'attack'
-      if (act === 'combo'  && cooldowns.combo  > 0) return 'attack'
-      if (act === 'repair' && cooldowns.repair > 0) return 'shield'
-      return act
+      return this.resolveStaticAction(self, act)
     }
 
     if (enemy.lastAction === 'laser' && strategy.onHit === 'dodge') return 'dodge'
-    if (enemy.shieldActive && ['attack', 'combo'].includes(strategy.primary)) return 'dodge'
+    if (enemy.shieldActive && (strategy.primary === 'attack' || strategy.primary === 'heavy')) return 'heavy'
 
-    const act = strategy.primary
-    if (act === 'laser'  && cooldowns.laser  > 0) return cooldowns.combo === 0 ? 'combo' : 'attack'
-    if (act === 'combo'  && cooldowns.combo  > 0) return 'attack'
-    if (act === 'repair' && cooldowns.repair > 0) return 'shield'
-    if (act === 'shield' && turn % 2 === 0) return 'attack'
+    return this.resolveStaticAction(self, strategy.primary)
+  }
+
+  private isActionAvailable(state: ExtState, action: ActionName): boolean {
+    if ((state.cooldowns[action as keyof typeof state.cooldowns] ?? 0) > 0) return false
+    if (action === 'special' && state.rage < SPECIAL_RAGE_COST) return false
+    return true
+  }
+
+  private resolveStaticAction(self: ExtState, act: ActionName): ActionName {
+    if (!this.isActionAvailable(self, act)) {
+      if (act === 'heavy'  ) return self.cooldowns.laser === 0 ? 'laser' : 'attack'
+      if (act === 'laser'  ) return 'attack'
+      if (act === 'repair' ) return 'shield'
+      if (act === 'shield' ) return 'attack'
+      return 'attack'
+    }
     return act
   }
 
+  // ── Turn resolution ─────────────────────────────────────────────────────────
+
   private resolveTurn(turn: number): TurnResult {
+    // Stamina regens at start of turn (before action)
+    this.p1.stamina = Math.min(MAX_STAMINA, this.p1.stamina + STAMINA_REGEN)
+    this.p2.stamina = Math.min(MAX_STAMINA, this.p2.stamina + STAMINA_REGEN)
+
     const a1 = this.pickAction(this.p1, this.p2, turn)
     const a2 = this.pickAction(this.p2, this.p1, turn)
 
@@ -146,39 +157,45 @@ export class BattleEngine {
     this.p1.repeatCount = a1 === this.p1.lastAction ? this.p1.repeatCount + 1 : 1
     this.p2.repeatCount = a2 === this.p2.lastAction ? this.p2.repeatCount + 1 : 1
 
-    // Reset shields
-    this.p1.shieldActive = false
-    this.p2.shieldActive = false
-    if (a1 === 'shield') this.p1.shieldActive = true
-    if (a2 === 'shield') this.p2.shieldActive = true
+    // Shield activation
+    this.p1.shieldActive = a1 === 'shield'
+    this.p2.shieldActive = a2 === 'shield'
 
-    // Resolve base damage
-    const { p1Dmg: rawP1Dmg, p2Dmg: rawP2Dmg } = this.resolveDamage(a1, a2, this.p1.position, this.p2.position)
+    // Repeat penalty factors
+    const p1RepeatFactor = this.p1.repeatCount >= REPEAT_PENALTY_AFTER ? REPEAT_DAMAGE_FACTOR : 1
+    const p2RepeatFactor = this.p2.repeatCount >= REPEAT_PENALTY_AFTER ? REPEAT_DAMAGE_FACTOR : 1
 
-    // Apply repeat penalty (attacker's repeat count reduces their outgoing damage)
-    const p1DmgFactor = this.p1.repeatCount >= REPEAT_PENALTY_AFTER ? REPEAT_DAMAGE_FACTOR : 1
-    const p2DmgFactor = this.p2.repeatCount >= REPEAT_PENALTY_AFTER ? REPEAT_DAMAGE_FACTOR : 1
+    // Calculate damage dealt by P1 → P2 and P2 → P1
+    const p2DmgDealt = Math.round(
+      this.calcDamage(a1, this.p1, a2, this.p2) * p1RepeatFactor
+    )
+    const p1DmgDealt = Math.round(
+      this.calcDamage(a2, this.p2, a1, this.p1) * p2RepeatFactor
+    )
 
-    // p1Dmg = damage P1 takes = damage dealt by P2's action on P1
-    // rawP1Dmg is damage a1 takes (from matrix atkDmg), rawP2Dmg is damage a1 deals (defDmg)
-    // Wait - let me re-read the matrix carefully:
-    // DAMAGE_MATRIX[a1][a2].atkDmg = damage P1 takes (P2 counters)
-    // DAMAGE_MATRIX[a1][a2].defDmg = damage P2 takes (P1 deals)
-    // So p2DmgFactor applies to P1's outgoing (rawP2Dmg), p1DmgFactor applies to P2's outgoing (rawP1Dmg)
-    const p1Dmg = Math.round(rawP1Dmg * p2DmgFactor)  // p1 takes damage from p2's action
-    const p2Dmg = Math.round(rawP2Dmg * p1DmgFactor)  // p2 takes damage from p1's action
+    // Apply stamina costs (negative = gain)
+    this.applyStaminaCost(this.p1, a1)
+    this.applyStaminaCost(this.p2, a2)
 
+    // Special attack: consume rage
+    if (a1 === 'special') this.p1.rage = 0
+    if (a2 === 'special') this.p2.rage = 0
+
+    // Repair
     const p1Heal = a1 === 'repair' ? REPAIR_AMOUNT : 0
     const p2Heal = a2 === 'repair' ? REPAIR_AMOUNT : 0
 
-    this.p1.hp = Math.min(MAX_HP, Math.max(0, this.p1.hp - p1Dmg + p1Heal))
-    this.p2.hp = Math.min(MAX_HP, Math.max(0, this.p2.hp - p2Dmg + p2Heal))
+    // Apply HP changes
+    this.p1.hp = Math.min(MAX_HP, Math.max(0, this.p1.hp - p1DmgDealt + p1Heal))
+    this.p2.hp = Math.min(MAX_HP, Math.max(0, this.p2.hp - p2DmgDealt + p2Heal))
 
-    // Tick down cooldowns
+    // Rage fills from damage taken
+    if (p1DmgDealt > 0) this.p1.rage = Math.min(MAX_RAGE, this.p1.rage + p1DmgDealt * RAGE_PER_DAMAGE)
+    if (p2DmgDealt > 0) this.p2.rage = Math.min(MAX_RAGE, this.p2.rage + p2DmgDealt * RAGE_PER_DAMAGE)
+
+    // Tick cooldowns
     this.tickCooldowns(this.p1)
     this.tickCooldowns(this.p2)
-
-    // Apply cooldown for used action
     this.applyCooldown(this.p1, a1)
     this.applyCooldown(this.p2, a2)
 
@@ -188,57 +205,88 @@ export class BattleEngine {
     this.updatePosition(this.p1, a1)
     this.updatePosition(this.p2, a2)
 
-    const p1Penalized = this.p1.repeatCount >= REPEAT_PENALTY_AFTER
-    const p2Penalized = this.p2.repeatCount >= REPEAT_PENALTY_AFTER
-
     return {
-      turn,
-      p1Action: a1,
-      p2Action: a2,
-      p1DmgTaken: p1Dmg,
-      p2DmgTaken: p2Dmg,
-      p1HpAfter: this.p1.hp,
-      p2HpAfter: this.p2.hp,
-      p1Heal,
-      p2Heal,
-      p1Position: this.p1.position,
-      p2Position: this.p2.position,
-      log: this.buildLog(a1, a2, p1Dmg, p2Dmg, p1Heal, p2Heal, p1Penalized, p2Penalized),
+      turn, p1Action: a1, p2Action: a2,
+      p1DmgTaken: p1DmgDealt, p2DmgTaken: p2DmgDealt,
+      p1HpAfter: this.p1.hp, p2HpAfter: this.p2.hp,
+      p1Heal, p2Heal,
+      p1Stamina: Math.round(this.p1.stamina),
+      p2Stamina: Math.round(this.p2.stamina),
+      p1Rage: Math.round(this.p1.rage),
+      p2Rage: Math.round(this.p2.rage),
+      p1Position: this.p1.position, p2Position: this.p2.position,
+      log: this.buildLog(a1, a2, p1DmgDealt, p2DmgDealt, p1Heal, p2Heal,
+        this.p1, this.p2),
     }
   }
 
-  private resolveDamage(
-    a1: ActionName, a2: ActionName,
-    pos1: Position, pos2: Position,
-  ): { p1Dmg: number; p2Dmg: number } {
-    const entry = DAMAGE_MATRIX[a1][a2]
+  // ── Damage calculation ──────────────────────────────────────────────────────
 
-    if (entry.missChance && Math.random() < entry.missChance) {
-      return { p1Dmg: 0, p2Dmg: 0 }
+  /**
+   * Calculate how much damage `attAction` deals to the defender,
+   * accounting for stamina exhaustion and defender's mitigation.
+   */
+  private calcDamage(
+    attAction: ActionName, att: ExtState,
+    defAction: ActionName, _def: ExtState,
+  ): number {
+    let dmg = BASE_DAMAGE[attAction] ?? 0
+    if (dmg === 0) return 0
+
+    // ── Stamina exhaustion ──────────────────────────────────────────
+    if (attAction === 'heavy') {
+      // Heavy MISSES if stamina was below threshold BEFORE regen+cost this turn
+      // We check current stamina (already after regen, before cost)
+      if (att.stamina < STAMINA_THRESHOLD_HEAVY) return 0
+    }
+    if (attAction === 'attack' && att.stamina < STAMINA_THRESHOLD_ATTACK) {
+      dmg = ATTACK_EXHAUSTED_DAMAGE  // exhausted attack: wet-noodle hit
+    }
+    if (attAction === 'laser' && att.stamina < STAMINA_THRESHOLD_LASER) {
+      dmg = Math.floor(dmg * 0.5)
     }
 
-    const p1Dmg = applyPositionModifier(a2, pos2, entry.atkDmg)
-    const p2Dmg = applyPositionModifier(a1, pos1, entry.defDmg)
+    // ── Position modifier ───────────────────────────────────────────
+    dmg = applyPositionModifier(attAction, att.position, dmg)
 
-    return { p1Dmg, p2Dmg }
+    // ── Defender mitigation ─────────────────────────────────────────
+    if (defAction === 'shield') {
+      // Shield absorbs 60%; 40% passes through
+      dmg = Math.round(dmg * (1 - SHIELD_ABSORB))
+    } else if (defAction === 'dodge') {
+      if (attAction === 'attack' || attAction === 'heavy') {
+        dmg = 0  // full evade of melee
+      } else if (attAction === 'laser') {
+        if (Math.random() < DODGE_LASER_EVADE_CHANCE) dmg = 0
+      } else if (attAction === 'special') {
+        dmg = Math.floor(dmg * (1 - DODGE_SPECIAL_ABSORB))  // partial
+      }
+    }
+
+    return Math.max(0, dmg)
+  }
+
+  // ── Helpers ─────────────────────────────────────────────────────────────────
+
+  private applyStaminaCost(state: ExtState, action: ActionName) {
+    const cost = STAMINA_COSTS[action] ?? 0
+    // cost is negative for shield/dodge (they gain stamina)
+    state.stamina = Math.min(MAX_STAMINA, Math.max(0, state.stamina - cost))
   }
 
   private tickCooldowns(state: ExtState) {
-    for (const key of Object.keys(state.cooldowns) as (keyof typeof state.cooldowns)[]) {
-      if (state.cooldowns[key] > 0) state.cooldowns[key]--
+    for (const k of Object.keys(state.cooldowns) as (keyof typeof state.cooldowns)[]) {
+      if (state.cooldowns[k] > 0) state.cooldowns[k]--
     }
   }
 
   private applyCooldown(state: ExtState, action: ActionName) {
     const cd = COOLDOWNS[action]
-    if (cd > 0) {
-      const key = action as keyof typeof state.cooldowns
-      if (key in state.cooldowns) state.cooldowns[key] = cd
-    }
+    if (cd > 0) state.cooldowns[action as keyof typeof state.cooldowns] = cd
   }
 
   private updatePosition(state: ExtState, action: ActionName) {
-    if (action === 'attack' || action === 'combo') state.position = 'close'
+    if (action === 'attack' || action === 'heavy') state.position = 'close'
     else if (action === 'laser') state.position = 'far'
     else if (action === 'dodge') {
       state.position = state.position === 'close' ? 'mid' : state.position === 'mid' ? 'far' : 'mid'
@@ -249,32 +297,41 @@ export class BattleEngine {
     a1: ActionName, a2: ActionName,
     d1: number, d2: number,
     h1: number, h2: number,
-    p1Pen: boolean, p2Pen: boolean,
+    p1: ExtState, p2: ExtState,
   ): string {
     const parts: string[] = []
+    const pen1 = p1.repeatCount >= REPEAT_PENALTY_AFTER
+    const pen2 = p2.repeatCount >= REPEAT_PENALTY_AFTER
 
-    if (a1 === 'dodge' && d1 === 0 && d2 === 0) {
-      parts.push('P1 dodges!')
-    } else if (a2 === 'dodge' && d2 === 0 && d1 === 0) {
-      parts.push('P2 dodges!')
-    } else if (a1 === 'shield' && a2 === 'attack') {
-      parts.push(`Shield absorbs! P1 -${d1}`)
-    } else if (a1 === 'laser' && a2 === 'dodge') {
-      parts.push('Laser misses! P2 rolled away!')
-    } else {
-      if (d2 > 0) parts.push(`P2 -${d2}${p1Pen ? '⚠️' : ''}`)
-      if (d1 > 0) parts.push(`P1 -${d1}${p2Pen ? '⚠️' : ''}`)
+    // Miss events
+    const p1Miss = a1 === 'heavy' && d2 === 0
+    const p2Miss = a2 === 'heavy' && d1 === 0
+
+    if (p1Miss) parts.push('P1 ПРОМАХ (нет выносливости!)')
+    if (p2Miss) parts.push('P2 ПРОМАХ (нет выносливости!)')
+    if (a1 === 'dodge' && d1 === 0) parts.push('P1 уклонился!')
+    if (a2 === 'dodge' && d2 === 0) parts.push('P2 уклонился!')
+
+    if (!p1Miss && !p2Miss) {
+      if (d2 > 0) parts.push(`P2 -${d2}HP${pen1 ? ' ⚠️спам' : ''}`)
+      if (d1 > 0) parts.push(`P1 -${d1}HP${pen2 ? ' ⚠️спам' : ''}`)
     }
 
     if (h1 > 0) parts.push(`P1 +${h1}HP`)
     if (h2 > 0) parts.push(`P2 +${h2}HP`)
-    if (p1Pen) parts.push('P1 spam ×0.5')
-    if (p2Pen) parts.push('P2 spam ×0.5')
 
-    if (parts.length === 0) parts.push('No damage')
+    if (a1 === 'special') parts.push(`⚡ P1 RAGE STRIKE!`)
+    if (a2 === 'special') parts.push(`⚡ P2 RAGE STRIKE!`)
 
+    if (parts.length === 0) parts.push(`${a1} vs ${a2} — нет урона`)
     return parts.join(' | ')
   }
+}
+
+function isActionAvailable(state: ExtState, action: ActionName): boolean {
+  if ((state.cooldowns[action as keyof typeof state.cooldowns] ?? 0) > 0) return false
+  if (action === 'special' && state.rage < SPECIAL_RAGE_COST) return false
+  return true
 }
 
 export function runMatch(
@@ -282,9 +339,9 @@ export function runMatch(
   p2Strategy: Strategy,
   format: 'bo1' | 'bo3' | 'bo5'
 ): { winner: 1 | 2 | 0; score: [number, number]; rounds: RoundResult[] } {
-  const maxRounds = format === 'bo1' ? 1 : format === 'bo3' ? 3 : 5
+  const maxRounds  = format === 'bo1' ? 1 : format === 'bo3' ? 3 : 5
   const winsNeeded = Math.ceil(maxRounds / 2)
-  const engine = new BattleEngine(p1Strategy, p2Strategy)
+  const engine     = new BattleEngine(p1Strategy, p2Strategy)
   const rounds: RoundResult[] = []
   const wins: [number, number] = [0, 0]
 

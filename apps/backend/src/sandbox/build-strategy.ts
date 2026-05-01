@@ -10,42 +10,39 @@ export interface ActionCall {
   moves?: ActionCall[]
 }
 
+const BATTLE_ACTIONS = new Set<ActionName>([
+  'attack', 'heavy', 'laser', 'shield', 'dodge', 'repair', 'special',
+])
+
 function isBattleAction(action: string | undefined): action is ActionName {
-  return action === 'attack'
-    || action === 'laser'
-    || action === 'shield'
-    || action === 'dodge'
-    || action === 'combo'
-    || action === 'repair'
+  return !!action && BATTLE_ACTIONS.has(action as ActionName)
 }
 
 export function buildStrategy(calls: ActionCall[]): Strategy {
-  const battleCalls = calls.filter(call => isBattleAction(call.action))
+  const battleCalls = calls.filter(c => isBattleAction(c.action))
 
-  // battleCalls[0] = action at normal HP (enemy HP ~60)
-  // battleCalls[1] = action at low HP (enemy HP ~20)
   const primary: ActionName = isBattleAction(battleCalls[0]?.action)
     ? battleCalls[0].action as ActionName
     : 'attack'
+
   const lowHp: ActionName = isBattleAction(battleCalls[1]?.action)
     ? battleCalls[1].action as ActionName
     : primary
 
   const hasShield = battleCalls.some(c => c.action === 'shield')
-  const hasDodge = battleCalls.some(c => c.action === 'dodge')
-
+  const hasDodge  = battleCalls.some(c => c.action === 'dodge')
   const onHit: ActionName = hasDodge ? 'dodge' : hasShield ? 'shield' : 'attack'
 
-  const style =
-    primary === 'laser' ? 'Aggressive' :
-    primary === 'combo' ? 'Balanced' :
-    primary === 'dodge' ? 'Evasive' :
+  const style: Strategy['style'] =
+    primary === 'laser' || primary === 'heavy' ? 'Aggressive' :
+    primary === 'special' ? 'Balanced' :
+    primary === 'dodge'  ? 'Evasive' :
     hasShield ? 'Defensive' : 'Standard'
 
   const moveCall = [...calls].reverse().find(c => c.action?.startsWith('move'))
   const position: Position =
-    moveCall?.action === 'moveForward' ? 'close' :
-    moveCall?.action === 'moveBackward' ? 'far' : 'mid'
+    moveCall?.action === 'moveForward'  ? 'close' :
+    moveCall?.action === 'moveBackward' ? 'far'   : 'mid'
 
   return { primary, lowHp, onHit, style, position }
 }

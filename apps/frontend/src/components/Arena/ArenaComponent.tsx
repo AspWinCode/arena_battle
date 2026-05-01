@@ -122,7 +122,7 @@ export default function ArenaComponent({
     }
 
     // Shield block: attacker hit shield (no damage to defender)
-    const attackActions: (ActionName | undefined)[] = ['attack', 'laser', 'combo']
+    const attackActions: (ActionName | undefined)[] = ['attack', 'laser', 'heavy', 'special']
     if (attackActions.includes(p1Action) && p2Action === 'shield' && p2DmgTaken === 0) {
       vfx.spawnShieldBlock(cx2, ROBOT_Y - 30, p2c)
     }
@@ -134,9 +134,11 @@ export default function ArenaComponent({
     if (p1Action === 'laser' && p2DmgTaken > 0) vfx.spawnLaserImpact(cx2, ROBOT_Y - 20, p1c)
     if (p2Action === 'laser' && p1DmgTaken > 0) vfx.spawnLaserImpact(cx1, ROBOT_Y - 20, p2c)
 
-    // Combo sparks
-    if (p1Action === 'combo' && p2DmgTaken > 0) vfx.spawnComboSparks(cx2, ROBOT_Y - 20, p1c)
-    if (p2Action === 'combo' && p1DmgTaken > 0) vfx.spawnComboSparks(cx1, ROBOT_Y - 20, p2c)
+    // Heavy / special sparks
+    if (p1Action === 'heavy' && p2DmgTaken > 0) vfx.spawnComboSparks(cx2, ROBOT_Y - 20, p1c)
+    if (p2Action === 'heavy' && p1DmgTaken > 0) vfx.spawnComboSparks(cx1, ROBOT_Y - 20, p2c)
+    if (p1Action === 'special' && p2DmgTaken > 0) vfx.spawnComboSparks(cx2, ROBOT_Y - 20, p1c)
+    if (p2Action === 'special' && p1DmgTaken > 0) vfx.spawnComboSparks(cx1, ROBOT_Y - 20, p2c)
 
     // Dodge trail
     if (p1Action === 'dodge') vfx.spawnDodgeTrail(cx1, ROBOT_Y - 20, p1c)

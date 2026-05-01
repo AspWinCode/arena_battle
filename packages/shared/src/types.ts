@@ -6,47 +6,61 @@ export type SessionFormat = 'bo1' | 'bo3' | 'bo5'
 export type SkinId = 'robot' | 'gladiator' | 'boxer' | 'cosmonaut'
 export type Lang = 'js' | 'py' | 'cpp' | 'java' | 'auto'
 
-export type ActionName = 'attack' | 'laser' | 'shield' | 'dodge' | 'combo' | 'repair'
+export type ActionName =
+  | 'attack'   // basic jab — 12 dmg, costs 10 stamina
+  | 'heavy'    // power strike — 28 dmg, costs 35 stamina; MISS if stamina < 35
+  | 'laser'    // ranged shot — 20 dmg, costs 20 stamina, CD 3
+  | 'shield'   // absorbs 60% dmg; +20 stamina this turn
+  | 'dodge'    // evade melee 100% / laser 50%; +10 stamina
+  | 'repair'   // heal +20 HP; no stamina cost
+  | 'special'  // rage move — 50 dmg; requires rage = 100, resets rage
+
 export type Position = 'close' | 'mid' | 'far'
-export type AttackType = 'jab' | 'hook' | 'uppercut' | 'sweep'
-export type DodgeDir = 'left' | 'right' | 'back' | 'roll'
 
 // ─── Strategy ─────────────────────────────────────────────────────────────────
 
 /**
- * Context passed to the user's strategy(ctx) function every turn.
- * All values are read-only snapshots of the current battle state.
+ * Context passed to strategy(ctx) every turn.
  */
 export interface StrategyContext {
-  /** Your current HP (0–100) */
+  /** Your HP (0–100) */
   myHp: number
-  /** Enemy's current HP (0–100) */
+  /** Your stamina (0–100). Low stamina = weak attacks or misses */
+  myStamina: number
+  /** Your rage (0–100). At 100 you can use 'special' */
+  myRage: number
+
+  /** Enemy HP */
   enemyHp: number
-  /** Current turn number (1–20) */
+  /** Enemy stamina — use it to predict if they can heavy-attack */
+  enemyStamina: number
+  /** Enemy rage — danger when it hits 100 */
+  enemyRage: number
+
+  /** Current turn (1–20) */
   turn: number
-  /** Your last action, or null on turn 1 */
   myLastAction: ActionName | null
-  /** Enemy's last action, or null on turn 1 */
   enemyLastAction: ActionName | null
+
   /**
-   * Remaining cooldown turns for each action.
-   * 0 = available, >0 = locked.
+   * Remaining cooldown turns for each action. 0 = available.
    */
   cooldowns: {
     attack: number
+    heavy: number
     laser: number
     shield: number
     dodge: number
-    combo: number
     repair: number
+    special: number
   }
-  /** Your position: 'close' | 'mid' | 'far' */
+
   myPosition: Position
-  /** Enemy position: 'close' | 'mid' | 'far' */
   enemyPosition: Position
+
   /**
-   * How many turns in a row you've used the same action.
-   * ≥ 3 triggers the repeat penalty (50% damage output).
+   * How many consecutive turns you've used the same action.
+   * ≥ 3 triggers repeat penalty (outgoing damage ×0.5).
    */
   myRepeatCount: number
 }
@@ -57,11 +71,6 @@ export interface Strategy {
   onHit: ActionName
   style: 'Aggressive' | 'Defensive' | 'Evasive' | 'Balanced' | 'Standard'
   position: Position
-  /**
-   * Optional dynamic function called every turn.
-   * When present, overrides primary/lowHp/onHit.
-   * Should return a valid ActionName; engine validates and falls back if needed.
-   */
   fn?: (ctx: StrategyContext) => ActionName
 }
 
@@ -69,15 +78,18 @@ export interface Strategy {
 
 export interface Cooldowns {
   attack: number
+  heavy: number
   laser: number
-  combo: number
-  repair: number
   shield: number
   dodge: number
+  repair: number
+  special: number
 }
 
 export interface PlayerState {
   hp: number
+  stamina: number
+  rage: number
   position: Position
   cooldowns: Cooldowns
   lastAction: ActionName | null
@@ -97,6 +109,10 @@ export interface TurnResult {
   p2HpAfter: number
   p1Heal: number
   p2Heal: number
+  p1Stamina: number
+  p2Stamina: number
+  p1Rage: number
+  p2Rage: number
   p1Position: Position
   p2Position: Position
   log: string
@@ -113,14 +129,12 @@ export interface RoundResult {
 
 // ─── WebSocket Messages ───────────────────────────────────────────────────────
 
-// Client → Server
 export type ClientMessage =
   | { type: 'connect'; payload: { playerCode: string; name: string; skin: SkinId } }
   | { type: 'ready'; payload: { code: string; lang: Lang } }
   | { type: 'chat'; payload: { message: string } }
   | { type: 'ping'; payload: Record<string, never> }
 
-// Server → Client
 export type ServerMessage =
   | { type: 'connected'; payload: { slot: 1 | 2; sessionLevel: SessionLevel; allowedSkins: SkinId[] } }
   | { type: 'lobby_update'; payload: { p1: LobbyPlayer | null; p2: LobbyPlayer | null } }
@@ -135,61 +149,33 @@ export type ServerMessage =
   | { type: 'compile_status'; payload: { status: 'compiling' | 'done' | 'error'; lang?: Lang; p1Done?: boolean; p2Done?: boolean; message?: string } }
 
 export interface LobbyPlayer {
-  name: string
-  skin: SkinId
-  ready: boolean
-  lang?: Lang
+  name: string; skin: SkinId; ready: boolean; lang?: Lang
 }
 
 export interface BattlePlayerInfo {
-  name: string
-  skin: SkinId
-  hp: number
+  name: string; skin: SkinId; hp: number
 }
 
 // ─── API Types ────────────────────────────────────────────────────────────────
 
 export interface CreateSessionBody {
-  name: string
-  level: SessionLevel
-  lang: Lang
-  format: SessionFormat
-  timeLimit: number
-  allowedSkins?: SkinId[]
+  name: string; level: SessionLevel; lang: Lang; format: SessionFormat; timeLimit: number; allowedSkins?: SkinId[]
 }
 
 export interface JoinSessionBody {
-  sessionCode: string
-  name: string
-  skin: SkinId
+  sessionCode: string; name: string; skin: SkinId
 }
 
 export interface JoinSessionResponse {
-  sessionId: string
-  playerSlot: 1 | 2
-  wsToken: string
+  sessionId: string; playerSlot: 1 | 2; wsToken: string
 }
 
 export interface SessionInfo {
-  id: string
-  name: string
-  level: SessionLevel
-  lang: Lang
-  format: SessionFormat
-  timeLimit: number
-  status: SessionStatus
-  code1: string
-  code2: string
-  createdAt: string
-  players: Array<{
-    slot: number
-    name: string
-    skin: SkinId
-    lang?: Lang
-  }>
+  id: string; name: string; level: SessionLevel; lang: Lang; format: SessionFormat
+  timeLimit: number; status: SessionStatus; code1: string; code2: string; createdAt: string
+  players: Array<{ slot: number; name: string; skin: SkinId; lang?: Lang }>
 }
 
 export interface ApiError {
-  error: string
-  code: string
+  error: string; code: string
 }

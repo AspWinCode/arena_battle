@@ -1,110 +1,111 @@
 import type { ActionName, Position } from './types'
 
-// ─── Damage Matrix ────────────────────────────────────────────────────────────
-// Format: [damageToAttacker, damageToDefender]
-// Rows = attacker action, Columns = defender action
+// ─── Core constants ───────────────────────────────────────────────────────────
 
-export type DamageEntry = {
-  atkDmg: number
-  defDmg: number
-  missChance?: number
-  note?: string
-}
-
-type DamageRow = Record<ActionName, DamageEntry>
-type DamageMatrix = Record<ActionName, DamageRow>
-
-export const DAMAGE_MATRIX: DamageMatrix = {
-  attack: {
-    attack:  { atkDmg: 15, defDmg: 15 },
-    laser:   { atkDmg: 15, defDmg: 15 },
-    shield:  { atkDmg:  8, defDmg:  0 },
-    dodge:   { atkDmg:  0, defDmg:  0 },
-    combo:   { atkDmg: 10, defDmg: 22 },
-    repair:  { atkDmg:  0, defDmg: 20 },
-  },
-  laser: {
-    attack:  { atkDmg:  0, defDmg: 25 },
-    laser:   { atkDmg: 25, defDmg: 25 },
-    shield:  { atkDmg:  0, defDmg: 20 },
-    dodge:   { atkDmg:  0, defDmg:  0, missChance: 0.5 },
-    combo:   { atkDmg:  5, defDmg: 25 },
-    repair:  { atkDmg:  0, defDmg: 30 },
-  },
-  shield: {
-    attack:  { atkDmg:  8, defDmg:  0 },
-    laser:   { atkDmg:  0, defDmg: 20 },
-    shield:  { atkDmg:  0, defDmg:  0 },
-    dodge:   { atkDmg:  0, defDmg:  0 },
-    combo:   { atkDmg:  0, defDmg: 10 },
-    repair:  { atkDmg:  0, defDmg:  0 },
-  },
-  dodge: {
-    attack:  { atkDmg:  0, defDmg:  0 },
-    laser:   { atkDmg:  0, defDmg:  0 },
-    shield:  { atkDmg:  0, defDmg:  0 },
-    dodge:   { atkDmg:  0, defDmg:  0, missChance: 0.5 },
-    combo:   { atkDmg:  0, defDmg: 12 },
-    repair:  { atkDmg:  0, defDmg:  0 },
-  },
-  combo: {
-    attack:  { atkDmg: 22, defDmg: 10 },
-    laser:   { atkDmg: 25, defDmg:  5 },
-    shield:  { atkDmg:  0, defDmg: 10 },
-    dodge:   { atkDmg: 12, defDmg:  0 },
-    combo:   { atkDmg: 20, defDmg: 20 },
-    repair:  { atkDmg:  0, defDmg: 25 },
-  },
-  repair: {
-    attack:  { atkDmg: 20, defDmg:  0 },
-    laser:   { atkDmg: 30, defDmg:  0 },
-    shield:  { atkDmg:  0, defDmg:  0 },
-    dodge:   { atkDmg:  0, defDmg:  0 },
-    combo:   { atkDmg: 25, defDmg:  0 },
-    repair:  { atkDmg:  0, defDmg:  0 },
-  },
-}
-
+export const MAX_HP      = 100
+export const MAX_TURNS   = 20
 export const REPAIR_AMOUNT = 20
 
-export const COOLDOWNS: Record<ActionName, number> = {
-  attack: 0,
-  laser:  3,
-  shield: 2,
-  dodge:  1,
-  combo:  4,
-  repair: 3,
-}
+// ─── Stamina system ───────────────────────────────────────────────────────────
 
-export const MAX_HP = 100
-export const MAX_TURNS = 20
+export const MAX_STAMINA = 100
+
+/** Stamina restored at the START of every turn (before action cost) */
+export const STAMINA_REGEN = 8
 
 /**
- * Repeat-action penalty: if you use the SAME action this many turns in a row,
- * your damage output is multiplied by REPEAT_DAMAGE_FACTOR.
- * Forces players to mix actions instead of spamming attack.
+ * Stamina cost per action.
+ * Negative = gain (shield/dodge restore stamina instead of spending it).
  */
-export const REPEAT_PENALTY_AFTER = 3
-export const REPEAT_DAMAGE_FACTOR = 0.5
+export const STAMINA_COSTS: Record<ActionName, number> = {
+  attack:  10,
+  heavy:   35,   // heavy attack — expensive
+  laser:   20,
+  shield: -20,   // bracing recovers stamina
+  dodge:  -10,   // quick sidestep is stamina-neutral+
+  repair:  0,    // resting — no stamina cost
+  special: 0,    // rage-gated, not stamina-gated
+}
 
-// Positional modifiers
+/**
+ * If attacker's stamina (before cost) is below these thresholds,
+ * the action is weakened or fails.
+ */
+export const STAMINA_THRESHOLD_HEAVY  = 35   // below this: heavy MISSES completely
+export const STAMINA_THRESHOLD_ATTACK = 10   // below this: attack deals only ATTACK_EXHAUSTED_DAMAGE
+export const STAMINA_THRESHOLD_LASER  = 20   // below this: laser deals half damage
+export const ATTACK_EXHAUSTED_DAMAGE  = 2    // "wet-noodle" attack when drained
+
+// ─── Rage system ─────────────────────────────────────────────────────────────
+
+export const MAX_RAGE            = 100
+/** Rage gained per point of damage taken */
+export const RAGE_PER_DAMAGE     = 0.4
+export const SPECIAL_DAMAGE      = 50
+export const SPECIAL_RAGE_COST   = 100
+
+// ─── Base damage (before modifiers) ──────────────────────────────────────────
+
+export const BASE_DAMAGE: Partial<Record<ActionName, number>> = {
+  attack:  12,
+  heavy:   28,
+  laser:   20,
+  special: 50,
+  // shield, dodge, repair = 0
+}
+
+// ─── Counter / mitigation ────────────────────────────────────────────────────
+
+/** Fraction of incoming damage BLOCKED by shield (0.6 = 60%) */
+export const SHIELD_ABSORB = 0.6
+
+/**
+ * Dodge behaviour:
+ * - Vs melee (attack, heavy): 100% evade
+ * - Vs laser: 50% evade
+ * - Vs special: 50% evade (not a full block)
+ */
+export const DODGE_LASER_EVADE_CHANCE   = 0.5
+export const DODGE_SPECIAL_ABSORB       = 0.5
+
+// ─── Repeat penalty ──────────────────────────────────────────────────────────
+
+export const REPEAT_PENALTY_AFTER  = 3
+export const REPEAT_DAMAGE_FACTOR  = 0.5
+
+// ─── Cooldowns ───────────────────────────────────────────────────────────────
+
+export const COOLDOWNS: Record<ActionName, number> = {
+  attack:  0,
+  heavy:   4,
+  laser:   3,
+  shield:  2,
+  dodge:   1,
+  repair:  3,
+  special: 0,  // rage-gated; no cooldown once rage refills
+}
+
+// ─── Position modifiers ───────────────────────────────────────────────────────
+
 export function applyPositionModifier(
   action: ActionName,
   position: Position,
-  baseDmg: number
+  baseDmg: number,
 ): number {
-  if (action === 'combo' && position === 'close') return Math.floor(baseDmg * 1.2)
-  if (action === 'laser' && position === 'far')  return Math.floor(baseDmg * 1.15)
-  if (action === 'attack' && position === 'far') return 0 // auto miss
+  if (action === 'heavy'  && position === 'close') return Math.floor(baseDmg * 1.2)  // +20% in close
+  if (action === 'laser'  && position === 'far')   return Math.floor(baseDmg * 1.15) // +15% at range
+  if (action === 'attack' && position === 'far')   return 0                           // melee misses at far
   return baseDmg
 }
+
+// ─── Block editor metadata ────────────────────────────────────────────────────
 
 export const BLOCK_CATEGORIES = [
   {
     id: 'combat',
     label: '⚔️ Combat',
     color: '#e6261f',
-    blocks: ['attack', 'laser', 'shield', 'dodge', 'combo', 'repair', 'moveForward', 'moveBackward'],
+    blocks: ['attack', 'heavy', 'laser', 'shield', 'dodge', 'repair', 'special', 'moveForward', 'moveBackward'],
   },
   {
     id: 'control',
@@ -122,7 +123,12 @@ export const BLOCK_CATEGORIES = [
     id: 'sensing',
     label: '👁 Sensing',
     color: '#5cb1d6',
-    blocks: ['enemyHp', 'enemyLastAction', 'enemyHasShield', 'laserCooldown', 'comboCooldown', 'repairCooldown', 'atCloseRange', 'atFarRange', 'roundNumber', 'damageReceived'],
+    blocks: [
+      'enemyHp', 'enemyLastAction', 'enemyHasShield',
+      'myStamina', 'enemyStamina', 'myRage', 'enemyRage',
+      'heavyCooldown', 'laserCooldown', 'repairCooldown',
+      'atCloseRange', 'atFarRange', 'roundNumber', 'damageReceived',
+    ],
   },
   {
     id: 'operators',

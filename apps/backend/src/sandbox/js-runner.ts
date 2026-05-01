@@ -3,11 +3,12 @@ import { buildStrategy, type ActionCall } from './build-strategy.js'
 
 const ACTION_NAMES = [
   'attack',
+  'heavy',
   'laser',
   'shield',
   'dodge',
-  'combo',
   'repair',
+  'special',
   'moveForward',
   'moveBackward',
 ] as const
@@ -88,12 +89,13 @@ async function buildDynamicStrategy(code: string): Promise<Strategy> {
     // Run test scenarios to fill static fallbacks (used if fn throws on turn 1)
     const testScript = await isolate.compileScript(`
       ;(function(){
-        var e1 = { myHp:80, enemyHp:60, turn:1, myLastAction:null, enemyLastAction:null,
-          cooldowns:{attack:0,laser:0,shield:0,dodge:0,combo:0,repair:0},
+        var cd = {attack:0,heavy:0,laser:0,shield:0,dodge:0,repair:0,special:0};
+        var e1 = { myHp:80, myStamina:100, myRage:0, enemyHp:60, enemyStamina:100, enemyRage:0,
+          turn:1, myLastAction:null, enemyLastAction:null, cooldowns:cd,
           myPosition:'mid', enemyPosition:'mid', myRepeatCount:0 };
-        var e2 = { myHp:25, enemyHp:80, turn:5, myLastAction:'attack', enemyLastAction:'laser',
-          cooldowns:{attack:0,laser:0,shield:0,dodge:0,combo:0,repair:0},
-          myPosition:'mid', enemyPosition:'far', myRepeatCount:0 };
+        var e2 = { myHp:20, myStamina:30, myRage:80, enemyHp:70, enemyStamina:60, enemyRage:20,
+          turn:8, myLastAction:'attack', enemyLastAction:'heavy', cooldowns:cd,
+          myPosition:'close', enemyPosition:'close', myRepeatCount:2 };
         if (typeof strategy === 'function') { strategy(e1); strategy(e2); }
       })();
     `)
@@ -117,8 +119,10 @@ async function buildDynamicStrategy(code: string): Promise<Strategy> {
 
 const TEST_CODE_SUFFIX = `
 ;(function(){
-  var e1 = { hp:60, lastAction:'attack', shieldActive:false, cooldowns:{laser:0,combo:0,repair:0} };
-  var e2 = { hp:20, lastAction:'laser',  shieldActive:false, cooldowns:{laser:0,combo:0,repair:0} };
+  var e1 = { hp:60, stamina:100, rage:0, lastAction:'attack', shieldActive:false,
+    cooldowns:{attack:0,heavy:0,laser:0,shield:0,dodge:0,repair:0,special:0} };
+  var e2 = { hp:20, stamina:30,  rage:80, lastAction:'heavy', shieldActive:false,
+    cooldowns:{attack:0,heavy:0,laser:0,shield:0,dodge:0,repair:0,special:0} };
   if (typeof onRoundStart === 'function') { onRoundStart(e1); onRoundStart(e2); }
   if (typeof on_round_start === 'function') { on_round_start(e1); on_round_start(e2); }
 })();

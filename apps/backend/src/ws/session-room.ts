@@ -243,7 +243,7 @@ export class SessionRoom {
       player.strategy = strategy
       return strategy
     } catch {
-      return { primary: 'attack', lowHp: 'combo', onHit: 'dodge', style: 'Standard', position: 'mid' }
+      return { primary: 'attack', lowHp: 'attack', onHit: 'dodge', style: 'Standard', position: 'mid' }
     }
   }
 

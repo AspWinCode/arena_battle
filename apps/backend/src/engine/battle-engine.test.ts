@@ -4,7 +4,7 @@ import type { Strategy } from '@robocode/shared'
 
 const aggressiveStrategy: Strategy = {
   primary: 'laser',
-  lowHp: 'combo',
+  lowHp: 'laser',
   onHit: 'dodge',
   style: 'Aggressive',
   position: 'far',
@@ -20,7 +20,7 @@ const defensiveStrategy: Strategy = {
 
 const attackerStrategy: Strategy = {
   primary: 'attack',
-  lowHp: 'combo',
+  lowHp: 'heavy',
   onHit: 'dodge',
   style: 'Standard',
   position: 'close',
@@ -78,9 +78,9 @@ describe('BattleEngine', () => {
 })
 
 describe('buildStrategy', () => {
-  it('should handle combo strategy', () => {
-    const comboStrat: Strategy = { primary: 'combo', lowHp: 'attack', onHit: 'dodge', style: 'Balanced', position: 'close' }
-    const engine = new BattleEngine(comboStrat, defensiveStrategy)
+  it('should handle special strategy', () => {
+    const specialStrat: Strategy = { primary: 'special', lowHp: 'attack', onHit: 'dodge', style: 'Balanced', position: 'close' }
+    const engine = new BattleEngine(specialStrat, defensiveStrategy)
     const result = engine.runRound(1)
     expect(result).toBeDefined()
   })

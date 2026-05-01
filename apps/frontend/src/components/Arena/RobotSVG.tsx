@@ -41,7 +41,7 @@ function GladiatorBody({ action, shieldActive }: {
   action?: ActionName | null
   shieldActive?: boolean
 }) {
-  const attacking = action === 'attack' || action === 'combo' || action === 'laser'
+  const attacking = action === 'attack' || action === 'heavy' || action === 'special' || action === 'laser'
 
   return (
     <g>
@@ -123,7 +123,7 @@ function GenericBody({ skinId, action, shieldActive }: {
   shieldActive?: boolean
 }) {
   const c = SKIN_COLORS[skinId]
-  const isAttacking = action === 'attack' || action === 'combo'
+  const isAttacking = action === 'attack' || action === 'heavy' || action === 'special'
   const isLaser     = action === 'laser'
   const isDodging   = action === 'dodge'
   const isRepair    = action === 'repair'
