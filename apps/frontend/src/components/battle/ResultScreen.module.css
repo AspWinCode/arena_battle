@@ -1,9 +1,9 @@
 .root {
   flex: 1;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
-  padding: 24px;
+  padding: 24px 16px;
   overflow-y: auto;
   position: relative;
 }
@@ -19,12 +19,13 @@
   position: relative;
   z-index: 1;
   width: 100%;
-  max-width: 560px;
+  max-width: 600px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 24px;
+  gap: 20px;
   animation: slideUp .5s cubic-bezier(.16,1,.3,1) forwards;
+  padding-bottom: 24px;
 }
 
 @keyframes slideUp {
@@ -32,12 +33,12 @@
   to   { opacity: 1; transform: none; }
 }
 
-/* ── Result badge ─────────────────────────────────────────────── */
+/* ── Result badge ─────────────────────────────────────────────────────────── */
 .resultBadge {
-  font-size: 28px;
+  font-size: 26px;
   font-weight: 900;
   letter-spacing: .04em;
-  padding: 12px 32px;
+  padding: 10px 30px;
   border-radius: 99px;
   text-align: center;
 }
@@ -48,80 +49,117 @@
   color: #fbbf24;
   text-shadow: 0 0 20px rgba(251,191,36,.4);
 }
-
 .loss {
-  background: rgba(230, 38, 31, .1);
-  border: 2px solid rgba(230, 38, 31, .4);
+  background: rgba(230,38,31,.1);
+  border: 2px solid rgba(230,38,31,.4);
   color: #f87171;
 }
-
 .draw {
-  background: rgba(100, 100, 140, .2);
-  border: 2px solid rgba(100, 100, 140, .4);
+  background: rgba(100,100,140,.2);
+  border: 2px solid rgba(100,100,140,.4);
   color: var(--text-muted);
 }
 
-/* ── Winner ───────────────────────────────────────────────────── */
+/* ── Winner ───────────────────────────────────────────────────────────────── */
 .winner {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
 }
-
 .winnerIcon {
-  font-size: 64px;
-  filter: drop-shadow(0 0 20px rgba(251,191,36,.4));
+  font-size: 56px;
+  filter: drop-shadow(0 0 18px rgba(251,191,36,.4));
 }
-
 .winnerName {
-  font-size: 22px;
+  font-size: 20px;
   font-weight: 800;
   color: var(--text);
 }
-
 .winnerLabel {
-  font-size: 13px;
+  font-size: 12px;
   color: var(--text-muted);
 }
 
-/* ── Score row ────────────────────────────────────────────────── */
+/* ── Score row ────────────────────────────────────────────────────────────── */
 .scoreRow {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 24px;
+  gap: 20px;
   width: 100%;
   background: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-  padding: 20px 32px;
+  padding: 16px 24px;
 }
-
 .scorePlayer {
   display: flex;
   align-items: center;
   gap: 8px;
   font-weight: 700;
-  font-size: 15px;
-  min-width: 140px;
+  font-size: 14px;
+  min-width: 120px;
 }
-
 .scoreRight { justify-content: flex-end; }
-
 .scoreBig {
   display: flex;
   align-items: center;
-  gap: 12px;
-  font-size: 42px;
+  gap: 10px;
+  font-size: 38px;
   font-weight: 900;
   font-variant-numeric: tabular-nums;
 }
+.scoreWin  { color: var(--gold); }
+.scoreDash { color: var(--text-muted); font-size: 26px; }
 
-.scoreWin { color: var(--gold); }
-.scoreDash { color: var(--text-muted); font-size: 28px; }
+/* ── Tabs ─────────────────────────────────────────────────────────────────── */
+.tabs {
+  display: flex;
+  gap: 0;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 4px;
+  width: 100%;
+}
+.tab {
+  flex: 1;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 13px;
+  font-weight: 600;
+  padding: 8px 0;
+  border-radius: calc(var(--radius-lg) - 4px);
+  cursor: pointer;
+  transition: background .2s, color .2s;
+}
+.tab:hover { color: var(--text); background: rgba(255,255,255,.04); }
+.tabActive {
+  background: var(--accent);
+  color: #fff;
+}
+.tabActive:hover { background: var(--accent); }
 
-/* ── Rounds ───────────────────────────────────────────────────── */
+/* ── Shared section ───────────────────────────────────────────────────────── */
+.section {
+  width: 100%;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 16px 20px;
+}
+.sectionTitle {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--text-muted);
+  margin-bottom: 14px;
+}
+
+/* ── Rounds ───────────────────────────────────────────────────────────────── */
 .rounds {
   width: 100%;
   background: var(--bg-card);
@@ -129,7 +167,6 @@
   border-radius: var(--radius-lg);
   padding: 16px 20px;
 }
-
 .roundsTitle {
   font-size: 11px;
   font-weight: 700;
@@ -138,22 +175,18 @@
   color: var(--text-muted);
   margin-bottom: 12px;
 }
-
 .roundsList { display: flex; flex-direction: column; gap: 8px; }
-
 .roundRow {
   display: flex;
   align-items: center;
   gap: 8px;
   font-size: 12px;
 }
-
 .roundLabel {
   min-width: 60px;
   font-weight: 600;
   color: var(--text-muted);
 }
-
 .roundBars {
   flex: 1;
   height: 6px;
@@ -161,66 +194,261 @@
   border-radius: 3px;
   overflow: hidden;
 }
-
 .roundBar {
   height: 100%;
   background: var(--text-muted);
   border-radius: 3px;
-  transition: width .3s ease;
+  transition: width .4s ease;
 }
 .roundBarRight { float: right; }
-.roundBarWin { background: var(--green); }
-
+.roundBarWin   { background: var(--green); }
 .roundHp {
   min-width: 40px;
   text-align: center;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
 }
-
 .roundWinLabel { color: var(--green); }
-.roundVs { color: var(--border); }
+.roundVs       { color: var(--border); }
+.roundWinner   { min-width: 100px; text-align: right; font-size: 11px; color: var(--text-muted); }
 
-.roundWinner {
-  min-width: 100px;
-  text-align: right;
-  font-size: 11px;
-  color: var(--text-muted);
-}
-
-/* ── Stats ────────────────────────────────────────────────────── */
+/* ── Quick stats ──────────────────────────────────────────────────────────── */
 .stats {
   display: flex;
-  gap: 16px;
+  gap: 12px;
   width: 100%;
 }
-
 .stat {
   flex: 1;
   background: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: 16px;
+  padding: 14px;
   text-align: center;
   display: flex;
   flex-direction: column;
   gap: 4px;
 }
-
 .statValue {
-  font-size: 28px;
+  font-size: 26px;
   font-weight: 800;
   color: var(--accent);
   font-variant-numeric: tabular-nums;
 }
-
 .statLabel {
-  font-size: 11px;
+  font-size: 10px;
   color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: .05em;
 }
 
+/* ── HP Timeline ──────────────────────────────────────────────────────────── */
+.timelines {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.timelineWrap {
+  background: var(--bg-mid);
+  border-radius: var(--radius);
+  padding: 10px 12px 6px;
+}
+.timelineLabel {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  margin-bottom: 4px;
+}
+.timeline { display: block; }
+.timelineLegend {
+  display: flex;
+  gap: 14px;
+  justify-content: flex-end;
+  font-size: 10px;
+  font-weight: 600;
+  margin-top: 4px;
+}
+
+/* ── Efficiency ───────────────────────────────────────────────────────────── */
+.effRow {
+  display: flex;
+  align-items: center;
+  gap: 0;
+}
+.effPlayer {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+}
+.effDivider {
+  width: 1px;
+  height: 80px;
+  background: var(--border);
+  margin: 0 12px;
+}
+.ring {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+.ringLabel {
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--text-muted);
+}
+
+/* ── Action breakdown ─────────────────────────────────────────────────────── */
+.actionSplit {
+  display: flex;
+  gap: 0;
+  align-items: flex-start;
+}
+.actionCol {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.actionColName {
+  font-size: 12px;
+  font-weight: 700;
+  margin-bottom: 2px;
+  text-align: center;
+}
+.actionDivider {
+  width: 1px;
+  background: var(--border);
+  align-self: stretch;
+  margin: 0 14px;
+}
+.actionBars { display: flex; flex-direction: column; gap: 5px; }
+.actionRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+}
+.actionRowFlip { flex-direction: row-reverse; }
+.actionLabel {
+  min-width: 44px;
+  font-weight: 600;
+  font-size: 10px;
+}
+.actionRowFlip .actionLabel { text-align: right; }
+.actionTrack {
+  flex: 1;
+  height: 5px;
+  background: var(--bg-mid);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.actionFill {
+  height: 100%;
+  border-radius: 3px;
+  min-width: 2px;
+  transition: width .4s ease;
+}
+.actionPct {
+  min-width: 28px;
+  text-align: right;
+  color: var(--text-muted);
+  font-size: 10px;
+}
+.actionRowFlip .actionPct { text-align: left; }
+
+/* ── Damage cards ─────────────────────────────────────────────────────────── */
+.dmgRow {
+  display: flex;
+  gap: 12px;
+}
+.dmgCard {
+  flex: 1;
+  background: var(--bg-mid);
+  border-radius: var(--radius);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.dmgCardName {
+  font-size: 12px;
+  font-weight: 700;
+  text-align: center;
+}
+.dmgGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+.dmgItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+.dmgVal {
+  font-size: 18px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+.dmgKey {
+  font-size: 9px;
+  color: var(--text-muted);
+  text-align: center;
+  line-height: 1.2;
+}
+.styleTag {
+  font-size: 11px;
+  font-weight: 700;
+  text-align: center;
+  color: var(--text-muted);
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  padding: 4px 8px;
+  margin-top: 2px;
+}
+
+/* ── Recommendations ──────────────────────────────────────────────────────── */
+.recsRow {
+  display: flex;
+  gap: 12px;
+  width: 100%;
+  align-items: flex-start;
+}
+.recs {
+  flex: 1;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.recsTitle {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  margin-bottom: 2px;
+}
+.recItem {
+  font-size: 11px;
+  color: var(--text-muted);
+  line-height: 1.5;
+  padding: 6px 8px;
+  background: var(--bg-mid);
+  border-radius: var(--radius);
+}
+
+/* ── Play again button ────────────────────────────────────────────────────── */
 .btn {
   width: 100%;
   max-width: 280px;

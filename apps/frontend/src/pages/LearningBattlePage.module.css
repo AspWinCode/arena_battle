@@ -321,3 +321,114 @@
 .bannerDraw { background: rgba(250,204,21,.08);  border: 1px solid rgba(250,204,21,.3);   color: #facc15; }
 
 .resultSub { font-size: 13px; font-weight: 400; opacity: .8; margin-top: 6px; }
+
+
+/* ── Mini analysis panel (result phase) ────────────────────────── */
+.miniAnalysis {
+  flex-shrink: 0;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.miniAnalysisTitle {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--text-muted);
+}
+
+.miniTopRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.miniEffBox, .miniDmgBox {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.miniEffVal, .miniDmgVal {
+  font-size: 22px;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+}
+
+.miniEffLabel {
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  color: var(--text-muted);
+}
+
+.miniStyleBox {
+  flex: 1;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-muted);
+  background: var(--bg-mid);
+  border-radius: var(--radius);
+  padding: 6px 10px;
+}
+
+.miniActions {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.miniActionRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+}
+
+.miniActionLabel {
+  min-width: 44px;
+  font-weight: 700;
+}
+
+.miniActionTrack {
+  flex: 1;
+  height: 4px;
+  background: var(--bg-mid);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.miniActionFill {
+  height: 100%;
+  border-radius: 2px;
+  min-width: 2px;
+}
+
+.miniActionPct {
+  min-width: 28px;
+  text-align: right;
+  color: var(--text-muted);
+}
+
+.miniRecs {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.miniRecItem {
+  font-size: 11px;
+  color: var(--text-muted);
+  line-height: 1.4;
+  padding: 5px 8px;
+  background: var(--bg-mid);
+  border-radius: var(--radius);
+}

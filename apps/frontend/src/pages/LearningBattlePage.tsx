@@ -1,9 +1,10 @@
-import { useState, useRef, useCallback } from 'react'
+import { useState, useRef, useCallback, useMemo } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { MISSIONS, MAX_HP, MAX_STAMINA, MAX_RAGE } from '@robocode/shared'
 import type { RoundResult, TurnResult } from '@robocode/shared'
 import { runLocalMatch } from '../engine/battleEngine'
 import { runCodeToStrategy } from '../engine/codeRunner'
+import { analyzeMatch, ACTION_COLOR, ACTION_LABEL } from '../engine/matchAnalysis'
 import { useLearnStore } from '../stores/learnStore'
 import CodeEditor from '../components/CodeEditor/CodeEditor'
 import TutorialOverlay from '../components/tutorial/TutorialOverlay'
@@ -39,6 +40,12 @@ export default function LearningBattlePage() {
   const [showTutorial, setShowTutorial] = useState(true)
 
   const animTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  // Compute analytics once rounds are ready
+  const matchAnalysis = useMemo(
+    () => (rounds.length > 0 ? analyzeMatch(rounds) : null),
+    [rounds],
+  )
 
   const handleRun = useCallback(() => {
     if (!mission) return
@@ -323,6 +330,58 @@ export default function LearningBattlePage() {
                     {winner === 1
                       ? 'Отличная стратегия! Можешь улучшить код и попробовать снова.'
                       : 'Измени стратегию и попробуй ещё раз!'}
+                  </div>
+                </div>
+              )}
+
+              {/* Mini analysis panel */}
+              {phase === 'result' && matchAnalysis && (
+                <div className={styles.miniAnalysis}>
+                  <div className={styles.miniAnalysisTitle}>🔬 Анализ твоей стратегии</div>
+
+                  {/* Efficiency + style */}
+                  <div className={styles.miniTopRow}>
+                    <div className={styles.miniEffBox}>
+                      <span className={styles.miniEffVal} style={{ color: '#00e5ff' }}>
+                        {matchAnalysis.p1.efficiencyScore}
+                      </span>
+                      <span className={styles.miniEffLabel}>эффективность</span>
+                    </div>
+                    <div className={styles.miniStyleBox}>
+                      {matchAnalysis.p1.detectedStyle}
+                    </div>
+                    <div className={styles.miniDmgBox}>
+                      <span className={styles.miniDmgVal} style={{ color: '#f87171' }}>
+                        {matchAnalysis.p1.damageDealt}
+                      </span>
+                      <span className={styles.miniEffLabel}>урона нанесено</span>
+                    </div>
+                  </div>
+
+                  {/* Action breakdown (top 5) */}
+                  <div className={styles.miniActions}>
+                    {matchAnalysis.p1.actions.slice(0, 5).map(a => (
+                      <div key={a.action} className={styles.miniActionRow}>
+                        <span className={styles.miniActionLabel}
+                          style={{ color: ACTION_COLOR[a.action] }}>
+                          {ACTION_LABEL[a.action]}
+                        </span>
+                        <div className={styles.miniActionTrack}>
+                          <div
+                            className={styles.miniActionFill}
+                            style={{ width: `${a.pct}%`, background: ACTION_COLOR[a.action] }}
+                          />
+                        </div>
+                        <span className={styles.miniActionPct}>{a.pct}%</span>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Recommendations */}
+                  <div className={styles.miniRecs}>
+                    {matchAnalysis.p1.recommendations.map((r, i) => (
+                      <div key={i} className={styles.miniRecItem}>{r}</div>
+                    ))}
                   </div>
                 </div>
               )}
