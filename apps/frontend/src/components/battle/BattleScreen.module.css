@@ -105,6 +105,63 @@
   color: var(--text-muted);
 }
 
+/* ── Stats bars ─────────────────────────────────────────────── */
+.statsBar {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px 24px;
+  background: var(--bg-mid);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.playerStats {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.statsDivider {
+  width: 1px;
+  background: var(--border);
+  align-self: stretch;
+  flex-shrink: 0;
+}
+
+.statRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.statLabel {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-muted);
+  width: 56px;
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.statTrack {
+  flex: 1;
+  height: 6px;
+  background: rgba(255,255,255,.05);
+  border-radius: 99px;
+  overflow: hidden;
+  min-width: 0;
+}
+
+.statFill {
+  height: 100%;
+  border-radius: 99px;
+  transition: width .3s ease, background .3s ease;
+}
+
 /* ── Arena ───────────────────────────────────────────────────── */
 .arenaWrap {
   flex: 1;

@@ -33,6 +33,10 @@ interface BattleState {
   p2Hp: number
   p1MaxHp: number
   p2MaxHp: number
+  p1Stamina: number
+  p2Stamina: number
+  p1Rage: number
+  p2Rage: number
   turns: TurnResult[]
   latestTurn: TurnResult | null
   completedRounds: RoundResult[]
@@ -66,6 +70,10 @@ const initialState = {
   p2Hp: 100,
   p1MaxHp: 100,
   p2MaxHp: 100,
+  p1Stamina: 100,
+  p2Stamina: 100,
+  p1Rage: 0,
+  p2Rage: 0,
   turns: [],
   latestTurn: null,
   completedRounds: [],
@@ -138,6 +146,10 @@ export const useBattleStore = create<BattleState>((set) => ({
         set((s) => ({
           p1Hp: msg.payload.p1HpAfter,
           p2Hp: msg.payload.p2HpAfter,
+          p1Stamina: msg.payload.p1Stamina ?? s.p1Stamina,
+          p2Stamina: msg.payload.p2Stamina ?? s.p2Stamina,
+          p1Rage: msg.payload.p1Rage ?? s.p1Rage,
+          p2Rage: msg.payload.p2Rage ?? s.p2Rage,
           turns: [...s.turns, msg.payload],
           latestTurn: msg.payload,
         }))

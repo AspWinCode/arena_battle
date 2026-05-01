@@ -1,4 +1,5 @@
 import { useBattleStore } from '../../stores/battleStore'
+import { MAX_HP, MAX_STAMINA, MAX_RAGE } from '@robocode/shared'
 import ArenaComponent from '../Arena/ArenaComponent'
 import styles from './BattleScreen.module.css'
 
@@ -7,12 +8,13 @@ const SKIN_ICONS: Record<string, string> = {
 }
 
 const ACTION_LABELS: Record<string, string> = {
-  attack: '👊 Удар',
-  laser:  '⚡ Лазер',
-  shield: '🛡 Щит',
-  dodge:  '💨 Уклон',
-  combo:  '💥 Комбо',
-  repair: '💚 Ремонт',
+  attack:  '👊 Удар',
+  heavy:   '💥 Тяжёлый',
+  laser:   '⚡ Лазер',
+  shield:  '🛡 Щит',
+  dodge:   '💨 Уклон',
+  repair:  '💚 Ремонт',
+  special: '☄️ СПЕШЛ',
 }
 
 export default function BattleScreen() {
@@ -23,6 +25,10 @@ export default function BattleScreen() {
   const p2Hp       = useBattleStore(s => s.p2Hp)
   const p1MaxHp    = useBattleStore(s => s.p1MaxHp)
   const p2MaxHp    = useBattleStore(s => s.p2MaxHp)
+  const p1Stamina  = useBattleStore(s => s.p1Stamina)
+  const p2Stamina  = useBattleStore(s => s.p2Stamina)
+  const p1Rage     = useBattleStore(s => s.p1Rage)
+  const p2Rage     = useBattleStore(s => s.p2Rage)
   const round      = useBattleStore(s => s.currentRound)
   const turns      = useBattleStore(s => s.turns)
   const latestTurn = useBattleStore(s => s.latestTurn)
@@ -66,6 +72,43 @@ export default function BattleScreen() {
         </div>
       </div>
 
+      {/* Stats bars */}
+      <div className={styles.statsBar}>
+        {/* P1 stats */}
+        <div className={styles.playerStats}>
+          <StatRow
+            label={`${p1Hp} HP`}
+            pct={(p1Hp / (p1MaxHp || MAX_HP)) * 100}
+            color={p1Hp / (p1MaxHp || MAX_HP) > 0.5 ? '#4ade80' : p1Hp / (p1MaxHp || MAX_HP) > 0.25 ? '#facc15' : '#f87171'}
+          />
+          <StatRow
+            label={`${p1Stamina} STA`}
+            pct={(p1Stamina / MAX_STAMINA) * 100}
+            color="#60a5fa"
+          />
+          <RageRow value={p1Rage} max={MAX_RAGE} />
+        </div>
+
+        <div className={styles.statsDivider} />
+
+        {/* P2 stats (mirrored) */}
+        <div className={styles.playerStats} style={{ alignItems: 'flex-end' }}>
+          <StatRow
+            label={`${p2Hp} HP`}
+            pct={(p2Hp / (p2MaxHp || MAX_HP)) * 100}
+            color={p2Hp / (p2MaxHp || MAX_HP) > 0.5 ? '#4ade80' : p2Hp / (p2MaxHp || MAX_HP) > 0.25 ? '#facc15' : '#f87171'}
+            flip
+          />
+          <StatRow
+            label={`${p2Stamina} STA`}
+            pct={(p2Stamina / MAX_STAMINA) * 100}
+            color="#60a5fa"
+            flip
+          />
+          <RageRow value={p2Rage} max={MAX_RAGE} flip />
+        </div>
+      </div>
+
       {/* Arena */}
       <div className={styles.arenaWrap}>
         <ArenaComponent
@@ -96,6 +139,46 @@ export default function BattleScreen() {
             </div>
           ))}
         </div>
+      </div>
+    </div>
+  )
+}
+
+// ── Sub-components ────────────────────────────────────────────────────────────
+
+function StatRow({ label, pct, color, flip }: { label: string; pct: number; color: string; flip?: boolean }) {
+  const clamped = Math.max(0, Math.min(100, pct))
+  return (
+    <div className={styles.statRow} style={{ flexDirection: flip ? 'row-reverse' : 'row' }}>
+      <span className={styles.statLabel}>{label}</span>
+      <div className={styles.statTrack}>
+        <div
+          className={styles.statFill}
+          style={{ width: `${clamped}%`, background: color, marginLeft: flip ? 'auto' : undefined }}
+        />
+      </div>
+    </div>
+  )
+}
+
+function RageRow({ value, max, flip }: { value: number; max: number; flip?: boolean }) {
+  const pct = Math.max(0, Math.min(100, (value / max) * 100))
+  const ready = pct >= 100
+  return (
+    <div className={styles.statRow} style={{ flexDirection: flip ? 'row-reverse' : 'row' }}>
+      <span className={styles.statLabel} style={{ color: ready ? '#f97316' : undefined }}>
+        {ready ? '☄️ RAGE!' : `${Math.round(value)} RAGE`}
+      </span>
+      <div className={styles.statTrack}>
+        <div
+          className={styles.statFill}
+          style={{
+            width: `${pct}%`,
+            background: ready ? '#f97316' : '#a855f7',
+            marginLeft: flip ? 'auto' : undefined,
+            boxShadow: ready ? '0 0 8px #f97316' : undefined,
+          }}
+        />
       </div>
     </div>
   )
