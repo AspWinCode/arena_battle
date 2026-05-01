@@ -156,6 +156,19 @@
   color: var(--accent);
 }
 
+.apiBlock {
+  width: 100%;
+  background: var(--bg-mid);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 6px 10px;
+  font-size: 10px;
+  font-family: monospace;
+  color: #a3e635;
+  white-space: pre;
+  overflow-x: auto;
+}
+
 /* Battle pane */
 .battlePane {
   flex: 1;
@@ -166,47 +179,80 @@
   gap: 12px;
 }
 
-/* Score row */
-.scoreRow {
+/* Stats section */
+.statsSection {
   display: flex;
-  align-items: center;
-  gap: 12px;
+  align-items: flex-start;
+  gap: 10px;
 }
 
-.scoreItem {
+.statsCol {
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  font-size: 12px;
+  gap: 5px;
+  font-size: 11px;
   font-weight: 600;
+  min-width: 0;
 }
 
-.scoreMid {
+.statsLabel {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.statsMid {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 6px;
+  gap: 2px;
   font-size: 20px;
   font-weight: 900;
+  flex-shrink: 0;
 }
 
 .scoreNum { color: var(--accent); }
-.scoreDash { color: var(--text-muted); }
+.scoreDash { color: var(--text-muted); font-size: 14px; }
 
-.hpTrack {
-  height: 8px;
+/* Stat bar */
+.statRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.statLabel {
+  font-size: 10px;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+  width: 52px;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.statTrack {
+  flex: 1;
+  height: 6px;
   background: var(--bg-mid);
   border-radius: 99px;
   overflow: hidden;
+  min-width: 0;
 }
 
-.hpFill {
+.statFill {
   height: 100%;
   border-radius: 99px;
-  transition: width .3s, background .3s;
+  transition: width .3s ease, background .3s ease;
 }
 
-.hpNum { font-size: 11px; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+/* Legacy hp classes kept for backwards compat */
+.hpTrack { height: 8px; background: var(--bg-mid); border-radius: 99px; overflow: hidden; }
+.hpFill  { height: 100%; border-radius: 99px; transition: width .3s, background .3s; }
+.hpNum   { font-size: 11px; color: var(--text-muted); font-variant-numeric: tabular-nums; }
 
 /* Turn display */
 .turnDisplay {
@@ -255,9 +301,10 @@
 .logRow:nth-child(odd) { background: var(--bg-mid); }
 
 .logTurn   { color: var(--text-muted); min-width: 28px; }
-.logAction { font-weight: 700; min-width: 46px; }
+.logAction { font-weight: 700; min-width: 70px; }
 .logVs     { color: var(--border); }
 .logDmg    { color: #f87171; font-weight: 700; }
+.logMiss   { color: #6b7280; font-size: 10px; font-weight: 700; opacity: .7; }
 
 /* Result banner */
 .resultBanner {

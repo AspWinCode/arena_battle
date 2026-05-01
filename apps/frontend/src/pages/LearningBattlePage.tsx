@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
-import { MISSIONS } from '@robocode/shared'
+import { MISSIONS, MAX_HP, MAX_STAMINA, MAX_RAGE } from '@robocode/shared'
 import type { RoundResult, TurnResult } from '@robocode/shared'
 import { runLocalMatch } from '../engine/battleEngine'
 import { runCodeToStrategy } from '../engine/codeRunner'
@@ -11,6 +11,11 @@ import styles from './LearningBattlePage.module.css'
 
 const SKIN_ICON: Record<string, string> = {
   robot: '🤖', gladiator: '⚔️', boxer: '🥊', cosmonaut: '🚀',
+}
+
+const ACTION_ICON: Record<string, string> = {
+  attack: '👊', heavy: '💥', laser: '⚡', shield: '🛡️',
+  dodge: '💨', repair: '💊', special: '☄️',
 }
 
 type Phase = 'coding' | 'animating' | 'result'
@@ -190,13 +195,22 @@ export default function LearningBattlePage() {
               <div className={styles.idleIcon}>{SKIN_ICON[mission.opponentSkin]}</div>
               <p className={styles.idleText}>Напиши код и нажми «Запустить бой»</p>
               <div className={styles.apiHints}>
-                <div className={styles.apiTitle}>Доступные команды:</div>
-                {['attack()', 'laser()', 'shield()', 'dodge()', 'combo()', 'repair()'].map(fn => (
-                  <code key={fn} className={styles.apiChip}>{fn}</code>
-                ))}
-                <div className={styles.apiTitle} style={{ marginTop: 8 }}>Данные врага:</div>
-                {['enemy.hp', 'enemy.lastAction', 'enemy.shieldActive', 'enemy.cooldowns.laser'].map(p => (
+                <div className={styles.apiTitle}>Функция стратегии:</div>
+                <code className={styles.apiBlock}>{'function strategy(ctx) { return "attack"; }'}</code>
+                <div className={styles.apiTitle} style={{ marginTop: 8 }}>Контекст ctx:</div>
+                {[
+                  'ctx.myHp', 'ctx.myStamina', 'ctx.myRage',
+                  'ctx.enemyHp', 'ctx.enemyStamina',
+                  'ctx.myLastAction', 'ctx.enemyLastAction',
+                  'ctx.cooldowns.laser', 'ctx.myRepeatCount',
+                ].map(p => (
                   <code key={p} className={styles.apiChip}>{p}</code>
+                ))}
+                <div className={styles.apiTitle} style={{ marginTop: 8 }}>Действия:</div>
+                {(['attack', 'heavy', 'laser', 'shield', 'dodge', 'repair', 'special'] as const).map(fn => (
+                  <code key={fn} className={styles.apiChip}>
+                    {ACTION_ICON[fn]} {fn}
+                  </code>
                 ))}
               </div>
             </div>
@@ -204,44 +218,99 @@ export default function LearningBattlePage() {
 
           {(phase === 'animating' || phase === 'result') && (
             <div className={styles.battlePane}>
-              {/* Live scores */}
-              <div className={styles.scoreRow}>
-                <div className={styles.scoreItem}>
-                  <span>🧑‍💻 Ты</span>
-                  <HpBar hp={displayTurn?.p1HpAfter ?? 100} />
-                  <span className={styles.hpNum}>{displayTurn?.p1HpAfter ?? 100} HP</span>
+              {/* Stats bars — HP, Stamina, Rage */}
+              <div className={styles.statsSection}>
+                <div className={styles.statsCol}>
+                  <div className={styles.statsLabel}>🧑‍💻 Ты</div>
+                  <StatBar
+                    value={displayTurn?.p1HpAfter ?? MAX_HP}
+                    max={MAX_HP}
+                    color="#4ade80"
+                    lowColor="#f87171"
+                    label={`${displayTurn?.p1HpAfter ?? MAX_HP} HP`}
+                  />
+                  <StatBar
+                    value={displayTurn?.p1Stamina ?? MAX_STAMINA}
+                    max={MAX_STAMINA}
+                    color="#60a5fa"
+                    label={`${displayTurn?.p1Stamina ?? MAX_STAMINA} STA`}
+                  />
+                  <RageBar
+                    value={displayTurn?.p1Rage ?? 0}
+                    max={MAX_RAGE}
+                  />
                 </div>
-                <div className={styles.scoreMid}>
+
+                <div className={styles.statsMid}>
                   <span className={styles.scoreNum}>{score[0]}</span>
                   <span className={styles.scoreDash}>–</span>
                   <span className={styles.scoreNum}>{score[1]}</span>
                 </div>
-                <div className={styles.scoreItem}>
-                  <span>{SKIN_ICON[mission.opponentSkin]} {mission.opponentName}</span>
-                  <HpBar hp={displayTurn?.p2HpAfter ?? 100} flip />
-                  <span className={styles.hpNum}>{displayTurn?.p2HpAfter ?? 100} HP</span>
+
+                <div className={styles.statsCol} style={{ alignItems: 'flex-end' }}>
+                  <div className={styles.statsLabel}>{SKIN_ICON[mission.opponentSkin]} {mission.opponentName}</div>
+                  <StatBar
+                    value={displayTurn?.p2HpAfter ?? MAX_HP}
+                    max={MAX_HP}
+                    color="#4ade80"
+                    lowColor="#f87171"
+                    label={`${displayTurn?.p2HpAfter ?? MAX_HP} HP`}
+                    flip
+                  />
+                  <StatBar
+                    value={displayTurn?.p2Stamina ?? MAX_STAMINA}
+                    max={MAX_STAMINA}
+                    color="#60a5fa"
+                    label={`${displayTurn?.p2Stamina ?? MAX_STAMINA} STA`}
+                    flip
+                  />
+                  <RageBar
+                    value={displayTurn?.p2Rage ?? 0}
+                    max={MAX_RAGE}
+                    flip
+                  />
                 </div>
               </div>
 
               {/* Current turn */}
               {displayTurn && phase === 'animating' && (
                 <div className={styles.turnDisplay}>
-                  <TurnCard label="Ты" action={displayTurn.p1Action} dmg={displayTurn.p1DmgTaken} heal={displayTurn.p1Heal} />
+                  <TurnCard
+                    label="Ты"
+                    action={displayTurn.p1Action}
+                    dmg={displayTurn.p1DmgTaken}
+                    heal={displayTurn.p1Heal}
+                  />
                   <span className={styles.turnVs}>⚡</span>
-                  <TurnCard label={mission.opponentName} action={displayTurn.p2Action} dmg={displayTurn.p2DmgTaken} heal={displayTurn.p2Heal} />
+                  <TurnCard
+                    label={mission.opponentName}
+                    action={displayTurn.p2Action}
+                    dmg={displayTurn.p2DmgTaken}
+                    heal={displayTurn.p2Heal}
+                  />
                 </div>
               )}
 
               {/* Turn log */}
               <div className={styles.turnLog}>
-                {rounds.flatMap(r => r.turns).slice(-8).reverse().map(t => (
+                {rounds.flatMap(r => r.turns).slice(-10).reverse().map(t => (
                   <div key={`${t.turn}`} className={styles.logRow}>
                     <span className={styles.logTurn}>#{t.turn}</span>
-                    <span className={styles.logAction}>{t.p1Action}</span>
-                    {t.p2DmgTaken > 0 && <span className={styles.logDmg}>→ -{t.p2DmgTaken}</span>}
+                    <span className={styles.logAction}>
+                      {ACTION_ICON[t.p1Action] ?? '?'} {t.p1Action}
+                    </span>
+                    {t.p2DmgTaken > 0 && <span className={styles.logDmg}>-{t.p2DmgTaken}</span>}
+                    {t.p2DmgTaken === 0 && t.p1Action !== 'shield' && t.p1Action !== 'dodge' && t.p1Action !== 'repair' && (
+                      <span className={styles.logMiss}>MISS</span>
+                    )}
                     <span className={styles.logVs}>|</span>
-                    <span className={styles.logAction}>{t.p2Action}</span>
-                    {t.p1DmgTaken > 0 && <span className={styles.logDmg}>→ -{t.p1DmgTaken}</span>}
+                    <span className={styles.logAction}>
+                      {ACTION_ICON[t.p2Action] ?? '?'} {t.p2Action}
+                    </span>
+                    {t.p1DmgTaken > 0 && <span className={styles.logDmg}>-{t.p1DmgTaken}</span>}
+                    {t.p1DmgTaken === 0 && t.p2Action !== 'shield' && t.p2Action !== 'dodge' && t.p2Action !== 'repair' && (
+                      <span className={styles.logMiss}>MISS</span>
+                    )}
                   </div>
                 ))}
               </div>
@@ -251,7 +320,9 @@ export default function LearningBattlePage() {
                 <div className={`${styles.resultBanner} ${winner === 1 ? styles.bannerWin : winner === 2 ? styles.bannerLose : styles.bannerDraw}`}>
                   {winner === 1 ? '🏆 ПОБЕДА!' : winner === 2 ? '💀 ПОРАЖЕНИЕ' : '🤝 НИЧЬЯ'}
                   <div className={styles.resultSub}>
-                    {winner === 1 ? 'Отличная стратегия! Можешь улучшить код и попробовать снова.' : 'Измени стратегию и попробуй ещё раз!'}
+                    {winner === 1
+                      ? 'Отличная стратегия! Можешь улучшить код и попробовать снова.'
+                      : 'Измени стратегию и попробуй ещё раз!'}
                   </div>
                 </div>
               )}
@@ -263,27 +334,56 @@ export default function LearningBattlePage() {
   )
 }
 
-function HpBar({ hp, flip }: { hp: number; flip?: boolean }) {
-  const pct = Math.max(0, Math.min(100, hp))
-  const color = pct > 50 ? '#4ade80' : pct > 25 ? '#facc15' : '#f87171'
+// ── Sub-components ────────────────────────────────────────────────────────────
+
+function StatBar({
+  value, max, color, lowColor, label, flip,
+}: {
+  value: number; max: number; color: string; lowColor?: string; label: string; flip?: boolean
+}) {
+  const pct = Math.max(0, Math.min(100, (value / max) * 100))
+  const fill = lowColor ? (pct > 50 ? color : pct > 25 ? '#facc15' : lowColor) : color
   return (
-    <div className={styles.hpTrack}>
-      <div
-        className={styles.hpFill}
-        style={{
-          width: `${pct}%`,
-          background: color,
-          marginLeft: flip ? 'auto' : undefined,
-        }}
-      />
+    <div className={styles.statRow} style={{ flexDirection: flip ? 'row-reverse' : 'row' }}>
+      <span className={styles.statLabel}>{label}</span>
+      <div className={styles.statTrack}>
+        <div
+          className={styles.statFill}
+          style={{
+            width: `${pct}%`,
+            background: fill,
+            marginLeft: flip ? 'auto' : undefined,
+          }}
+        />
+      </div>
+    </div>
+  )
+}
+
+function RageBar({ value, max, flip }: { value: number; max: number; flip?: boolean }) {
+  const pct = Math.max(0, Math.min(100, (value / max) * 100))
+  const ready = pct >= 100
+  return (
+    <div className={styles.statRow} style={{ flexDirection: flip ? 'row-reverse' : 'row' }}>
+      <span className={styles.statLabel} style={{ color: ready ? '#f97316' : undefined }}>
+        {ready ? '☄️ RAGE!' : `${Math.round(value)} RAGE`}
+      </span>
+      <div className={styles.statTrack}>
+        <div
+          className={styles.statFill}
+          style={{
+            width: `${pct}%`,
+            background: ready ? '#f97316' : '#a855f7',
+            marginLeft: flip ? 'auto' : undefined,
+            boxShadow: ready ? '0 0 8px #f97316' : undefined,
+          }}
+        />
+      </div>
     </div>
   )
 }
 
 function TurnCard({ label, action, dmg, heal }: { label: string; action: string; dmg: number; heal: number }) {
-  const ACTION_ICON: Record<string, string> = {
-    attack: '👊', laser: '⚡', shield: '🛡️', dodge: '💨', combo: '🌀', repair: '💊',
-  }
   return (
     <div className={styles.turnCard}>
       <div className={styles.turnLabel}>{label}</div>
