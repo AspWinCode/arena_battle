@@ -13,6 +13,7 @@ import {
 import type {
   Strategy, StrategyContext, ActionName, PlayerState, TurnResult, RoundResult,
 } from '@robocode/shared'
+import type { PerkEffect } from '@robocode/shared'
 
 const VALID_ACTIONS = new Set<ActionName>(['attack', 'heavy', 'laser', 'shield', 'dodge', 'repair', 'special'])
 
@@ -32,13 +33,14 @@ export class BattleEngine {
   constructor(
     private p1Strategy: Strategy,
     private p2Strategy: Strategy,
+    private p1Perks: PerkEffect = {},
   ) {}
 
-  private initState(s: Strategy): ExtState {
+  private initState(s: Strategy, perks: PerkEffect = {}): ExtState {
     return {
-      hp: MAX_HP,
-      stamina: MAX_STAMINA,
-      rage: 0,
+      hp:       Math.min(MAX_HP,      MAX_HP      + (perks.bonusHp      ?? 0)),
+      stamina:  Math.min(MAX_STAMINA, MAX_STAMINA + (perks.bonusStamina ?? 0)),
+      rage:     Math.min(MAX_RAGE,    0           + (perks.bonusRage    ?? 0)),
       position: s.position ?? 'mid',
       cooldowns: { attack: 0, heavy: 0, laser: 0, shield: 0, dodge: 0, repair: 0, special: 0 },
       lastAction: null,
@@ -49,7 +51,7 @@ export class BattleEngine {
   }
 
   runRound(roundNumber: number): RoundResult {
-    this.p1 = this.initState(this.p1Strategy)
+    this.p1 = this.initState(this.p1Strategy, this.p1Perks)
     this.p2 = this.initState(this.p2Strategy)
     this.turns = []
 
@@ -129,18 +131,29 @@ export class BattleEngine {
   private calcDamage(
     attAction: ActionName, att: ExtState,
     defAction: ActionName,
+    def?: ExtState,
   ): number {
     let dmg = BASE_DAMAGE[attAction] ?? 0
     if (dmg === 0) return 0
 
-    if (attAction === 'heavy'  && att.stamina < STAMINA_THRESHOLD_HEAVY)  return 0
+    // Perk: heavyThreshold override for p1
+    const heavyThresh = att === this.p1
+      ? (this.p1Perks.heavyThreshold ?? STAMINA_THRESHOLD_HEAVY)
+      : STAMINA_THRESHOLD_HEAVY
+
+    if (attAction === 'heavy'  && att.stamina < heavyThresh)              return 0
     if (attAction === 'attack' && att.stamina < STAMINA_THRESHOLD_ATTACK) dmg = ATTACK_EXHAUSTED_DAMAGE
     if (attAction === 'laser'  && att.stamina < STAMINA_THRESHOLD_LASER)  dmg = Math.floor(dmg * 0.5)
 
     dmg = applyPositionModifier(attAction, att.position, dmg)
 
+    // Perk: shieldAbsorb override for p1 defender
+    const shieldAbs = (def === this.p1 && this.p1Perks.shieldAbsorb)
+      ? this.p1Perks.shieldAbsorb
+      : SHIELD_ABSORB
+
     if (defAction === 'shield') {
-      dmg = Math.round(dmg * (1 - SHIELD_ABSORB))
+      dmg = Math.round(dmg * (1 - shieldAbs))
     } else if (defAction === 'dodge') {
       if (attAction === 'attack' || attAction === 'heavy') dmg = 0
       else if (attAction === 'laser'  && Math.random() < DODGE_LASER_EVADE_CHANCE) dmg = 0
@@ -171,8 +184,8 @@ export class BattleEngine {
     const p1Factor = this.p1.repeatCount >= REPEAT_PENALTY_AFTER ? REPEAT_DAMAGE_FACTOR : 1
     const p2Factor = this.p2.repeatCount >= REPEAT_PENALTY_AFTER ? REPEAT_DAMAGE_FACTOR : 1
 
-    const p2Dealt = Math.round(this.calcDamage(a1, this.p1, a2) * p1Factor)
-    const p1Dealt = Math.round(this.calcDamage(a2, this.p2, a1) * p2Factor)
+    const p2Dealt = Math.round(this.calcDamage(a1, this.p1, a2, this.p2) * p1Factor)
+    const p1Dealt = Math.round(this.calcDamage(a2, this.p2, a1, this.p1) * p2Factor)
 
     this.applyStaminaCost(this.p1, a1)
     this.applyStaminaCost(this.p2, a2)
@@ -195,7 +208,11 @@ export class BattleEngine {
       }
     }
     const applyCd = (s: ExtState, a: ActionName) => {
-      const cd = COOLDOWNS[a]
+      let cd = COOLDOWNS[a]
+      if (cd > 0 && s === this.p1) {
+        if (a === 'laser') cd = Math.max(0, cd - (this.p1Perks.laserCooldownReduce ?? 0))
+        if (a === 'heavy') cd = Math.max(0, cd - (this.p1Perks.heavyCooldownReduce ?? 0))
+      }
       if (cd > 0) (s.cooldowns as any)[a] = cd
     }
     applyCd(this.p1, a1); applyCd(this.p2, a2)
@@ -236,10 +253,15 @@ export class BattleEngine {
   }
 }
 
-export function runLocalMatch(p1: Strategy, p2: Strategy, format: 'bo1' | 'bo3' | 'bo5') {
+export function runLocalMatch(
+  p1: Strategy,
+  p2: Strategy,
+  format: 'bo1' | 'bo3' | 'bo5',
+  p1Perks: PerkEffect = {},
+) {
   const maxRounds  = format === 'bo1' ? 1 : format === 'bo3' ? 3 : 5
   const winsNeeded = Math.ceil(maxRounds / 2)
-  const engine     = new BattleEngine(p1, p2)
+  const engine     = new BattleEngine(p1, p2, p1Perks)
   const rounds: RoundResult[] = []
   const wins: [number, number] = [0, 0]
 

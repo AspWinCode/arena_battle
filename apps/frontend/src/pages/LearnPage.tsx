@@ -30,6 +30,11 @@ export default function LearnPage() {
             <span className={styles.progress}>{totalCompleted} / {MISSIONS.length} миссий</span>
           </div>
           <p className={styles.subtitle}>Пройди 10 миссий и стань мастером программирования!</p>
+          <div className={styles.sparringLink}>
+            <Link to="/sparring" className="btn btn-ghost" style={{ fontSize: 13 }}>
+              🥊 Спарринг с ботами →
+            </Link>
+          </div>
         </div>
 
         <div className={styles.progressBar}>

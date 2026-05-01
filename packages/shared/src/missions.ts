@@ -110,6 +110,13 @@ const CHAMPION: Strategy = {
   },
 }
 
+// ── Export strategies for Sparring mode ──────────────────────────────────────
+
+export {
+  HEAVY_SPAMMER, LASER_SNIPER, SHIELD_TURTLE, COMBO_BOXER,
+  HEALER, MIRROR, BERSERKER, VETERAN, GHOST_SNIPER, CHAMPION,
+}
+
 // ── Missions ──────────────────────────────────────────────────────────────────
 
 export const MISSIONS: Mission[] = [

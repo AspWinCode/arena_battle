@@ -3,6 +3,7 @@ import JoinPage from './pages/JoinPage'
 import BattlePage from './pages/BattlePage'
 import LearnPage from './pages/LearnPage'
 import LearningBattlePage from './pages/LearningBattlePage'
+import SparringPage from './pages/SparringPage'
 import TournamentsPage from './pages/TournamentsPage'
 import TournamentDetailPage from './pages/TournamentDetailPage'
 import RegisterPage from './pages/RegisterPage'
@@ -26,6 +27,7 @@ export default function App() {
       <Route path="/battle/:sessionId" element={<BattlePage />} />
       <Route path="/learn" element={<LearnPage />} />
       <Route path="/learn/:missionId" element={<LearningBattlePage />} />
+      <Route path="/sparring" element={<SparringPage />} />
       <Route path="/tournaments" element={<TournamentsPage />} />
       <Route path="/tournaments/:id" element={<TournamentDetailPage />} />
 
