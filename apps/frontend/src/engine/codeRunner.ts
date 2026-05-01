@@ -17,6 +17,7 @@ const MOCK_CTX_NORMAL: StrategyContext = {
   myLastAction: null, enemyLastAction: null,
   cooldowns: { attack: 0, heavy: 0, laser: 0, shield: 0, dodge: 0, repair: 0, special: 0 },
   myPosition: 'mid', enemyPosition: 'mid',
+  distanceModifier: 1.0,
   myRepeatCount: 0,
 }
 
@@ -27,6 +28,7 @@ const MOCK_CTX_LOW_HP: StrategyContext = {
   myLastAction: 'attack', enemyLastAction: 'heavy',
   cooldowns: { attack: 0, heavy: 0, laser: 0, shield: 0, dodge: 0, repair: 0, special: 0 },
   myPosition: 'close', enemyPosition: 'close',
+  distanceModifier: 1.3,
   myRepeatCount: 2,
 }
 

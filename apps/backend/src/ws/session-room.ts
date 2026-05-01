@@ -163,7 +163,7 @@ export class SessionRoom {
 
       this.broadcastAll({ type: 'compile_status', payload: { status: 'done', p1Done: true, p2Done: true } })
 
-      const { winner, score, rounds } = runMatch(s1, s2, this.format)
+      const { winner, score, rounds } = await runMatch(s1, s2, this.format)
 
       for (const round of rounds) {
         this.broadcastAll({

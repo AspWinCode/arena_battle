@@ -221,6 +221,29 @@ export default function ArenaComponent({
           <rect x={0} y={H - 40} width={W} height={40} fill="#12122a" />
           <line x1={0} y1={H - 40} x2={W} y2={H - 40} stroke="#00e5ff" strokeOpacity="0.15" strokeWidth={1} />
 
+          {/* ── Zone bands on floor (drawn after floor rect so they show) ── */}
+          {/* FAR zone: outer strips (green) */}
+          <rect x={0}   y={H - 40} width={165} height={5} fill="#22c55e" opacity={0.25} />
+          <rect x={435} y={H - 40} width={165} height={5} fill="#22c55e" opacity={0.25} />
+          {/* MID zone: middle strips (yellow) */}
+          <rect x={165} y={H - 40} width={90}  height={5} fill="#fbbf24" opacity={0.28} />
+          <rect x={345} y={H - 40} width={90}  height={5} fill="#fbbf24" opacity={0.28} />
+          {/* CLOSE zone: center strip (red) */}
+          <rect x={255} y={H - 40} width={90}  height={5} fill="#ef4444" opacity={0.30} />
+
+          {/* Zone boundary markers — thin vertical ticks above floor line */}
+          <line x1={165} y1={H - 47} x2={165} y2={H - 40} stroke="#fbbf24" strokeOpacity="0.45" strokeWidth={1} />
+          <line x1={435} y1={H - 47} x2={435} y2={H - 40} stroke="#fbbf24" strokeOpacity="0.45" strokeWidth={1} />
+          <line x1={255} y1={H - 47} x2={255} y2={H - 40} stroke="#ef4444" strokeOpacity="0.45" strokeWidth={1} />
+          <line x1={345} y1={H - 47} x2={345} y2={H - 40} stroke="#ef4444" strokeOpacity="0.45" strokeWidth={1} />
+
+          {/* Zone labels above floor line */}
+          <text x={82}  y={H - 49} textAnchor="middle" fill="#22c55e" fontSize={7} fontWeight={700} opacity={0.55} letterSpacing="0.06em">FAR</text>
+          <text x={518} y={H - 49} textAnchor="middle" fill="#22c55e" fontSize={7} fontWeight={700} opacity={0.55} letterSpacing="0.06em">FAR</text>
+          <text x={210} y={H - 49} textAnchor="middle" fill="#fbbf24" fontSize={7} fontWeight={700} opacity={0.55} letterSpacing="0.06em">MID</text>
+          <text x={390} y={H - 49} textAnchor="middle" fill="#fbbf24" fontSize={7} fontWeight={700} opacity={0.55} letterSpacing="0.06em">MID</text>
+          <text x={300} y={H - 49} textAnchor="middle" fill="#ef4444" fontSize={7} fontWeight={700} opacity={0.55} letterSpacing="0.06em">CLOSE</text>
+
           {/* Arena center decoration */}
           <circle cx={W / 2} cy={H - 40} r={80}
             fill="none" stroke="#00e5ff" strokeOpacity="0.06" strokeWidth={1} />

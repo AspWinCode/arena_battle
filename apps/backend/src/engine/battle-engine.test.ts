@@ -27,9 +27,9 @@ const attackerStrategy: Strategy = {
 }
 
 describe('BattleEngine', () => {
-  it('should produce a winner in a round', () => {
+  it('should produce a winner in a round', async () => {
     const engine = new BattleEngine(aggressiveStrategy, defensiveStrategy)
-    const result = engine.runRound(1)
+    const result = await engine.runRound(1)
 
     expect(result.round).toBe(1)
     expect([0, 1, 2]).toContain(result.winner)
@@ -37,16 +37,16 @@ describe('BattleEngine', () => {
     expect(result.turns.length).toBeLessThanOrEqual(20)
   })
 
-  it('should have HP >= 0 after round', () => {
+  it('should have HP >= 0 after round', async () => {
     const engine = new BattleEngine(aggressiveStrategy, attackerStrategy)
-    const result = engine.runRound(1)
+    const result = await engine.runRound(1)
     expect(result.p1Hp).toBeGreaterThanOrEqual(0)
     expect(result.p2Hp).toBeGreaterThanOrEqual(0)
   })
 
-  it('turn results should have valid structure', () => {
+  it('turn results should have valid structure', async () => {
     const engine = new BattleEngine(attackerStrategy, aggressiveStrategy)
-    const result = engine.runRound(1)
+    const result = await engine.runRound(1)
 
     for (const turn of result.turns) {
       expect(turn.turn).toBeGreaterThan(0)
@@ -58,30 +58,30 @@ describe('BattleEngine', () => {
     }
   })
 
-  it('runMatch BO3 should not exceed 3 rounds', () => {
-    const { winner, score, rounds } = runMatch(aggressiveStrategy, defensiveStrategy, 'bo3')
+  it('runMatch BO3 should not exceed 3 rounds', async () => {
+    const { winner, score, rounds } = await runMatch(aggressiveStrategy, defensiveStrategy, 'bo3')
     expect(rounds.length).toBeLessThanOrEqual(3)
     expect([1, 2, 0]).toContain(winner)
     expect(score[0] + score[1]).toBeGreaterThan(0)
   })
 
-  it('runMatch BO1 should have exactly 1 round', () => {
-    const { rounds } = runMatch(attackerStrategy, aggressiveStrategy, 'bo1')
+  it('runMatch BO1 should have exactly 1 round', async () => {
+    const { rounds } = await runMatch(attackerStrategy, aggressiveStrategy, 'bo1')
     expect(rounds.length).toBe(1)
   })
 
-  it('winner of bo3 should have more wins', () => {
-    const { winner, score } = runMatch(aggressiveStrategy, defensiveStrategy, 'bo3')
+  it('winner of bo3 should have more wins', async () => {
+    const { winner, score } = await runMatch(aggressiveStrategy, defensiveStrategy, 'bo3')
     if (winner === 1) expect(score[0]).toBeGreaterThan(score[1])
     if (winner === 2) expect(score[1]).toBeGreaterThan(score[0])
   })
 })
 
 describe('buildStrategy', () => {
-  it('should handle special strategy', () => {
+  it('should handle special strategy', async () => {
     const specialStrat: Strategy = { primary: 'special', lowHp: 'attack', onHit: 'dodge', style: 'Balanced', position: 'close' }
     const engine = new BattleEngine(specialStrat, defensiveStrategy)
-    const result = engine.runRound(1)
+    const result = await engine.runRound(1)
     expect(result).toBeDefined()
   })
 })

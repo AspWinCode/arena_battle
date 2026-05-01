@@ -8,7 +8,7 @@ import {
   DODGE_LASER_EVADE_CHANCE, DODGE_SPECIAL_ABSORB,
   REPEAT_PENALTY_AFTER, REPEAT_DAMAGE_FACTOR,
   COOLDOWNS, REPAIR_AMOUNT,
-  applyPositionModifier,
+  applyPositionModifier, getPositionMultiplier,
 } from '@robocode/shared'
 import type {
   Strategy, StrategyContext, ActionName, PlayerState, TurnResult, RoundResult,
@@ -85,6 +85,7 @@ export class BattleEngine {
       cooldowns: { ...self.cooldowns },
       myPosition: self.position,
       enemyPosition: enemy.position,
+      distanceModifier: getPositionMultiplier(self.strategy.primary, self.position),
       myRepeatCount: self.repeatCount,
     }
   }

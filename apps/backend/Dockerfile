@@ -34,7 +34,7 @@ RUN npm run build
 # ─────────────────────────────────────────────
 FROM node:20-bookworm-slim AS runner
 RUN apt-get update \
- && apt-get install -y --no-install-recommends openssl ca-certificates \
+ && apt-get install -y --no-install-recommends openssl ca-certificates python3 \
  && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 
@@ -52,6 +52,10 @@ COPY --from=base /app/packages/shared/package.json  ./packages/shared/package.js
 # package.json нужен для workspace-резолвинга
 COPY --from=base /app/apps/backend/package.json ./package.json
 COPY --from=base /app/package.json              ./root-package.json
+
+# Python sandbox runner
+COPY docker/sandbox-python/runner.py /app/sandbox-runner.py
+ENV PYTHON_RUNNER_PATH=/app/sandbox-runner.py
 
 ENV NODE_ENV=production
 EXPOSE 3001

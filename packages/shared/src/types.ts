@@ -59,6 +59,12 @@ export interface StrategyContext {
   enemyPosition: Position
 
   /**
+   * Current damage multiplier based on your position and your primary action.
+   * e.g. heavy at close = 1.5, laser at far = 1.4, attack at far = 0.6
+   */
+  distanceModifier: number
+
+  /**
    * How many consecutive turns you've used the same action.
    * ≥ 3 triggers repeat penalty (outgoing damage ×0.5).
    */
@@ -71,7 +77,12 @@ export interface Strategy {
   onHit: ActionName
   style: 'Aggressive' | 'Defensive' | 'Evasive' | 'Balanced' | 'Standard'
   position: Position
+  /** Synchronous per-turn fn (JS strategies via isolated-vm) */
   fn?: (ctx: StrategyContext) => ActionName
+  /** Async per-turn fn (Python strategies via persistent subprocess) */
+  asyncFn?: (ctx: StrategyContext) => Promise<ActionName>
+  /** Cleanup to call when battle session ends */
+  dispose?: () => void
 }
 
 // ─── Player State ─────────────────────────────────────────────────────────────

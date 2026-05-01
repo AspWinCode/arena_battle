@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto'
 import type { Strategy, Lang } from '@robocode/shared'
 import { runJS } from './js-runner.js'
+import { runPython } from './python-runner.js'
 import { buildStrategy } from './build-strategy.js'
 
 // ── Strategy cache (keyed by SHA-256 of lang:code) ─────────────────────────
@@ -45,6 +46,11 @@ export async function runInSandbox(code: string, lang: Lang): Promise<Strategy> 
   if (cached) {
     console.log(`[sandbox] cache hit ${lang} ${cacheKey(code, lang).slice(0, 8)}`)
     return cached
+  }
+
+  // Python strategies hold a live subprocess — cannot be shared across battles
+  if (lang === 'py') {
+    return runPython(code)
   }
 
   const strategy = lang === 'js' || lang === 'auto'

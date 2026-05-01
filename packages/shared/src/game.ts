@@ -85,17 +85,30 @@ export const COOLDOWNS: Record<ActionName, number> = {
   special: 0,  // rage-gated; no cooldown once rage refills
 }
 
-// ─── Position modifiers ───────────────────────────────────────────────────────
+// ─── Position modifiers (Phase 1 v2) ─────────────────────────────────────────
+//
+//  action   CLOSE   MID   FAR
+//  attack   ×1.3   ×1.0  ×0.6
+//  heavy    ×1.5   ×1.0  ×0.3  (still MISSES if stamina < 35)
+//  laser    ×0.7   ×1.0  ×1.4
+
+const POSITION_MULTIPLIERS: Partial<Record<ActionName, Record<Position, number>>> = {
+  attack: { close: 1.3, mid: 1.0, far: 0.6 },
+  heavy:  { close: 1.5, mid: 1.0, far: 0.3 },
+  laser:  { close: 0.7, mid: 1.0, far: 1.4 },
+}
+
+export function getPositionMultiplier(action: ActionName, position: Position): number {
+  return POSITION_MULTIPLIERS[action]?.[position] ?? 1.0
+}
 
 export function applyPositionModifier(
   action: ActionName,
   position: Position,
   baseDmg: number,
 ): number {
-  if (action === 'heavy'  && position === 'close') return Math.floor(baseDmg * 1.2)  // +20% in close
-  if (action === 'laser'  && position === 'far')   return Math.floor(baseDmg * 1.15) // +15% at range
-  if (action === 'attack' && position === 'far')   return 0                           // melee misses at far
-  return baseDmg
+  const m = getPositionMultiplier(action, position)
+  return m === 1.0 ? baseDmg : Math.floor(baseDmg * m)
 }
 
 // ─── Block editor metadata ────────────────────────────────────────────────────
