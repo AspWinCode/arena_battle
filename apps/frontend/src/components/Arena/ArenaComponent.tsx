@@ -140,9 +140,23 @@ export default function ArenaComponent({
     if (p1Action === 'special' && p2DmgTaken > 0) vfx.spawnComboSparks(cx2, ROBOT_Y - 20, p1c)
     if (p2Action === 'special' && p1DmgTaken > 0) vfx.spawnComboSparks(cx1, ROBOT_Y - 20, p2c)
 
-    // Dodge trail
-    if (p1Action === 'dodge') vfx.spawnDodgeTrail(cx1, ROBOT_Y - 20, p1c)
-    if (p2Action === 'dodge') vfx.spawnDodgeTrail(cx2, ROBOT_Y - 20, p2c)
+    // Dodge trail + label
+    if (p1Action === 'dodge') {
+      vfx.spawnDodgeTrail(cx1, ROBOT_Y - 20, p1c)
+      if (p1DmgTaken === 0) vfx.showLabel(cx1, ROBOT_Y - 50, 'DODGE', '#818cf8')
+    }
+    if (p2Action === 'dodge') {
+      vfx.spawnDodgeTrail(cx2, ROBOT_Y - 20, p2c)
+      if (p2DmgTaken === 0) vfx.showLabel(cx2, ROBOT_Y - 50, 'DODGE', '#818cf8')
+    }
+
+    // MISS label for attacks that deal no damage (not blocked, not dodged)
+    if (attackActions.includes(p1Action) && p2DmgTaken === 0 && p2Action !== 'shield' && p2Action !== 'dodge') {
+      vfx.showLabel(cx2, ROBOT_Y - 50, 'MISS', '#6b7280')
+    }
+    if (attackActions.includes(p2Action) && p1DmgTaken === 0 && p1Action !== 'shield' && p1Action !== 'dodge') {
+      vfx.showLabel(cx1, ROBOT_Y - 50, 'MISS', '#6b7280')
+    }
 
     // Repair
     if (p1Heal > 0) { vfx.spawnRepairParticles(cx1, ROBOT_Y); vfx.showHealNumber(cx1, ROBOT_Y - 60, p1Heal) }

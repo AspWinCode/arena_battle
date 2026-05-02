@@ -5,7 +5,7 @@ export function generateCode(root: BlockInstance | null): string {
   if (!root) return ''
 
   const lines: string[] = []
-  lines.push('function onRoundStart(enemy) {')
+  lines.push('function strategy(ctx) {')
 
   // Declare all variables used in the script
   const varNames = collectVarNames(root.next ?? null)
@@ -14,6 +14,7 @@ export function generateCode(root: BlockInstance | null): string {
   }
 
   lines.push(...generateBlock(root.next ?? null, 1))
+  lines.push('  return \'attack\'; // fallback')
   lines.push('}')
   return lines.join('\n')
 }
@@ -51,25 +52,40 @@ function slotValue(sv: SlotValue | undefined): string {
 }
 
 function generateExpression(inst: BlockInstance): string {
-  const s = (id: string) => slotValue(inst.slots.find(s => s.slotId === id))
+  const s = (id: string) => slotValue(inst.slots.find(sv => sv.slotId === id))
 
   switch (inst.defId) {
-    case 'enemyHp':         return 'enemy.hp'
-    case 'myHp':            return 'myHp'
-    case 'enemyLastAction': return 'enemy.lastAction'
-    case 'enemyHasShield':  return 'enemy.shieldActive'
-    case 'roundNumber':     return 'roundNumber'
-    case 'greaterThan':     return `(${s('a')} > ${s('b')})`
-    case 'lessThan':        return `(${s('a')} < ${s('b')})`
-    case 'equals':          return `(${s('a')} === ${s('b')})`
-    case 'and':             return `(${s('a')} && ${s('b')})`
-    case 'or':              return `(${s('a')} || ${s('b')})`
-    case 'not':             return `!(${s('a')})`
+    // Sensing reporters → ctx fields
+    case 'ctxMyHp':            return 'ctx.myHp'
+    case 'ctxEnemyHp':         return 'ctx.enemyHp'
+    case 'ctxMyRage':          return 'ctx.myRage'
+    case 'ctxMyStamina':       return 'ctx.myStamina'
+    case 'ctxMyLastAction':    return 'ctx.myLastAction'
+    case 'ctxEnemyLastAction': return 'ctx.enemyLastAction'
+    case 'ctxCooldownLaser':   return 'ctx.cooldowns.laser'
+    case 'ctxCooldownHeavy':   return 'ctx.cooldowns.heavy'
+    case 'ctxTurn':            return 'ctx.turn'
+    case 'ctxRepeatCount':     return 'ctx.myRepeatCount'
+    case 'ctxEnemyHasShield':  return "(ctx.enemyLastAction === 'shield')"
+    // Legacy IDs (backwards compat)
+    case 'enemyHp':            return 'ctx.enemyHp'
+    case 'myHp':               return 'ctx.myHp'
+    case 'enemyLastAction':    return 'ctx.enemyLastAction'
+    case 'enemyHasShield':     return "(ctx.enemyLastAction === 'shield')"
+    case 'roundNumber':        return 'ctx.turn'
+    // Operators
+    case 'greaterThan': return `(${s('a')} > ${s('b')})`
+    case 'lessThan':    return `(${s('a')} < ${s('b')})`
+    case 'geq':         return `(${s('a')} >= ${s('b')})`
+    case 'equals':      return `(${s('a')} === ${s('b')})`
+    case 'and':         return `(${s('a')} && ${s('b')})`
+    case 'or':          return `(${s('a')} || ${s('b')})`
+    case 'not':         return `!(${s('a')})`
     case 'varReporter': {
-      const name = inst.slots.find(s => s.slotId === 'name')?.value
+      const name = inst.slots.find(sv => sv.slotId === 'name')?.value
       return name && typeof name === 'string' ? sanitizeVarName(name) : '__var'
     }
-    default:                return '0'
+    default: return '0'
   }
 }
 
@@ -84,30 +100,26 @@ function generateBlock(inst: BlockInstance | null, depth: number): string[] {
   const s = (id: string) => slotValue(inst.slots.find(sv => sv.slotId === id))
 
   switch (inst.defId) {
-    case 'attack':
-      lines.push(`${ind}return attack(${s('type')});`)
-      break
-    case 'laser':
-      lines.push(`${ind}return laser(${s('power')});`)
-      break
-    case 'shield':
-      lines.push(`${ind}return shield(${s('dur')});`)
-      break
-    case 'dodge':
-      lines.push(`${ind}return dodge(${s('dir')});`)
-      break
-    case 'combo':
-      lines.push(`${ind}return combo();`)
-      break
-    case 'repair':
-      lines.push(`${ind}return repair(${s('amt')});`)
-      break
-    case 'moveForward':
-      lines.push(`${ind}moveForward(${s('n')});`)
-      break
-    case 'moveBackward':
-      lines.push(`${ind}moveBackward(${s('n')});`)
-      break
+    // Combat action blocks — return the action string directly
+    case 'doAttack':  lines.push(`${ind}return 'attack';`);  break
+    case 'doHeavy':   lines.push(`${ind}return 'heavy';`);   break
+    case 'doLaser':   lines.push(`${ind}return 'laser';`);   break
+    case 'doShield':  lines.push(`${ind}return 'shield';`);  break
+    case 'doDodge':   lines.push(`${ind}return 'dodge';`);   break
+    case 'doRepair':  lines.push(`${ind}return 'repair';`);  break
+    case 'doSpecial': lines.push(`${ind}return 'special';`); break
+    // Hat / cap
+    case 'whenTurn': break
+    case 'stop':     lines.push(`${ind}return 'attack';`); break  // safe fallback
+    // Legacy combat IDs
+    case 'attack':      lines.push(`${ind}return 'attack';`);  break
+    case 'laser':       lines.push(`${ind}return 'laser';`);   break
+    case 'shield':      lines.push(`${ind}return 'shield';`);  break
+    case 'dodge':       lines.push(`${ind}return 'dodge';`);   break
+    case 'combo':       lines.push(`${ind}return 'special';`); break
+    case 'repair':      lines.push(`${ind}return 'repair';`);  break
+    case 'moveForward': break
+    case 'moveBackward': break
     case 'setVar': {
       const name = inst.slots.find(sv => sv.slotId === 'name')?.value
       const varName = name && typeof name === 'string' ? sanitizeVarName(name) : '__var'
@@ -147,12 +159,6 @@ function generateBlock(inst: BlockInstance | null, depth: number): string[] {
       lines.push(`${ind}}`)
       break
     }
-    case 'stop':
-      lines.push(`${ind}return;`)
-      break
-    case 'whenRoundStarts':
-    case 'whenHit':
-      break
   }
 
   lines.push(...generateBlock(inst.next ?? null, depth))

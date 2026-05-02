@@ -416,3 +416,29 @@
   background: var(--bg-mid);
   border-radius: var(--radius);
 }
+
+/* ── Editor mode tabs ───────────────────────────────────────────────────────── */
+.modeTabs {
+  display: flex;
+  gap: 4px;
+  padding: 8px 12px 0;
+  background: var(--bg-card);
+  border-bottom: 1px solid var(--border);
+}
+.modeTab {
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-muted);
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  border-radius: var(--radius) var(--radius) 0 0;
+  transition: color .15s, border-color .15s;
+}
+.modeTab:hover { color: var(--text); }
+.modeTabActive {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}

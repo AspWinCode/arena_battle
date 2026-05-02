@@ -20,6 +20,7 @@ export interface VFXHandle {
   spawnMoveTrail(x: number, y: number, color: string, direction: 'forward' | 'backward'): void
   showHitNumber(x: number, y: number, dmg: number, color?: string): void
   showHealNumber(x: number, y: number, hp: number): void
+  showLabel(x: number, y: number, text: string, color: string): void
   shake(intensity?: number): void
 }
 
@@ -88,6 +89,9 @@ const VFXCanvas = forwardRef<VFXHandle, { width: number; height: number }>((
     },
     showHealNumber(x, y, hp) {
       hitNumbers.current.push({ x, y, text: `+${hp}`, color: '#22c55e', life: 60, maxLife: 60, vy: -1 })
+    },
+    showLabel(x, y, text, color) {
+      hitNumbers.current.push({ x, y, text, color, life: 50, maxLife: 50, vy: -0.6 })
     },
     spawnDeathExplosion(x, y, color) {
       // Large burst — 50 sparks + 5 rings

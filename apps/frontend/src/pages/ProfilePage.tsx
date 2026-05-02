@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { api } from '../api/client'
 import { useUserStore } from '../stores/userStore'
+import { useDailyStore } from '../stores/dailyStore'
 import styles from './ProfilePage.module.css'
 
 // ── Types ──────────────────────────────────────────────────────────────────
@@ -50,8 +51,9 @@ const STATUS_COLORS: Record<string, string> = { PENDING: '#facc15', APPROVED: '#
 export default function ProfilePage() {
   const navigate = useNavigate()
   const { user, token, updateUser, logout } = useUserStore()
+  const daily = useDailyStore()
   const [data, setData]       = useState<FullProfile | null>(null)
-  const [tab,  setTab]        = useState<'stats' | 'history' | 'tournaments' | 'settings'>('stats')
+  const [tab,  setTab]        = useState<'stats' | 'progress' | 'history' | 'tournaments' | 'settings'>('stats')
   const [loading, setLoading] = useState(true)
   const [error, setError]     = useState('')
 
@@ -160,9 +162,9 @@ export default function ProfilePage() {
 
       {/* Tabs */}
       <div className={styles.tabs}>
-        {(['stats', 'history', 'tournaments', 'settings'] as const).map(t => (
+        {(['stats', 'progress', 'history', 'tournaments', 'settings'] as const).map(t => (
           <button key={t} className={`${styles.tab} ${tab === t ? styles.tabActive : ''}`} onClick={() => setTab(t)}>
-            {{ stats: '📊 Статистика', history: '⚔️ История', tournaments: '🏆 Турниры', settings: '⚙️ Настройки' }[t]}
+            {{ stats: '📊 Статистика', progress: '🔥 Прогресс', history: '⚔️ История', tournaments: '🏆 Турниры', settings: '⚙️ Настройки' }[t]}
           </button>
         ))}
       </div>
@@ -180,6 +182,56 @@ export default function ProfilePage() {
                 </div>
               </div>
             ))}
+          </div>
+        )}
+
+        {/* ── Local Progress tab ── */}
+        {tab === 'progress' && (
+          <div>
+            {/* Streak */}
+            <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
+              <div className={styles.statBox} style={{ flex: 1, padding: 20, background: 'var(--bg-mid)', borderRadius: 'var(--radius-lg)', textAlign: 'center' }}>
+                <div style={{ fontSize: 48, lineHeight: 1, marginBottom: 8 }}>
+                  {daily.currentStreak === 0 ? '🌑' : daily.currentStreak < 3 ? '🔥' : daily.currentStreak < 7 ? '🔥' : '⚡🔥⚡'}
+                </div>
+                <div style={{ fontSize: 36, fontWeight: 900, fontVariantNumeric: 'tabular-nums' }}>{daily.currentStreak}</div>
+                <div style={{ fontSize: 11, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '.05em' }}>
+                  {daily.currentStreak === 0 ? 'серия прервана' : `${daily.currentStreak} побед подряд`}
+                </div>
+              </div>
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {[
+                  { label: 'Лучшая серия',  val: daily.bestStreak,   color: '#fbbf24' },
+                  { label: 'Всего побед',   val: daily.totalWins,    color: '#4ade80' },
+                  { label: 'Всего боёв',    val: daily.totalBattles, color: 'var(--text)' },
+                  { label: 'Всего XP',      val: daily.totalXp,      color: '#a78bfa' },
+                ].map(({ label, val, color }) => (
+                  <div key={label} style={{ flex: 1, padding: '8px 14px', background: 'var(--bg-mid)', borderRadius: 'var(--radius)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{label}</span>
+                    <span style={{ fontSize: 18, fontWeight: 800, color, fontVariantNumeric: 'tabular-nums' }}>{val}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            {/* Milestone badges */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10 }}>
+              {[3, 7, 14, 30].map(m => {
+                const reached = daily.bestStreak >= m
+                return (
+                  <div key={m} style={{ padding: '12px 8px', background: reached ? 'rgba(251,191,36,.06)' : 'var(--bg-mid)', border: `1px solid ${reached ? '#fbbf24' : 'var(--border)'}`, borderRadius: 'var(--radius)', textAlign: 'center', opacity: reached ? 1 : 0.5, transition: 'all .2s' }}>
+                    <div style={{ fontSize: 18 }}>{reached ? '✅' : '🔒'}</div>
+                    <div style={{ fontSize: 22, fontWeight: 900, fontVariantNumeric: 'tabular-nums' }}>{m}</div>
+                    <div style={{ fontSize: 9, textTransform: 'uppercase', letterSpacing: '.04em', color: 'var(--text-muted)' }}>побед подряд</div>
+                    <div style={{ fontSize: 10, fontWeight: 700, color: '#fbbf24', marginTop: 2 }}>
+                      {m === 3 ? '+150 XP' : m === 7 ? '+400 XP' : m === 14 ? '+1000 XP' : '🏆 Легенда'}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+            <div style={{ marginTop: 16, textAlign: 'center' }}>
+              <Link to="/daily" className="btn btn-primary">📅 Ежедневные задания →</Link>
+            </div>
           </div>
         )}
 

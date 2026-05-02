@@ -11,6 +11,7 @@ import { analyzeMatch, ACTION_COLOR, ACTION_LABEL } from '../engine/matchAnalysi
 import { useLearnStore } from '../stores/learnStore'
 import { useDailyStore } from '../stores/dailyStore'
 import CodeEditor from '../components/CodeEditor/CodeEditor'
+import BlockEditor from '../components/BlockEditor/BlockEditor'
 import styles from './SparringPage.module.css'
 
 const SKIN_ICON: Record<string, string> = {
@@ -76,6 +77,9 @@ export default function SparringPage() {
     () => MISSIONS.filter(m => progress[m.id]?.completed).length,
     [progress],
   )
+
+  // Editor mode
+  const [editorMode, setEditorMode] = useState<'code' | 'blocks'>('code')
 
   // Setup state
   const [selectedBotId, setSelectedBotId]   = useState(SPARRING_BOTS[0].id)
@@ -189,17 +193,31 @@ export default function SparringPage() {
       <div className={styles.layout}>
         {/* ── LEFT: Code editor ─────────────────────────────────── */}
         <div className={styles.leftPane}>
-          <div className={styles.paneTitle}>💻 Твой код</div>
+          {/* Editor mode tabs */}
+          <div className={styles.modeTabs}>
+            <button
+              className={`${styles.modeTab} ${editorMode === 'code' ? styles.modeTabActive : ''}`}
+              onClick={() => setEditorMode('code')}
+            >💻 Код</button>
+            <button
+              className={`${styles.modeTab} ${editorMode === 'blocks' ? styles.modeTabActive : ''}`}
+              onClick={() => setEditorMode('blocks')}
+            >🧩 Блоки</button>
+          </div>
 
           {codeError && <div className={styles.codeError}>{codeError}</div>}
 
           <div className={styles.editorWrap}>
-            <CodeEditor
-              value={code}
-              language="javascript"
-              onChange={v => setCode(v ?? '')}
-              readOnly={phase === 'animating'}
-            />
+            {editorMode === 'code' ? (
+              <CodeEditor
+                value={code}
+                language="javascript"
+                onChange={v => setCode(v ?? '')}
+                readOnly={phase === 'animating'}
+              />
+            ) : (
+              <BlockEditor onChange={v => setCode(v)} />
+            )}
           </div>
 
           <div className={styles.editorFooter}>
