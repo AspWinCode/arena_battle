@@ -1,0 +1,215 @@
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+}
+
+.empty {
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 13px;
+  padding: 20px;
+}
+
+/* ── Summary ──────────────────────────────────────────────────────────────── */
+.summary {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.scoreChip {
+  margin-left: auto;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .04em;
+  padding: 2px 8px;
+  background: rgba(255,255,255,.05);
+  border-radius: 99px;
+  border: 1px solid var(--border);
+}
+
+/* ── Nodes ────────────────────────────────────────────────────────────────── */
+.nodesWrap {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.nodes {
+  display: flex;
+  gap: 4px;
+  overflow-x: auto;
+  padding: 4px 0 2px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+
+.node {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  background: var(--bg-mid);
+  border: 2px solid var(--rc, #334155);
+  border-radius: 8px;
+  cursor: pointer;
+  padding: 6px 4px 4px;
+  min-width: 40px;
+  transition: transform .12s, box-shadow .12s;
+  color: inherit;
+  flex-shrink: 0;
+}
+
+.node:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--rc, #334155) 40%, transparent);
+}
+
+.nodeSelected {
+  background: color-mix(in srgb, var(--rc, #334155) 18%, transparent);
+  box-shadow: 0 0 0 2px var(--rc, #334155),
+              0 4px 14px color-mix(in srgb, var(--rc, #334155) 35%, transparent);
+}
+
+.nodeIcon { font-size: 14px; line-height: 1; }
+.nodeTurn {
+  font-size: 9px;
+  font-weight: 800;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Rail (connector line + dots) ────────────────────────────────────────── */
+.rail {
+  display: flex;
+  align-items: center;
+  overflow-x: auto;
+  padding: 0 20px 0 20px;
+  scrollbar-width: none;
+}
+.rail::-webkit-scrollbar { display: none; }
+
+.railCell {
+  display: flex;
+  align-items: center;
+  min-width: 44px;
+  flex-shrink: 0;
+}
+
+.dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.railLine {
+  flex: 1;
+  height: 2px;
+  background: var(--border);
+}
+
+/* ── Detail panel ─────────────────────────────────────────────────────────── */
+.detail {
+  background: var(--bg-mid);
+  border: 1px solid var(--dc, var(--border));
+  border-left: 3px solid var(--dc, var(--border));
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  animation: detailIn .15s ease;
+}
+
+@keyframes detailIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: none; }
+}
+
+.detailHeader {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.detailTurnNum {
+  font-size: 10px;
+  font-weight: 800;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: .06em;
+}
+
+.detailAction {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.detailRating {
+  font-size: 12px;
+  font-weight: 700;
+  margin-left: auto;
+}
+
+.detailReason {
+  font-size: 13px;
+  color: var(--text);
+  line-height: 1.55;
+}
+
+.detailStats {
+  display: flex;
+  gap: 20px;
+}
+
+.detailStat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+}
+
+.detailStatVal {
+  font-size: 18px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.detailStatKey {
+  font-size: 9px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: .05em;
+}
+
+/* ── Hint ─────────────────────────────────────────────────────────────────── */
+.hint {
+  text-align: center;
+  font-size: 11px;
+  color: var(--text-muted);
+  font-style: italic;
+  padding: 4px;
+}
+
+/* ── Legend ───────────────────────────────────────────────────────────────── */
+.legend {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 600;
+  padding-top: 2px;
+}
+
+.legendItem {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}

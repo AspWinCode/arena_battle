@@ -1,8 +1,9 @@
 import { useState, useMemo } from 'react'
 import { useBattleStore } from '../../stores/battleStore'
-import { analyzeMatch, ACTION_LABEL, ACTION_COLOR } from '../../engine/matchAnalysis'
+import { analyzeMatch, evaluateTurns, ACTION_LABEL, ACTION_COLOR } from '../../engine/matchAnalysis'
 import type { HpPoint, PlayerAnalysis } from '../../engine/matchAnalysis'
 import type { ActionName } from '@robocode/shared'
+import DecisionGraph from './DecisionGraph'
 import styles from './ResultScreen.module.css'
 
 const SKIN_ICONS: Record<string, string> = {
@@ -166,9 +167,17 @@ export default function ResultScreen({ onPlayAgain }: { onPlayAgain: () => void 
   const completedRounds = useBattleStore(s => s.completedRounds)
   const slot           = useBattleStore(s => s.slot)
 
-  const [tab, setTab] = useState<'result' | 'analysis'>('result')
+  const [tab, setTab] = useState<'result' | 'analysis' | 'graph'>('result')
+  const [graphSide, setGraphSide] = useState<1 | 2>(slot ?? 1)
 
   const analysis = useMemo(() => analyzeMatch(completedRounds), [completedRounds])
+
+  // Per-round evals for the decision graph
+  const allTurnsP1 = useMemo(() => completedRounds.flatMap(r => r.turns), [completedRounds])
+  const graphEvals = useMemo(
+    () => evaluateTurns(allTurnsP1, graphSide),
+    [allTurnsP1, graphSide],
+  )
 
   const isWinner     = matchWinner !== null && matchWinner !== 0 && matchWinner === slot
   const isDraw       = matchWinner === 0
@@ -225,6 +234,12 @@ export default function ResultScreen({ onPlayAgain }: { onPlayAgain: () => void 
             onClick={() => setTab('analysis')}
           >
             🔬 Анализ
+          </button>
+          <button
+            className={`${styles.tab} ${tab === 'graph' ? styles.tabActive : ''}`}
+            onClick={() => setTab('graph')}
+          >
+            🧠 Граф
           </button>
         </div>
 
@@ -351,6 +366,67 @@ export default function ResultScreen({ onPlayAgain }: { onPlayAgain: () => void 
               <Recs recs={analysis.p1.recommendations} color={P1_COLOR} />
               <Recs recs={analysis.p2.recommendations} color={P2_COLOR} />
             </div>
+          </>
+        )}
+
+        {/* ── TAB: ГРАФ РЕШЕНИЙ ─────────────────────────────────── */}
+        {tab === 'graph' && (
+          <>
+            <div className={styles.section}>
+              <div className={styles.sectionTitle}>🧠 Граф решений — каждый ход</div>
+
+              {/* Side switcher */}
+              <div className={styles.graphSidePicker}>
+                <button
+                  className={`${styles.sideBtn} ${graphSide === 1 ? styles.sideBtnActive : ''}`}
+                  style={{ '--sc': P1_COLOR } as React.CSSProperties}
+                  onClick={() => setGraphSide(1)}
+                >
+                  {p1?.name ?? 'P1'}
+                </button>
+                <button
+                  className={`${styles.sideBtn} ${graphSide === 2 ? styles.sideBtnActive : ''}`}
+                  style={{ '--sc': P2_COLOR } as React.CSSProperties}
+                  onClick={() => setGraphSide(2)}
+                >
+                  {p2?.name ?? 'P2'}
+                </button>
+              </div>
+
+              <DecisionGraph evals={graphEvals} />
+            </div>
+
+            {/* Per-round breakdown hint */}
+            {completedRounds.length > 1 && (
+              <div className={styles.section}>
+                <div className={styles.sectionTitle}>📋 По раундам</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {completedRounds.map((r, i) => {
+                    const roundEvals = evaluateTurns(r.turns, graphSide)
+                    const good = roundEvals.filter(e => e.rating === 'good').length
+                    const bad  = roundEvals.filter(e => e.rating === 'bad').length
+                    const score = roundEvals.length ? Math.round(good / roundEvals.length * 100) : 0
+                    return (
+                      <div key={i} className={styles.roundGraphRow}>
+                        <span className={styles.roundLabel}>Раунд {r.round}</span>
+                        <span style={{ color: '#4ade80', fontSize: 12 }}>✅ {good}</span>
+                        <span style={{ color: '#f87171', fontSize: 12 }}>❌ {bad}</span>
+                        <div className={styles.roundScoreBar}>
+                          <div
+                            className={styles.roundScoreFill}
+                            style={{
+                              width: `${score}%`,
+                              background: score >= 60 ? '#4ade80' : score >= 35 ? '#fbbf24' : '#f87171',
+                            }}
+                          />
+                        </div>
+                        <span className={styles.roundScorePct}>{score}%</span>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
           </>
         )}
 

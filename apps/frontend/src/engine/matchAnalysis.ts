@@ -1,4 +1,8 @@
-import type { RoundResult, ActionName } from '@robocode/shared'
+import type { RoundResult, TurnResult, ActionName } from '@robocode/shared'
+import {
+  STAMINA_THRESHOLD_HEAVY, STAMINA_THRESHOLD_ATTACK, STAMINA_THRESHOLD_LASER,
+  STAMINA_COSTS, REPEAT_PENALTY_AFTER,
+} from '@robocode/shared'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -268,4 +272,116 @@ export const ACTION_COLOR: Record<ActionName, string> = {
   dodge:   '#34d399',
   repair:  '#4ade80',
   special: '#fbbf24',
+}
+
+export const ACTION_ICON: Record<ActionName, string> = {
+  attack:  '👊',
+  heavy:   '🔨',
+  laser:   '⚡',
+  shield:  '🛡',
+  dodge:   '💨',
+  repair:  '🔧',
+  special: '💥',
+}
+
+// ── Decision Graph ─────────────────────────────────────────────────────────────
+
+export type TurnRating = 'good' | 'ok' | 'bad'
+
+export interface TurnEval {
+  turn: number
+  action: ActionName
+  rating: TurnRating
+  reason: string
+  dmgDealt: number
+  dmgTaken: number
+  staminaBefore: number
+}
+
+const ATTACK_ACTIONS_SET = new Set<ActionName>(['attack', 'heavy', 'laser', 'special'])
+
+export function evaluateTurns(turns: TurnResult[], side: 1 | 2): TurnEval[] {
+  const actionField   = side === 1 ? 'p1Action'   : 'p2Action'
+  const opActionField = side === 1 ? 'p2Action'   : 'p1Action'
+  const staminaField  = side === 1 ? 'p1Stamina'  : 'p2Stamina'
+  const dmgDealtField = side === 1 ? 'p2DmgTaken' : 'p1DmgTaken'
+  const dmgTakenField = side === 1 ? 'p1DmgTaken' : 'p2DmgTaken'
+  const hpAfterField  = side === 1 ? 'p1HpAfter'  : 'p2HpAfter'
+
+  const evals: TurnEval[] = []
+  let consecutiveCount = 0
+  let lastAction: ActionName | null = null
+
+  for (const t of turns) {
+    const action       = t[actionField]   as ActionName
+    const opAction     = t[opActionField] as ActionName
+    const staminaAfter = t[staminaField]  as number
+    const dmgDealt     = t[dmgDealtField] as number
+    const dmgTaken     = t[dmgTakenField] as number
+    const hpAfter      = t[hpAfterField]  as number
+
+    // Reconstruct stamina before action: after = before - cost → before = after + cost
+    const cost = STAMINA_COSTS[action] ?? 0
+    const staminaBefore = Math.min(100, Math.max(0, staminaAfter + cost))
+
+    if (action === lastAction) consecutiveCount++
+    else consecutiveCount = 1
+    lastAction = action
+
+    let rating: TurnRating = 'ok'
+    let reason = ''
+
+    // ── BAD ──────────────────────────────────────────────────────────────────
+    if (action === 'heavy' && dmgDealt === 0 && opAction !== 'dodge' && opAction !== 'shield') {
+      rating = 'bad'
+      reason = `Heavy MISS! stamina = ${staminaBefore} (нужно ≥ ${STAMINA_THRESHOLD_HEAVY}). Альтернатива: attack`
+    } else if (consecutiveCount >= REPEAT_PENALTY_AFTER && ATTACK_ACTIONS_SET.has(action)) {
+      rating = 'bad'
+      reason = `${ACTION_LABEL[action]} ×${consecutiveCount} подряд — штраф к урону ×0.5. Смени тактику!`
+    } else if (action === 'attack' && staminaBefore < STAMINA_THRESHOLD_ATTACK && dmgDealt <= 3) {
+      rating = 'bad'
+      reason = `Атака при истощении — stamina ${staminaBefore}, урон всего ${dmgDealt}. Лучше: shield или dodge`
+    } else if (action === 'laser' && staminaBefore < STAMINA_THRESHOLD_LASER && dmgDealt < 15) {
+      rating = 'bad'
+      reason = `Слабый лазер — stamina ${staminaBefore} < 20, урон ×0.5. Подожди восстановления`
+    } else if (action === 'repair' && hpAfter > 90) {
+      rating = 'bad'
+      reason = `Repair при HP > 90 — потраченный ход. Лучше атаковать или копить rage`
+    } else if (action === 'shield' && !ATTACK_ACTIONS_SET.has(opAction)) {
+      rating = 'bad'
+      reason = `Зря встал в щит: враг использовал «${ACTION_LABEL[opAction]}» — не атаковал`
+    }
+    // ── GOOD ─────────────────────────────────────────────────────────────────
+    else if (action === 'special') {
+      rating = 'good'
+      reason = `Special — rage-удар нанёс ${dmgDealt} урона! Rage использован вовремя`
+    } else if (action === 'shield' && ATTACK_ACTIONS_SET.has(opAction) && dmgTaken < 15) {
+      rating = 'good'
+      reason = `Заблокировал «${ACTION_LABEL[opAction]}» врага — получил только ${dmgTaken} урона вместо полного`
+    } else if (action === 'dodge' && (opAction === 'attack' || opAction === 'heavy') && dmgTaken === 0) {
+      rating = 'good'
+      reason = `Уклонился от «${ACTION_LABEL[opAction]}»! 0 урона`
+    } else if (action === 'dodge' && opAction === 'laser' && dmgTaken === 0) {
+      rating = 'good'
+      reason = `Уклонился от лазера! (50% шанс сработал)`
+    } else if (action === 'repair' && hpAfter <= 55) {
+      rating = 'good'
+      reason = `Repair при низком HP — правильный момент (HP после: ${hpAfter})`
+    } else if (action === 'heavy' && dmgDealt >= 28) {
+      rating = 'good'
+      reason = `Heavy hit — ${dmgDealt} урона за один ход!`
+    } else if (action === 'laser' && dmgDealt >= 20) {
+      rating = 'good'
+      reason = `Точный лазер — ${dmgDealt} урона`
+    } else {
+      rating = 'ok'
+      reason = dmgDealt > 0
+        ? `${ACTION_LABEL[action]} — нанёс ${dmgDealt} урона`
+        : `${ACTION_LABEL[action]} — без урона`
+    }
+
+    evals.push({ turn: t.turn, action, rating, reason, dmgDealt, dmgTaken, staminaBefore })
+  }
+
+  return evals
 }

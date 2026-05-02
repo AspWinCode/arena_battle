@@ -73,6 +73,7 @@ function RageBar({ value, max, flip }: { value: number; max: number; flip?: bool
 export default function SparringPage() {
   const progress      = useLearnStore(s => s.progress)
   const recordBattle  = useDailyStore(s => s.recordBattle)
+  const currentStreak = useDailyStore(s => s.currentStreak)
   const completedCount = useMemo(
     () => MISSIONS.filter(m => progress[m.id]?.completed).length,
     [progress],
@@ -101,6 +102,12 @@ export default function SparringPage() {
   const selectedBot  = SPARRING_BOTS.find(b => b.id === selectedBotId)!
   const activePerks  = PERKS.filter(p => selectedPerkIds.includes(p.id))
   const mergedEffect = mergeEffects(activePerks)
+
+  // Win streak rage bonus (P1 feature from TZ)
+  const streakRageBonus = currentStreak >= 10 ? 60 : currentStreak >= 5 ? 40 : currentStreak >= 3 ? 20 : 0
+  const effectWithStreak = streakRageBonus > 0
+    ? { ...mergedEffect, bonusRage: (mergedEffect.bonusRage ?? 0) + streakRageBonus }
+    : mergedEffect
 
   const matchAnalysis = useMemo(
     () => (rounds.length > 0 ? analyzeMatch(rounds) : null),
@@ -136,7 +143,7 @@ export default function SparringPage() {
       playerStrategy,
       selectedBot.strategy,
       format,
-      mergedEffect,
+      effectWithStreak,
     )
     setRounds(result.rounds)
     setWinner(result.winner)
@@ -177,7 +184,7 @@ export default function SparringPage() {
     }
     setTurnLog([])
     step()
-  }, [code, selectedBot, format, mergedEffect])
+  }, [code, selectedBot, format, effectWithStreak])
 
   const unlockedPerkIds = new Set(PERKS.filter(p => p.unlockAt <= completedCount).map(p => p.id))
 
@@ -221,6 +228,12 @@ export default function SparringPage() {
           </div>
 
           <div className={styles.editorFooter}>
+            {streakRageBonus > 0 && (phase === 'setup' || phase === 'result') && (
+              <span title={`Серия ${currentStreak} побед — стартовый rage +${streakRageBonus}`}
+                style={{ fontSize: 12, color: '#f97316', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4 }}>
+                🔥 ×{currentStreak} +{streakRageBonus} rage
+              </span>
+            )}
             {phase === 'setup' || phase === 'result' ? (
               <button className="btn btn-primary" onClick={handleRun}>
                 ▶ Запустить бой
