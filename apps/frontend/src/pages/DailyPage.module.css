@@ -1,0 +1,340 @@
+.root {
+  min-height: 100vh;
+  overflow-y: auto;
+  position: relative;
+  background: var(--bg);
+}
+
+.bg {
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 60% 40% at 20% 20%, rgba(251,191,36,.07) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 40% at 80% 80%, rgba(99,102,241,.07) 0%, transparent 60%);
+  pointer-events: none;
+}
+
+.content {
+  position: relative;
+  z-index: 1;
+  max-width: 560px;
+  margin: 0 auto;
+  padding: 24px 20px 60px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* ── Header ───────────────────────────────────────────────────────────────── */
+.header { display: flex; flex-direction: column; gap: 10px; }
+
+.back {
+  font-size: 13px;
+  color: var(--text-muted);
+  text-decoration: none;
+  display: inline-block;
+}
+.back:hover { color: var(--text); }
+
+.headerRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.title {
+  font-size: 24px;
+  font-weight: 900;
+  color: var(--text);
+  margin: 0;
+}
+
+.todayXp {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 1px;
+}
+.todayXpVal {
+  font-size: 20px;
+  font-weight: 800;
+  color: #a78bfa;
+  font-variant-numeric: tabular-nums;
+}
+.todayXpLabel {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  color: var(--text-muted);
+}
+
+/* ── Streak card ──────────────────────────────────────────────────────────── */
+.streakCard {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+/* Flame */
+.flame {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 12px 24px;
+  border-radius: var(--radius-lg);
+  min-width: 120px;
+  text-align: center;
+}
+.flame_cold    { background: rgba(100,116,139,.1); border: 1px solid rgba(100,116,139,.2); }
+.flame_warm    { background: rgba(251,191,36,.08); border: 1px solid rgba(251,191,36,.25); }
+.flame_hot     { background: rgba(249,115,22,.1);  border: 1px solid rgba(249,115,22,.3);  }
+.flame_blazing {
+  background: linear-gradient(135deg, rgba(249,115,22,.15), rgba(239,68,68,.15));
+  border: 1px solid rgba(249,115,22,.4);
+  box-shadow: 0 0 20px rgba(249,115,22,.15);
+}
+.flameIcon { font-size: 40px; line-height: 1; }
+.flameNum  {
+  font-size: 48px;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  color: var(--text);
+}
+.flameLabel { font-size: 12px; color: var(--text-muted); }
+
+/* Streak stats row */
+.streakStats {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  width: 100%;
+  background: var(--bg-mid);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.streakStat {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 10px 8px;
+}
+.streakStatVal {
+  font-size: 22px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+.streakStatKey {
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  color: var(--text-muted);
+}
+.streakDivider { width: 1px; background: var(--border); align-self: stretch; }
+
+/* Milestone progress bar */
+.milestone {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.milestoneTrack {
+  height: 6px;
+  background: var(--bg-mid);
+  border-radius: 3px;
+  overflow: hidden;
+  width: 100%;
+}
+.milestoneFill {
+  height: 100%;
+  background: linear-gradient(90deg, #f97316, #fbbf24);
+  border-radius: 3px;
+  transition: width .5s ease;
+}
+.milestoneLabel {
+  font-size: 11px;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+/* ── Section ──────────────────────────────────────────────────────────────── */
+.section {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.sectionTitle {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--text-muted);
+}
+.sectionSub {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+.emptyTasks {
+  font-size: 13px;
+  color: var(--text-muted);
+  text-align: center;
+  padding: 16px 0;
+}
+
+/* ── Task cards ───────────────────────────────────────────────────────────── */
+.taskList { display: flex; flex-direction: column; gap: 10px; }
+
+.taskCard {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  background: var(--bg-mid);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  transition: border-color .2s;
+}
+.taskDone {
+  border-color: rgba(74,222,128,.3);
+  background: rgba(74,222,128,.04);
+}
+.taskClaimed {
+  opacity: .7;
+}
+
+.taskLeft { flex-shrink: 0; }
+.taskIcon { font-size: 28px; }
+
+.taskBody { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.taskTitle { font-size: 14px; font-weight: 700; color: var(--text); }
+.taskDesc  { font-size: 11px; color: var(--text-muted); }
+
+.taskProgress {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+}
+.taskTrack {
+  flex: 1;
+  height: 5px;
+  background: var(--bg-card);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.taskFill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 3px;
+  transition: width .4s ease;
+  min-width: 2px;
+}
+.taskFillDone { background: #4ade80; }
+.taskPct {
+  font-size: 10px;
+  color: var(--text-muted);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  min-width: 36px;
+}
+
+.taskRight {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  min-width: 64px;
+}
+.taskXp {
+  font-size: 12px;
+  font-weight: 700;
+  color: #a78bfa;
+}
+.taskStatus { font-size: 11px; color: var(--text-muted); }
+.taskCheckmark { font-size: 22px; }
+
+.claimBtn {
+  background: linear-gradient(135deg, #4ade80, #22c55e);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius);
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity .15s;
+  white-space: nowrap;
+  box-shadow: 0 0 12px rgba(74,222,128,.3);
+}
+.claimBtn:hover { opacity: .85; }
+
+/* ── Stats grid ───────────────────────────────────────────────────────────── */
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+.statPill {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 12px 10px;
+  background: var(--bg-mid);
+  border-radius: var(--radius);
+  text-align: center;
+}
+.statIcon  { font-size: 18px; }
+.statVal   { font-size: 22px; font-weight: 800; font-variant-numeric: tabular-nums; color: var(--text); }
+.statLabel { font-size: 9px; text-transform: uppercase; letter-spacing: .05em; color: var(--text-muted); }
+
+/* ── Play links ───────────────────────────────────────────────────────────── */
+.playLinks { display: flex; gap: 12px; }
+
+/* ── Milestone cards ──────────────────────────────────────────────────────── */
+.milestones { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+
+.milestoneCard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 12px 8px;
+  background: var(--bg-mid);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  text-align: center;
+  opacity: .5;
+  transition: opacity .2s;
+}
+.milestoneReached {
+  opacity: 1;
+  border-color: #fbbf24;
+  background: rgba(251,191,36,.06);
+  box-shadow: 0 0 10px rgba(251,191,36,.1);
+}
+.milestoneIcon   { font-size: 18px; }
+.milestoneNum    { font-size: 22px; font-weight: 900; color: var(--text); font-variant-numeric: tabular-nums; }
+.milestoneKey    { font-size: 9px; text-transform: uppercase; letter-spacing: .04em; color: var(--text-muted); }
+.milestoneReward { font-size: 10px; font-weight: 700; color: #fbbf24; margin-top: 2px; }

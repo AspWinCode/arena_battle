@@ -6,6 +6,7 @@ import { runLocalMatch } from '../engine/battleEngine'
 import { runCodeToStrategy } from '../engine/codeRunner'
 import { analyzeMatch, ACTION_COLOR, ACTION_LABEL } from '../engine/matchAnalysis'
 import { useLearnStore } from '../stores/learnStore'
+import { useDailyStore } from '../stores/dailyStore'
 import CodeEditor from '../components/CodeEditor/CodeEditor'
 import TutorialOverlay from '../components/tutorial/TutorialOverlay'
 import styles from './LearningBattlePage.module.css'
@@ -25,6 +26,7 @@ export default function LearningBattlePage() {
   const { missionId } = useParams<{ missionId: string }>()
   const navigate = useNavigate()
   const { completesMission, incrementAttempt } = useLearnStore()
+  const recordBattle = useDailyStore(s => s.recordBattle)
 
   const mission = MISSIONS.find(m => m.id === missionId)
 
@@ -88,6 +90,23 @@ export default function LearningBattlePage() {
                       result.score[0] > 0 ? 2 : 1
         completesMission(mission.id, stars)
       }
+      // Record for daily tasks & streak
+      const allTurns = result.rounds.flatMap(r => r.turns)
+      const won = result.winner === 1
+      const lastTurn = allTurns[allTurns.length - 1]
+      const isKo = won && !!lastTurn && lastTurn.p2HpAfter === 0
+      recordBattle({
+        won,
+        isKo,
+        damageDealt:  allTurns.reduce((s, t) => s + t.p2DmgTaken, 0),
+        turnsPlayed:  allTurns.length,
+        healing:      allTurns.reduce((s, t) => s + (t.p1Heal ?? 0), 0),
+        specialUsed:  allTurns.filter(t => t.p1Action === 'special').length,
+        heavyUsed:    allTurns.filter(t => t.p1Action === 'heavy').length,
+        laserUsed:    allTurns.filter(t => t.p1Action === 'laser').length,
+        dodgeUsed:    allTurns.filter(t => t.p1Action === 'dodge').length,
+        usedRepair:   allTurns.some(t => t.p1Action === 'repair'),
+      })
     }, delay)
   }, [code, mission, incrementAttempt, completesMission])
 

@@ -9,6 +9,7 @@ import { runLocalMatch } from '../engine/battleEngine'
 import { runCodeToStrategy } from '../engine/codeRunner'
 import { analyzeMatch, ACTION_COLOR, ACTION_LABEL } from '../engine/matchAnalysis'
 import { useLearnStore } from '../stores/learnStore'
+import { useDailyStore } from '../stores/dailyStore'
 import CodeEditor from '../components/CodeEditor/CodeEditor'
 import styles from './SparringPage.module.css'
 
@@ -69,7 +70,8 @@ function RageBar({ value, max, flip }: { value: number; max: number; flip?: bool
 // ── Main component ─────────────────────────────────────────────────────────────
 
 export default function SparringPage() {
-  const progress = useLearnStore(s => s.progress)
+  const progress      = useLearnStore(s => s.progress)
+  const recordBattle  = useDailyStore(s => s.recordBattle)
   const completedCount = useMemo(
     () => MISSIONS.filter(m => progress[m.id]?.completed).length,
     [progress],
@@ -143,7 +145,27 @@ export default function SparringPage() {
 
     let idx = 0
     const step = () => {
-      if (idx >= allTurns.length) { setPhase('result'); return }
+      if (idx >= allTurns.length) {
+        setPhase('result')
+        // Record battle for daily tasks & streak
+        const allT = allTurns
+        const won  = result.winner === 1
+        const lastTurn = allT[allT.length - 1]
+        const isKo = won && !!lastTurn && lastTurn.p2HpAfter === 0
+        recordBattle({
+          won,
+          isKo,
+          damageDealt:  allT.reduce((s, t) => s + t.p2DmgTaken, 0),
+          turnsPlayed:  allT.length,
+          healing:      allT.reduce((s, t) => s + (t.p1Heal ?? 0), 0),
+          specialUsed:  allT.filter(t => t.p1Action === 'special').length,
+          heavyUsed:    allT.filter(t => t.p1Action === 'heavy').length,
+          laserUsed:    allT.filter(t => t.p1Action === 'laser').length,
+          dodgeUsed:    allT.filter(t => t.p1Action === 'dodge').length,
+          usedRepair:   allT.some(t => t.p1Action === 'repair'),
+        })
+        return
+      }
       const t = allTurns[idx++]
       setDisplayTurn(t)
       setTurnLog(prev => [...prev, t].slice(-30))
