@@ -22,6 +22,7 @@ interface TournamentDetail {
     p1: { id: string; playerName: string; seed: number | null } | null
     p2: { id: string; playerName: string; seed: number | null } | null
     winner: { id: string; playerName: string } | null
+    session?: { id: string; code1: string; code2: string } | null
   }>
 }
 
@@ -196,7 +197,21 @@ export default function AdminTournamentDetail() {
       {/* Bracket tab */}
       {tab === 'bracket' && (
         tournament.matches.length > 0
-          ? <BracketView matches={tournament.matches} totalRounds={totalRounds} />
+          ? <BracketView
+              matches={tournament.matches}
+              totalRounds={totalRounds}
+              adminMode
+              tournamentId={id}
+              adminToken={token ?? undefined}
+              onSessionCreated={(matchId, sessionId, code1, code2) => {
+                setTournament(prev => prev ? {
+                  ...prev,
+                  matches: prev.matches.map(m =>
+                    m.id === matchId ? { ...m, session: { id: sessionId, code1, code2 } } : m
+                  )
+                } : prev)
+              }}
+            />
           : <div className={styles.empty}>
               <p>Сетка не создана. Одобри участников и нажми «Сгенерировать сетку».</p>
               {approved >= 2 && (

@@ -24,6 +24,7 @@ interface TournamentDetail {
     p1: { id: string; playerName: string; seed: number | null } | null
     p2: { id: string; playerName: string; seed: number | null } | null
     winner: { id: string; playerName: string } | null
+    session?: { id: string; code1: string; code2: string } | null
   }>
 }
 

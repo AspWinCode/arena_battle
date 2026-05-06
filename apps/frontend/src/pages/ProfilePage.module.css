@@ -418,6 +418,43 @@
   font-weight: 600;
 }
 
+/* ── Public profile helpers ──────────────────────────────────────────── */
+.tabContent {
+  padding: 4px 0 24px;
+}
+
+.section {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  margin-bottom: 16px;
+}
+
+.statsGrid {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.statRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 14px;
+}
+
+.statRow:last-child { border-bottom: none; }
+
+.statRowLabel { color: var(--text-muted); }
+
+.statRowValue {
+  font-weight: 700;
+  color: var(--text);
+}
+
 /* ── Responsive ──────────────────────────────────────────────────────── */
 @media (max-width: 640px) {
   .quickStats { grid-template-columns: repeat(3, 1fr); }

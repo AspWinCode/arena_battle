@@ -68,6 +68,7 @@ export const tournamentRoutes: FastifyPluginAsync = async (fastify) => {
             p1:     { select: { id: true, playerName: true, seed: true } },
             p2:     { select: { id: true, playerName: true, seed: true } },
             winner: { select: { id: true, playerName: true, seed: true } },
+            session: { select: { id: true, code1: true, code2: true } },
           },
         },
       },
@@ -232,6 +233,55 @@ export const tournamentRoutes: FastifyPluginAsync = async (fastify) => {
       } catch (e) {
         return reply.status(400).send({ error: e instanceof Error ? e.message : 'Ошибка генерации' })
       }
+    }
+  )
+
+  // Create a real battle session for a tournament match (admin)
+  fastify.post<{ Params: { id: string; matchId: string } }>(
+    '/:id/matches/:matchId/session',
+    { onRequest: [fastify.authenticate] },
+    async (req, reply) => {
+      const jwt = req.user as { adminId: string }
+
+      const match = await prisma.tournamentMatch.findUnique({
+        where: { id: req.params.matchId },
+        include: { tournament: true },
+      })
+      if (!match) return reply.status(404).send({ error: 'Match not found' })
+      if (match.sessionId) return reply.status(409).send({ error: 'Session already exists' })
+
+      // Generate unique 6-char join codes
+      function genCode(): string {
+        const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
+        return Array.from({ length: 6 }, () => chars[Math.floor(Math.random() * chars.length)]).join('')
+      }
+      let code1: string, code2: string
+      do { code1 = genCode() } while (await prisma.session.findUnique({ where: { code1 } }))
+      do { code2 = genCode() } while (code2 === code1 || await prisma.session.findUnique({ where: { code2 } }))
+
+      const session = await prisma.session.create({
+        data: {
+          adminId: jwt.adminId,
+          name: `${match.tournament.name} — Раунд ${match.round} #${match.position}`,
+          level: match.tournament.level as 'BLOCKS' | 'CODE' | 'PRO',
+          format: match.tournament.format as 'bo1' | 'bo3' | 'bo5',
+          timeLimit: 10,
+          allowedSkins: ['robot', 'gladiator', 'boxer', 'cosmonaut'],
+          code1,
+          code2,
+        },
+      })
+
+      await prisma.tournamentMatch.update({
+        where: { id: req.params.matchId },
+        data:  { sessionId: session.id },
+      })
+
+      return reply.status(201).send({
+        sessionId: session.id,
+        code1: session.code1,
+        code2: session.code2,
+      })
     }
   )
 

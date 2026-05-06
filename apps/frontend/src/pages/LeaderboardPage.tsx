@@ -18,13 +18,15 @@ interface LeaderEntry {
 
 // Shape returned by the real API
 interface ApiLeaderEntry {
-  rank:        number
-  username:    string
-  displayName: string
-  avatar:      string
-  wins:        number
-  total:       number
-  winRate:     number
+  rank:          number
+  username:      string
+  displayName:   string
+  avatar:        string
+  wins:          number
+  total:         number
+  winRate:       number
+  bestStreak:    number
+  currentStreak: number
 }
 
 const MOCK_LEADERS: LeaderEntry[] = [
@@ -63,7 +65,7 @@ export default function LeaderboardPage() {
             avatar:  e.avatar,
             xp:      e.wins * 100,   // approximate XP from wins
             wins:    e.wins,
-            streak:  0,              // streak not returned by leaderboard endpoint
+            streak:  e.bestStreak ?? 0,
             winRate: e.winRate,
           })))
           setIsLive(true)

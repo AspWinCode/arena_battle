@@ -150,7 +150,37 @@ export const userProfileRoutes: FastifyPluginAsync = async (fastify) => {
     const stats = await calcStats(user.id)
     const achievements = buildAchievements(stats)
 
-    return reply.send({ user, stats, achievements })
+    // Recent sessions for public profile (last 5)
+    const recentPlayers = await prisma.player.findMany({
+      where: { userId: user.id },
+      orderBy: { createdAt: 'desc' },
+      take: 5,
+      include: {
+        session: {
+          select: {
+            id: true, name: true, status: true, createdAt: true,
+            battles: { select: { winner: true, round: true } },
+          },
+        },
+      },
+    })
+
+    const recentSessions = recentPlayers.map(p => {
+      const myWins = p.session.battles.filter(b => b.winner === p.slot).length
+      const opWins = p.session.battles.filter(b => b.winner !== p.slot && b.winner !== 0).length
+      return {
+        sessionId: p.session.id,
+        sessionName: p.session.name,
+        slot: p.slot,
+        lang: p.lang,
+        skin: p.skin,
+        won: myWins > opWins,
+        score: [myWins, opWins],
+        playedAt: p.session.createdAt,
+      }
+    })
+
+    return reply.send({ user, stats, achievements, recentSessions })
   })
 
   // Own full profile (private — includes email)
@@ -259,6 +289,8 @@ export const userProfileRoutes: FastifyPluginAsync = async (fastify) => {
         username: true,
         displayName: true,
         avatar: true,
+        bestStreak: true,
+        currentStreak: true,
         players: {
           select: {
             slot: true,
@@ -280,7 +312,11 @@ export const userProfileRoutes: FastifyPluginAsync = async (fastify) => {
         if (myWins > oppWins) wins++
       }
       const winRate = total > 0 ? Math.round((wins / total) * 100) : 0
-      return { username: u.username, displayName: u.displayName, avatar: u.avatar, wins, total, winRate }
+      return {
+        username: u.username, displayName: u.displayName, avatar: u.avatar,
+        wins, total, winRate,
+        bestStreak: u.bestStreak, currentStreak: u.currentStreak,
+      }
     })
 
     ranked.sort((a, b) => b.wins - a.wins || b.winRate - a.winRate)

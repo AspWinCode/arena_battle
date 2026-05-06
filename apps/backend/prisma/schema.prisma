@@ -73,6 +73,7 @@ model Session {
   admin       Admin    @relation(fields: [adminId], references: [id])
   players     Player[]
   battles     Battle[]
+  tournamentMatch TournamentMatch?
 }
 
 model Player {
@@ -188,7 +189,8 @@ model TournamentMatch {
   winnerId     String?
   winner       TournamentApplication?  @relation("Match_Winner", fields: [winnerId], references: [id])
 
-  sessionId    String?
+  sessionId    String?                 @unique
+  session      Session?                @relation(fields: [sessionId], references: [id])
   status       MatchStatus             @default(PENDING)
   scheduledAt  DateTime?
 
