@@ -8,7 +8,7 @@ try {
     port: Number(process.env.PORT ?? 3001),
     host: process.env.HOST ?? '0.0.0.0',
   })
-  console.log(`🚀 RoboCode Arena backend listening on port ${process.env.PORT ?? 3001}`)
+  console.log(`🚀 CodeFighters backend listening on port ${process.env.PORT ?? 3001}`)
 } catch (err) {
   server.log.error(err)
   process.exit(1)

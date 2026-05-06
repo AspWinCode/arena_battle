@@ -14,7 +14,7 @@ export default function LobbyScreen() {
     <div className={styles.root}>
       <div className={styles.logo}>
         <span>🤖</span>
-        <span>RoboCode Arena</span>
+        <span>CodeFighters</span>
       </div>
 
       <div className={styles.players}>

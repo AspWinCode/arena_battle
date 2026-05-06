@@ -77,7 +77,7 @@ export default function AdminDashboard() {
       {/* Header */}
       <header className={styles.header}>
         <div className={styles.headerLeft}>
-          <span className={styles.logo}>🤖 RoboCode Admin</span>
+          <span className={styles.logo}>🤖 CodeFighters Admin</span>
         </div>
         <div className={styles.headerRight}>
           <Link to="/admin/users" className="btn btn-ghost" style={{ fontSize: 13 }}>

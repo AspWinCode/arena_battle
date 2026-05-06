@@ -38,7 +38,7 @@ export default function LoginPage() {
           <span style={{ fontSize: 40 }}>🤖</span>
           <div>
             <h1 className={styles.title}>Вход</h1>
-            <p className={styles.sub}>RoboCode Arena</p>
+            <p className={styles.sub}>CodeFighters</p>
           </div>
         </div>
 

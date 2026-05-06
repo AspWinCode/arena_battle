@@ -33,7 +33,7 @@ export default function AdminLoginPage() {
       <form className={styles.card} onSubmit={handleSubmit}>
         <div className={styles.logo}>
           <span>🤖</span>
-          <span>RoboCode Admin</span>
+          <span>CodeFighters Admin</span>
         </div>
 
         <h2 className={styles.title}>Вход в панель</h2>

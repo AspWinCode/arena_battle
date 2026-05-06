@@ -21,9 +21,9 @@ async function sendResetEmail(to: string, code: string) {
   await transporter.sendMail({
     from: process.env.SMTP_FROM ?? 'no-reply@robocode.arena',
     to,
-    subject: 'Восстановление пароля — RoboCode Arena',
+    subject: 'Восстановление пароля — CodeFighters',
     text: `Ваш код сброса пароля: ${code}\n\nКод действует 10 минут.`,
-    html: `<h2>RoboCode Arena</h2><p>Ваш код сброса пароля:</p><h1 style="letter-spacing:8px;font-family:monospace">${code}</h1><p style="color:#888">Код действует 10 минут. Если вы не запрашивали сброс — проигнорируйте это письмо.</p>`,
+    html: `<h2>CodeFighters</h2><p>Ваш код сброса пароля:</p><h1 style="letter-spacing:8px;font-family:monospace">${code}</h1><p style="color:#888">Код действует 10 минут. Если вы не запрашивали сброс — проигнорируйте это письмо.</p>`,
   })
 }
 

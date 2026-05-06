@@ -44,7 +44,7 @@ export default function AdminTournamentNew() {
           <div className={styles.field}>
             <label className={styles.label}>Название *</label>
             <input className={styles.input} required maxLength={80}
-              placeholder="RoboCode Championship 2026"
+              placeholder="CodeFighters Championship 2026"
               value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} />
           </div>
 

@@ -11,7 +11,7 @@ export default function LandingPage() {
         <div className={styles.navInner}>
           <div className={styles.navLogo}>
             <span>⚔️</span>
-            <span>Arena<span className={styles.accent}>Battle</span></span>
+            <span>Code<span className={styles.accent}>Fighters</span></span>
           </div>
           <div className={styles.navLinks}>
             <Link to="/tournaments" className={styles.navLink}>Турниры</Link>
@@ -279,14 +279,14 @@ export default function LandingPage() {
       <footer className={styles.footer}>
         <div className={styles.container}>
           <div className={styles.footerInner}>
-            <div className={styles.footerLogo}>⚔️ Arena<span className={styles.accent}>Battle</span></div>
+            <div className={styles.footerLogo}>⚔️ Code<span className={styles.accent}>Fighters</span></div>
             <div className={styles.footerLinks}>
               <Link to="/tournaments">Турниры</Link>
               <Link to="/leaderboard">Рейтинг</Link>
               <Link to="/learn">Обучение</Link>
               <Link to="/join">В бой</Link>
             </div>
-            <div className={styles.footerCopy}>© 2025 ArenaBattle</div>
+            <div className={styles.footerCopy}>© 2025 CodeFighters</div>
           </div>
         </div>
       </footer>

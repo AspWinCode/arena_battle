@@ -80,7 +80,7 @@ export default function JoinPage() {
         <div className={styles.logo}>
           <span className={styles.logoIcon}>🤖</span>
           <div>
-            <h1 className={styles.logoTitle}>RoboCode Arena</h1>
+            <h1 className={styles.logoTitle}>CodeFighters</h1>
             <p className={styles.logoSub}>Учись программировать в бою</p>
           </div>
         </div>

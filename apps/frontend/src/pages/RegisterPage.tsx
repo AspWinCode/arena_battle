@@ -63,7 +63,7 @@ export default function RegisterPage() {
           <span style={{ fontSize: 40 }}>{form.avatar}</span>
           <div>
             <h1 className={styles.title}>Регистрация</h1>
-            <p className={styles.sub}>RoboCode Arena</p>
+            <p className={styles.sub}>CodeFighters</p>
           </div>
         </div>
 

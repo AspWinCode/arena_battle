@@ -14,7 +14,7 @@ const transporter = enabled
     })
   : null
 
-const FROM = process.env.SMTP_FROM ?? `"RoboCode Arena" <noreply@robocode.arena>`
+const FROM = process.env.SMTP_FROM ?? `"CodeFighters" <noreply@codefighters.app>`
 const APP_URL = process.env.FRONTEND_URL ?? 'http://localhost:5173'
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
@@ -30,12 +30,12 @@ function baseHtml(title: string, body: string): string {
         <tr><td style="padding:32px 40px 24px;border-bottom:1px solid #2a2a50;text-align:center;">
           <div style="font-size:36px;margin-bottom:8px;">🤖</div>
           <div style="font-size:22px;font-weight:800;background:linear-gradient(135deg,#00e5ff,#7c3aed);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
-            RoboCode Arena
+            CodeFighters
           </div>
         </td></tr>
         <tr><td style="padding:32px 40px;">${body}</td></tr>
         <tr><td style="padding:16px 40px 24px;border-top:1px solid #2a2a50;text-align:center;color:#64748b;font-size:12px;">
-          © RoboCode Arena · <a href="${APP_URL}" style="color:#00e5ff;">arenabattle.ru</a>
+          © CodeFighters · <a href="${APP_URL}" style="color:#00e5ff;">codefighters.app</a>
         </td></tr>
       </table>
     </td></tr>
@@ -67,7 +67,7 @@ export async function sendApprovalWithCredentials(opts: {
   tournamentName: string
 }): Promise<void> {
   const { to, playerName, username, password, tournamentName } = opts
-  const html = baseHtml('Заявка одобрена — RoboCode Arena', `
+  const html = baseHtml('Заявка одобрена — CodeFighters', `
     <h2 style="margin:0 0 16px;font-size:20px;color:#4ade80;">✅ Твоя заявка одобрена!</h2>
     <p style="margin:0 0 8px;">Привет, <strong>${playerName}</strong>!</p>
     <p style="margin:0 0 24px;color:#94a3b8;">Ты участвуешь в турнире <strong style="color:#e2e8f0;">${tournamentName}</strong>.</p>
@@ -94,7 +94,7 @@ export async function sendApprovalNotification(opts: {
   tournamentName: string
 }): Promise<void> {
   const { to, playerName, tournamentName } = opts
-  const html = baseHtml('Заявка одобрена — RoboCode Arena', `
+  const html = baseHtml('Заявка одобрена — CodeFighters', `
     <h2 style="margin:0 0 16px;font-size:20px;color:#4ade80;">✅ Заявка одобрена!</h2>
     <p style="margin:0 0 8px;">Привет, <strong>${playerName}</strong>!</p>
     <p style="margin:0 0 24px;color:#94a3b8;">Ты участвуешь в турнире <strong style="color:#e2e8f0;">${tournamentName}</strong>.</p>
@@ -114,7 +114,7 @@ export async function sendRejectionNotification(opts: {
   reason?: string
 }): Promise<void> {
   const { to, playerName, tournamentName, reason } = opts
-  const html = baseHtml('Заявка отклонена — RoboCode Arena', `
+  const html = baseHtml('Заявка отклонена — CodeFighters', `
     <h2 style="margin:0 0 16px;font-size:20px;color:#f87171;">❌ Заявка отклонена</h2>
     <p style="margin:0 0 8px;">Привет, <strong>${playerName}</strong>.</p>
     <p style="margin:0 0 16px;color:#94a3b8;">К сожалению, твоя заявка на турнир <strong style="color:#e2e8f0;">${tournamentName}</strong> была отклонена.</p>
