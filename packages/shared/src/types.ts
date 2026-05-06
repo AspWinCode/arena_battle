@@ -7,7 +7,7 @@ export type SkinId =
   | 'robot'     | 'gladiator' | 'boxer'     | 'cosmonaut'
   | 'ninja'     | 'mage'      | 'paladin'   | 'sniper'
   | 'tank'      | 'vampire'   | 'samurai'   | 'phantom'
-  | 'engineer'  | 'berserker'
+  | 'engineer'  | 'berserker' | 'scorpion'  | 'plague'
 export type Lang = 'js' | 'py' | 'cpp' | 'java' | 'auto'
 
 export type ActionName =

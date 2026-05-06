@@ -28,6 +28,8 @@ const SKIN_COLORS: Record<string, { primary: string; secondary: string; accent: 
   phantom:   { primary: '#6d28d9', secondary: '#12082a', accent: '#a78bfa' },
   engineer:  { primary: '#f59e0b', secondary: '#2d1a00', accent: '#fde68a' },
   berserker: { primary: '#b91c1c', secondary: '#1a0505', accent: '#f87171' },
+  scorpion:  { primary: '#d97706', secondary: '#2d1400', accent: '#fcd34d' },
+  plague:    { primary: '#065f46', secondary: '#022c22', accent: '#6ee7b7' },
 }
 
 const GL = '#f1cf68'

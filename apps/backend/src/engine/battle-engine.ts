@@ -41,6 +41,9 @@ interface ExtState extends PlayerState {
   flatDmgReduction:    number    // Tank
   specialRageCost:     number    // Engineer (60), others (100)
   rageFromDealt:       boolean   // Berserker
+  attackIgnoresDodge:  boolean   // Scorpion
+  poisonOnHit:         number    // Plague Doctor: HP/turn applied to enemy
+  poisonStacks:        number    // runtime: current incoming poison per turn
   actionDmgOverrides:  Partial<Record<ActionName, number>>  // Sniper
   cooldownOverrides:   Partial<Record<ActionName, number>>  // Phantom, Sniper
   staminaCostOverrides:Partial<Record<ActionName, number>>  // Mage
@@ -85,6 +88,9 @@ export class BattleEngine {
       flatDmgReduction:    char.flatDmgReduction,
       specialRageCost:     char.specialRageCost,
       rageFromDealt:       char.rageFromDealt,
+      attackIgnoresDodge:  char.attackIgnoresDodge,
+      poisonOnHit:         char.poisonOnHit,
+      poisonStacks:        0,
       actionDmgOverrides:  char.actionDmgOverrides,
       cooldownOverrides:   char.cooldownOverrides,
       staminaCostOverrides:char.staminaCostOverrides,
@@ -247,6 +253,15 @@ export class BattleEngine {
     this.p1.hp = Math.min(this.p1.maxHp, Math.max(0, this.p1.hp - p1DmgDealt + p1Heal))
     this.p2.hp = Math.min(this.p2.maxHp, Math.max(0, this.p2.hp - p2DmgDealt + p2Heal))
 
+    // ── Plague Doctor: poison tick ────────────────────────────────────────────
+    if (this.p1.poisonStacks > 0) this.p1.hp = Math.max(0, this.p1.hp - this.p1.poisonStacks)
+    if (this.p2.poisonStacks > 0) this.p2.hp = Math.max(0, this.p2.hp - this.p2.poisonStacks)
+    // Apply new poison stacks if plague doctor landed a hit
+    if (this.p1.poisonOnHit > 0 && (a1 === 'attack' || a1 === 'heavy') && p2DmgDealt > 0)
+      this.p2.poisonStacks = this.p1.poisonOnHit
+    if (this.p2.poisonOnHit > 0 && (a2 === 'attack' || a2 === 'heavy') && p1DmgDealt > 0)
+      this.p1.poisonStacks = this.p2.poisonOnHit
+
     // ── Rage accumulation ────────────────────────────────────────────────────
     // Base: rage from damage taken
     if (p1DmgDealt > 0) this.p1.rage = Math.min(MAX_RAGE, this.p1.rage + p1DmgDealt * RAGE_PER_DAMAGE * this.p1.rageMult)
@@ -305,7 +320,8 @@ export class BattleEngine {
       dmg = Math.round(dmg * (1 - shieldAbsorb))
     } else if (defAction === 'dodge') {
       if (attAction === 'attack' || attAction === 'heavy') {
-        dmg = 0
+        // Scorpion: dodge doesn't work vs his attack/heavy
+        if (!att.attackIgnoresDodge) dmg = 0
       } else if (attAction === 'laser') {
         // Ninja: 100% evade; others: 50%
         if (def.superDodge || Math.random() < DODGE_LASER_EVADE_CHANCE) dmg = 0
@@ -316,7 +332,7 @@ export class BattleEngine {
       }
     }
 
-    // Tank: flat damage reduction (minimum 1 always gets through)
+    // Rino: flat damage reduction (minimum 1 always gets through)
     if (def.flatDmgReduction > 0 && dmg > 0) {
       dmg = Math.max(1, dmg - def.flatDmgReduction)
     }
@@ -366,6 +382,9 @@ export class BattleEngine {
     if (p2.character === 'ninja' && a2 === 'dodge') parts.push('🌑 Ниндзя уклонился!')
     if (p1.character === 'samurai' && p1.hp <= p1.maxHp * p1.bushidoThreshold && d2 > 0) parts.push('⚔️ БУСИДО!')
     if (p2.character === 'samurai' && p2.hp <= p2.maxHp * p2.bushidoThreshold && d1 > 0) parts.push('⚔️ БУСИДО!')
+    if (p1.poisonStacks > 0) parts.push(`☠️ P1 яд -${p1.poisonStacks}`)
+    if (p2.poisonStacks > 0) parts.push(`☠️ P2 яд -${p2.poisonStacks}`)
+    if (p1.character === 'scorpion' && (a1 === 'attack' || a1 === 'heavy') && a2 === 'dodge') parts.push('🦂 Захват!')
     if (parts.length === 0) parts.push(`${a1} vs ${a2}`)
     return parts.join(' | ')
   }

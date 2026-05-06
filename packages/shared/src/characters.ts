@@ -34,6 +34,10 @@ export interface CharacterStats {
   specialRageCost: number
   /** Berserker: also gains rage from damage DEALT (in addition to damage taken) */
   rageFromDealt: boolean
+  /** Scorpion: opponent's dodge has no effect on attack/heavy ("GET OVER HERE") */
+  attackIgnoresDodge: boolean
+  /** Plague Doctor: attack/heavy applies this many HP/turn poison damage to enemy */
+  poisonOnHit: number
   /** Per-action damage multipliers applied on top of dmgMult (Sniper attack×0.5) */
   actionDmgOverrides: Partial<Record<ActionName, number>>
   /** Cooldown overrides for specific actions (Sniper laser→1, Phantom dodge→0) */
@@ -63,6 +67,8 @@ const DEFAULTS: Omit<CharacterStats, 'maxHp' | 'dmgMult' | 'rageMult' | 'name' |
   flatDmgReduction:    0,
   specialRageCost:     100,
   rageFromDealt:       false,
+  attackIgnoresDodge:  false,
+  poisonOnHit:         0,
   actionDmgOverrides:  {},
   cooldownOverrides:   {},
   staminaCostOverrides:{},
@@ -229,6 +235,30 @@ export const CHARACTER_STATS: Record<SkinId, CharacterStats> = {
     color:   '#b91c1c',
     tagline: 'Ярость от атак в обе стороны',
     passive: '🔥 Кровожажда: ярость накапливается от получаемого И от наносимого урона. Спецудар очень часто.',
+  },
+
+  // ── New characters ──────────────────────────────────────────────────────────
+
+  scorpion: {
+    ...DEFAULTS,
+    maxHp: 90, dmgMult: 1.1, rageMult: 1.0,
+    attackIgnoresDodge: true,
+    name:    'Скорпион',
+    icon:    '🦂',
+    color:   '#d97706',
+    tagline: 'Уклонение бесполезно',
+    passive: '🦂 Захват: уклонение противника не спасает от attack и heavy. GET OVER HERE!',
+  },
+
+  plague: {
+    ...DEFAULTS,
+    maxHp: 85, dmgMult: 0.9, rageMult: 1.0,
+    poisonOnHit: 4,
+    name:    'Чумной доктор',
+    icon:    '🎭',
+    color:   '#065f46',
+    tagline: 'Каждый удар отравляет',
+    passive: '☠️ Чума: attack и heavy накладывают яд — 4 HP урона каждый ход до конца раунда.',
   },
 }
 

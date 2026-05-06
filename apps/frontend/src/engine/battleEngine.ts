@@ -39,6 +39,9 @@ interface ExtState extends PlayerState {
   flatDmgReduction:    number
   specialRageCost:     number
   rageFromDealt:       boolean
+  attackIgnoresDodge:  boolean   // Scorpion
+  poisonOnHit:         number    // Plague Doctor
+  poisonStacks:        number    // runtime: incoming poison per turn
   actionDmgOverrides:  Partial<Record<ActionName, number>>
   cooldownOverrides:   Partial<Record<ActionName, number>>
   staminaCostOverrides:Partial<Record<ActionName, number>>
@@ -85,6 +88,9 @@ export class BattleEngine {
       flatDmgReduction:    char.flatDmgReduction,
       specialRageCost:     char.specialRageCost,
       rageFromDealt:       char.rageFromDealt,
+      attackIgnoresDodge:  char.attackIgnoresDodge,
+      poisonOnHit:         char.poisonOnHit,
+      poisonStacks:        0,
       actionDmgOverrides:  char.actionDmgOverrides,
       cooldownOverrides:   char.cooldownOverrides,
       staminaCostOverrides:char.staminaCostOverrides,
@@ -196,7 +202,8 @@ export class BattleEngine {
       dmg = Math.round(dmg * (1 - shieldAbs))
     } else if (defAction === 'dodge') {
       if (attAction === 'attack' || attAction === 'heavy') {
-        dmg = 0
+        // Scorpion: dodge doesn't work vs his attack/heavy
+        if (!att.attackIgnoresDodge) dmg = 0
       } else if (attAction === 'laser') {
         if (def.superDodge || Math.random() < DODGE_LASER_EVADE_CHANCE) dmg = 0
       } else if (attAction === 'special') {
@@ -205,7 +212,7 @@ export class BattleEngine {
       }
     }
 
-    // Tank flat reduction
+    // Rino flat reduction
     if (def.flatDmgReduction > 0 && dmg > 0) {
       dmg = Math.max(1, dmg - def.flatDmgReduction)
     }
@@ -265,6 +272,14 @@ export class BattleEngine {
     this.p1.hp = Math.min(this.p1.maxHp, Math.max(0, this.p1.hp - p1Dealt + p1Heal))
     this.p2.hp = Math.min(this.p2.maxHp, Math.max(0, this.p2.hp - p2Dealt + p2Heal))
 
+    // ── Plague Doctor: poison tick ────────────────────────────────────────────
+    if (this.p1.poisonStacks > 0) this.p1.hp = Math.max(0, this.p1.hp - this.p1.poisonStacks)
+    if (this.p2.poisonStacks > 0) this.p2.hp = Math.max(0, this.p2.hp - this.p2.poisonStacks)
+    if (this.p1.poisonOnHit > 0 && (a1 === 'attack' || a1 === 'heavy') && p2Dealt > 0)
+      this.p2.poisonStacks = this.p1.poisonOnHit
+    if (this.p2.poisonOnHit > 0 && (a2 === 'attack' || a2 === 'heavy') && p1Dealt > 0)
+      this.p1.poisonStacks = this.p2.poisonOnHit
+
     if (p1Dealt > 0) this.p1.rage = Math.min(MAX_RAGE, this.p1.rage + p1Dealt * RAGE_PER_DAMAGE * this.p1.rageMult)
     if (p2Dealt > 0) this.p2.rage = Math.min(MAX_RAGE, this.p2.rage + p2Dealt * RAGE_PER_DAMAGE * this.p2.rageMult)
     if (this.p1.rageFromDealt && p2Dealt > 0) this.p1.rage = Math.min(MAX_RAGE, this.p1.rage + p2Dealt * RAGE_PER_DAMAGE)
@@ -300,6 +315,9 @@ export class BattleEngine {
     if (p1Dealt > 0) logParts.push(`P1 -${p1Dealt}${pen2 ? '⚠️' : ''}`)
     if (p1Heal > 0) logParts.push(`P1 +${p1Heal}HP`)
     if (p2Heal > 0) logParts.push(`P2 +${p2Heal}HP`)
+    if (this.p1.poisonStacks > 0) logParts.push(`☠️ P1 яд -${this.p1.poisonStacks}`)
+    if (this.p2.poisonStacks > 0) logParts.push(`☠️ P2 яд -${this.p2.poisonStacks}`)
+    if (this.p1.character === 'scorpion' && (a1 === 'attack' || a1 === 'heavy') && a2 === 'dodge') logParts.push('🦂 Захват!')
     if (logParts.length === 0) logParts.push(`${a1} vs ${a2}`)
 
     return {
