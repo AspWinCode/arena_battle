@@ -126,7 +126,7 @@ export class BattleEngine {
     const { strategy } = self
 
     if (self.rage >= SPECIAL_RAGE_COST && this.isActionAvailable(self, 'special')) return 'special'
-    if (enemy.hp < 30) return this.resolveStaticAction(self, strategy.lowHp)
+    if (self.hp < 30) return this.resolveStaticAction(self, strategy.lowHp)
     if (enemy.lastAction === 'laser' && strategy.onHit === 'dodge') return 'dodge'
     if (enemy.shieldActive && (strategy.primary === 'attack' || strategy.primary === 'heavy')) return 'heavy'
     return this.resolveStaticAction(self, strategy.primary)
