@@ -50,7 +50,7 @@ const updateSchema = z.object({
   // avatar can be an emoji (1-4 chars) OR a data: URL (base64) OR a /uploads/ path
   avatar:           z.string().max(200000).optional(),
   preferredLang:    z.enum(['js', 'py', 'cpp', 'java']).optional(),
-  preferredSkin:    z.enum(['robot', 'gladiator', 'boxer', 'cosmonaut']).optional(),
+  preferredSkin:    z.enum(ALL_SKIN_IDS).optional(),
   experienceLevel:  z.enum(['beginner', 'intermediate', 'advanced']).optional(),
   programmingYears: z.number().int().min(0).max(40).optional(),
 })
