@@ -28,6 +28,7 @@ export default function LandingPage() {
           <div className={styles.heroGrid} />
           <div className={styles.glow1} />
           <div className={styles.glow2} />
+          <img src="/logo.png" className={styles.logoBgImg} aria-hidden />
         </div>
 
         <div className={styles.container}>
