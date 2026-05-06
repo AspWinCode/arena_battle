@@ -3,6 +3,20 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useUserStore } from '../stores/userStore'
 import styles from './UserMenu.module.css'
 
+function AvatarImg({ src, size = 28 }: { src: string; size?: number }) {
+  const isImage = src?.startsWith('data:') || src?.startsWith('/')
+  if (isImage) {
+    return (
+      <img
+        src={src}
+        style={{ width: size, height: size, borderRadius: '50%', objectFit: 'cover', display: 'block', flexShrink: 0 }}
+        alt=""
+      />
+    )
+  }
+  return <>{src || '🤖'}</>
+}
+
 export default function UserMenu() {
   const navigate = useNavigate()
   const { user, logout } = useUserStore()
@@ -35,7 +49,7 @@ export default function UserMenu() {
   return (
     <div className={styles.wrap} ref={ref}>
       <button className={styles.trigger} onClick={() => setOpen(o => !o)}>
-        <span className={styles.avatar}>{user.avatar}</span>
+        <span className={styles.avatar}><AvatarImg src={user.avatar} size={28} /></span>
         <span className={styles.name}>{user.displayName}</span>
         <span className={styles.chevron}>{open ? '▲' : '▼'}</span>
       </button>
@@ -43,7 +57,7 @@ export default function UserMenu() {
       {open && (
         <div className={styles.dropdown}>
           <div className={styles.dropHeader}>
-            <span className={styles.dropAvatar}>{user.avatar}</span>
+            <span className={styles.dropAvatar}><AvatarImg src={user.avatar} size={40} /></span>
             <div>
               <div className={styles.dropName}>{user.displayName}</div>
               <div className={styles.dropUser}>@{user.username}</div>
