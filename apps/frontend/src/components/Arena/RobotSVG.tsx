@@ -33,7 +33,6 @@ const GLADIATOR_Y             = -GLADIATOR_HEIGHT
 const GLADIATOR_SCALE         = GLADIATOR_HEIGHT / GLADIATOR_SOURCE_HEIGHT
 
 // ── Gladiator shield sprite ─────────────────────────────────────────────────
-// Source image: gladiator holding axe + round shield (921 × 690 px)
 const SHIELD_SOURCE_WIDTH  = 921
 const SHIELD_SOURCE_HEIGHT = 690
 const SHIELD_SPRITE_HREF   = '/skins/gladiator_shield.png?v=1'
@@ -42,6 +41,27 @@ const SHIELD_WIDTH         = Math.round(SHIELD_HEIGHT * (SHIELD_SOURCE_WIDTH / S
 const SHIELD_X             = -SHIELD_WIDTH / 2
 const SHIELD_Y             = -SHIELD_HEIGHT
 const SHIELD_SCALE         = SHIELD_HEIGHT / SHIELD_SOURCE_HEIGHT
+
+// ── Gladiator attack sprites (2-frame animation) ────────────────────────────
+// Frame 1: wind-up (raising axe) — portrait ~563×860
+const ATK1_SOURCE_W = 563
+const ATK1_SOURCE_H = 860
+const ATK1_HREF     = '/skins/gladiator_attack1.png?v=1'
+const ATK1_H        = 210
+const ATK1_W        = Math.round(ATK1_H * (ATK1_SOURCE_W / ATK1_SOURCE_H))
+const ATK1_X        = -ATK1_W / 2
+const ATK1_Y        = -ATK1_H
+const ATK1_SCALE    = ATK1_H / ATK1_SOURCE_H
+
+// Frame 2: swing (axe impact) — landscape ~1351×860
+const ATK2_SOURCE_W = 1351
+const ATK2_SOURCE_H = 860
+const ATK2_HREF     = '/skins/gladiator_attack2.png?v=1'
+const ATK2_H        = 200
+const ATK2_W        = Math.round(ATK2_H * (ATK2_SOURCE_W / ATK2_SOURCE_H))
+const ATK2_X        = -ATK2_W / 2
+const ATK2_Y        = -ATK2_H
+const ATK2_SCALE    = ATK2_H / ATK2_SOURCE_H
 
 const GENERIC_SCALE  = 0.70
 const GENERIC_FOOT_Y = 51 * GENERIC_SCALE
@@ -70,7 +90,6 @@ function GladiatorBody({ action, shieldActive }: {
         {isShield ? (
           /* ── Shield stance PNG ── */
           <g>
-            {/* Golden shield glow pulse */}
             <ellipse
               cx={SHIELD_WIDTH * 0.08} cy={-SHIELD_HEIGHT * 0.52}
               rx={SHIELD_WIDTH * 0.32} ry={SHIELD_HEIGHT * 0.36}
@@ -79,39 +98,66 @@ function GladiatorBody({ action, shieldActive }: {
               <animate attributeName="opacity" values="0.7;0.2;0.7" dur="0.75s" repeatCount="indefinite" />
               <animate attributeName="rx" values={`${SHIELD_WIDTH * 0.32};${SHIELD_WIDTH * 0.36};${SHIELD_WIDTH * 0.32}`} dur="0.75s" repeatCount="indefinite" />
             </ellipse>
-
             <g transform={`translate(${SHIELD_X}, ${SHIELD_Y}) scale(${SHIELD_SCALE})`}>
-              <image
-                x={0} y={0}
-                width={SHIELD_SOURCE_WIDTH} height={SHIELD_SOURCE_HEIGHT}
-                href={SHIELD_SPRITE_HREF} preserveAspectRatio="none"
-              />
+              <image x={0} y={0} width={SHIELD_SOURCE_WIDTH} height={SHIELD_SOURCE_HEIGHT}
+                href={SHIELD_SPRITE_HREF} preserveAspectRatio="none" />
             </g>
-
-            <text
-              x={SHIELD_WIDTH * 0.1} y={SHIELD_Y + SHIELD_HEIGHT * 0.46}
-              fill={GL} fontSize={10} fontWeight={800} fontFamily="monospace" textAnchor="start"
-            >
+            <text x={SHIELD_WIDTH * 0.1} y={SHIELD_Y + SHIELD_HEIGHT * 0.46}
+              fill={GL} fontSize={10} fontWeight={800} fontFamily="monospace" textAnchor="start">
               SHIELD
             </text>
           </g>
-        ) : (
-          /* ── Normal / attacking stance PNG ── */
-          <g>
-            <animateTransform
-              attributeName="transform" type="rotate"
-              values={attacking ? '-7 0 -20; 5 0 -20; -7 0 -20' : '0 0 0; 0 0 0; 0 0 0'}
-              dur={attacking ? '0.34s' : '1s'}
-              repeatCount="indefinite" calcMode="spline"
-              keySplines="0.4 0 0.6 1; 0.4 0 0.6 1"
-            />
 
+        ) : attacking ? (
+          /* ── Attack 2-frame animation: wind-up → swing ── */
+          <g>
+            {/* Frame 1: wind-up (замах) — visible first 45% of cycle */}
+            <g transform={`translate(${ATK1_X}, ${ATK1_Y}) scale(${ATK1_SCALE})`}>
+              <image x={0} y={0} width={ATK1_SOURCE_W} height={ATK1_SOURCE_H}
+                href={ATK1_HREF} preserveAspectRatio="none">
+                {/* 0→45%: opacity 1, 45%→50%: fade out, 50→95%: 0, 95%→100%: fade in */}
+                <animate attributeName="opacity"
+                  values="1;1;0;0;1"
+                  keyTimes="0;0.45;0.5;0.95;1"
+                  dur="0.42s" repeatCount="indefinite" calcMode="linear" />
+              </image>
+            </g>
+
+            {/* Frame 2: swing (удар с кровью) — visible 50–95% of cycle */}
+            <g transform={`translate(${ATK2_X}, ${ATK2_Y}) scale(${ATK2_SCALE})`}>
+              <image x={0} y={0} width={ATK2_SOURCE_W} height={ATK2_SOURCE_H}
+                href={ATK2_HREF} preserveAspectRatio="none">
+                <animate attributeName="opacity"
+                  values="0;0;1;1;0"
+                  keyTimes="0;0.45;0.5;0.95;1"
+                  dur="0.42s" repeatCount="indefinite" calcMode="linear" />
+              </image>
+            </g>
+
+            {/* Золотая вспышка в момент удара */}
+            <circle cx={ATK2_W * 0.3} cy={-ATK2_H * 0.45} r={18} fill={GL} opacity={0}>
+              <animate attributeName="opacity"
+                values="0;0;0.55;0;0"
+                keyTimes="0;0.45;0.6;0.75;1"
+                dur="0.42s" repeatCount="indefinite" calcMode="linear" />
+              <animate attributeName="r"
+                values="10;10;22;10;10"
+                keyTimes="0;0.45;0.6;0.75;1"
+                dur="0.42s" repeatCount="indefinite" calcMode="linear" />
+            </circle>
+
+            <text x={ATK1_W * 0.1} y={ATK1_Y + ATK1_H * 0.46}
+              fill={GL} fontSize={10} fontWeight={800} fontFamily="monospace" textAnchor="start">
+              {action?.toUpperCase()}
+            </text>
+          </g>
+
+        ) : (
+          /* ── Idle / laser / repair / dodge ── */
+          <g>
             <g transform={`translate(${GLADIATOR_X}, ${GLADIATOR_Y}) scale(${GLADIATOR_SCALE})`}>
-              <image
-                x={0} y={0}
-                width={GLADIATOR_SOURCE_WIDTH} height={GLADIATOR_SOURCE_HEIGHT}
-                href={GLADIATOR_SPRITE_HREF} preserveAspectRatio="none"
-              />
+              <image x={0} y={0} width={GLADIATOR_SOURCE_WIDTH} height={GLADIATOR_SOURCE_HEIGHT}
+                href={GLADIATOR_SPRITE_HREF} preserveAspectRatio="none" />
             </g>
 
             {/* Laser spear overlay */}
