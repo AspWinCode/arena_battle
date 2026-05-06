@@ -75,7 +75,8 @@ function GladiatorBody({ action, shieldActive }: {
   shieldActive?: boolean
 }) {
   const isShield   = action === 'shield' || shieldActive
-  const attacking  = action === 'attack' || action === 'heavy' || action === 'special' || action === 'laser'
+  // laser stays in idle branch (shows spear overlay on normal sprite)
+  const attacking  = action === 'attack' || action === 'heavy' || action === 'special'
 
   return (
     <g>
