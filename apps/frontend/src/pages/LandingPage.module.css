@@ -179,14 +179,14 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 6px 16px;
-  background: rgba(0,229,255,.08);
-  border: 1px solid rgba(0,229,255,.22);
-  border-radius: 99px;
-  font-size: 12px;
-  font-weight: 600;
+  padding: 6px 20px;
+  background: rgba(29,233,124,.06);
+  border: 1px solid rgba(29,233,124,.3);
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 700;
   color: var(--accent);
-  letter-spacing: .04em;
+  letter-spacing: .1em;
   text-transform: uppercase;
   margin-bottom: 26px;
 }
@@ -252,13 +252,40 @@
   z-index: 1;
 }
 
-/* Arena card */
+/* Arena card — HUD frame */
 .arenaCard {
   background: var(--bg-card);
-  border: 1px solid rgba(29,233,124,.15);
-  border-radius: 14px;
+  border: 1px solid rgba(29,233,124,.12);
+  border-radius: 4px;
   padding: 20px;
-  box-shadow: 0 0 60px rgba(0,0,0,.7), 0 0 0 1px rgba(29,233,124,.05), inset 0 1px 0 rgba(29,233,124,.06);
+  position: relative;
+  box-shadow: 0 0 60px rgba(0,0,0,.8), 0 0 30px rgba(29,233,124,.04);
+}
+/* HUD corner marks — top-left & bottom-right */
+.arenaCard::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  background:
+    linear-gradient(var(--accent), var(--accent)) top    left  / 16px 2px no-repeat,
+    linear-gradient(var(--accent), var(--accent)) top    left  / 2px 16px no-repeat,
+    linear-gradient(var(--accent), var(--accent)) bottom right / 16px 2px no-repeat,
+    linear-gradient(var(--accent), var(--accent)) bottom right / 2px 16px no-repeat;
+  pointer-events: none;
+  border-radius: 2px;
+}
+/* top-right & bottom-left */
+.arenaCard::after {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  background:
+    linear-gradient(var(--accent), var(--accent)) top    right / 16px 2px no-repeat,
+    linear-gradient(var(--accent), var(--accent)) top    right / 2px 16px no-repeat,
+    linear-gradient(var(--accent), var(--accent)) bottom left  / 16px 2px no-repeat,
+    linear-gradient(var(--accent), var(--accent)) bottom left  / 2px 16px no-repeat;
+  pointer-events: none;
+  border-radius: 2px;
 }
 
 .arenaHead {
@@ -340,8 +367,19 @@
 .chars {
   padding: 80px 0;
   background: var(--bg-mid);
-  border-top: 1px solid var(--border);
+  border-top: 1px solid rgba(29,233,124,.08);
   overflow: hidden;
+  position: relative;
+}
+/* codeby-style glowing divider line */
+.chars::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 50%;
+  transform: translateX(-50%);
+  width: 60%; height: 1px;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  box-shadow: 0 0 20px var(--accent);
 }
 
 .charsHead {
@@ -388,7 +426,17 @@
 /* ── Features ────────────────────────────────────────────────── */
 .features {
   padding: 100px 0;
-  border-top: 1px solid var(--border);
+  border-top: 1px solid rgba(29,233,124,.08);
+  position: relative;
+}
+.features::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 50%;
+  transform: translateX(-50%);
+  width: 50%; height: 1px;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  box-shadow: 0 0 16px var(--accent);
 }
 
 .featGrid {
@@ -399,26 +447,35 @@
 
 .featCard {
   background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: 14px;
+  border: 1px solid rgba(29,233,124,.1);
+  border-radius: 4px;
   padding: 28px;
   position: relative;
-  overflow: hidden;
+  overflow: visible;
   transition: transform .2s, box-shadow .2s, border-color .2s;
 }
+/* HUD corners on feature cards */
 .featCard::before {
   content: '';
   position: absolute;
-  top: 0; left: 0; right: 0;
-  height: 2px;
-  background: var(--accent);
+  inset: -2px;
+  background:
+    linear-gradient(var(--accent), var(--accent)) top    left  / 12px 2px no-repeat,
+    linear-gradient(var(--accent), var(--accent)) top    left  / 2px 12px no-repeat,
+    linear-gradient(var(--accent), var(--accent)) bottom right / 12px 2px no-repeat,
+    linear-gradient(var(--accent), var(--accent)) bottom right / 2px 12px no-repeat,
+    linear-gradient(var(--accent), var(--accent)) top    right / 12px 2px no-repeat,
+    linear-gradient(var(--accent), var(--accent)) top    right / 2px 12px no-repeat,
+    linear-gradient(var(--accent), var(--accent)) bottom left  / 12px 2px no-repeat,
+    linear-gradient(var(--accent), var(--accent)) bottom left  / 2px 12px no-repeat;
   opacity: 0;
-  transition: opacity .2s;
+  transition: opacity .25s;
+  pointer-events: none;
 }
 .featCard:hover {
   transform: translateY(-4px);
-  box-shadow: 0 12px 40px rgba(0,0,0,.6), 0 0 20px rgba(29,233,124,.06);
-  border-color: rgba(29,233,124,.25);
+  box-shadow: 0 12px 40px rgba(0,0,0,.7), 0 0 24px rgba(29,233,124,.07);
+  border-color: rgba(29,233,124,.2);
 }
 .featCard:hover::before { opacity: 1; }
 .featIcon  { font-size: 32px; margin-bottom: 14px; }
@@ -426,7 +483,21 @@
 .featDesc  { font-size: 14px; color: var(--text-muted); line-height: 1.6; }
 
 /* ── How it works ────────────────────────────────────────────── */
-.how { padding: 100px 0; background: var(--bg-mid); border-top: 1px solid var(--border); }
+.how {
+  padding: 100px 0;
+  background: var(--bg-mid);
+  border-top: 1px solid rgba(29,233,124,.08);
+  position: relative;
+}
+.how::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 50%;
+  transform: translateX(-50%);
+  width: 45%; height: 1px;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  box-shadow: 0 0 16px var(--accent);
+}
 
 .steps {
   display: flex;
@@ -438,9 +509,27 @@
 .step {
   flex: 1;
   background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: 16px;
+  border: 1px solid rgba(29,233,124,.1);
+  border-radius: 4px;
   padding: 32px 28px;
+  position: relative;
+  overflow: visible;
+}
+.step::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  background:
+    linear-gradient(var(--accent), var(--accent)) top    left  / 12px 2px no-repeat,
+    linear-gradient(var(--accent), var(--accent)) top    left  / 2px 12px no-repeat,
+    linear-gradient(var(--accent), var(--accent)) bottom right / 12px 2px no-repeat,
+    linear-gradient(var(--accent), var(--accent)) bottom right / 2px 12px no-repeat,
+    linear-gradient(var(--accent), var(--accent)) top    right / 12px 2px no-repeat,
+    linear-gradient(var(--accent), var(--accent)) top    right / 2px 12px no-repeat,
+    linear-gradient(var(--accent), var(--accent)) bottom left  / 12px 2px no-repeat,
+    linear-gradient(var(--accent), var(--accent)) bottom left  / 2px 12px no-repeat;
+  pointer-events: none;
+  opacity: .5;
 }
 .stepArrow  { flex-shrink: 0; font-size: 24px; color: var(--border); margin-top: 56px; font-weight: 300; }
 .stepNum    { font-size: 11px; font-weight: 800; color: var(--accent); letter-spacing: .15em; margin-bottom: 12px; opacity: .7; }
