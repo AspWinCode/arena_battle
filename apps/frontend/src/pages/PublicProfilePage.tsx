@@ -40,6 +40,21 @@ const LANG_LABELS: Record<string, string> = { js: 'JavaScript', py: 'Python', cp
 const EXP_LABELS:  Record<string, string>  = { beginner: 'Начинающий', intermediate: 'Средний', advanced: 'Продвинутый' }
 const SKIN_ICONS:  Record<string, string>  = { robot: '🤖', gladiator: '⚔️', boxer: '🥊', cosmonaut: '🚀' }
 
+/** Renders avatar: <img> for data-URL/path, emoji text otherwise */
+function AvatarDisplay({ avatar, size = 72 }: { avatar: string; size?: number }) {
+  const isImage = avatar?.startsWith('data:') || avatar?.startsWith('/')
+  if (isImage) {
+    return (
+      <img
+        src={avatar}
+        style={{ width: size, height: size, borderRadius: '50%', objectFit: 'cover', display: 'block' }}
+        alt="avatar"
+      />
+    )
+  }
+  return <>{avatar || '🤖'}</>
+}
+
 type Tab = 'overview' | 'achievements' | 'history'
 
 export default function PublicProfilePage() {
@@ -76,7 +91,9 @@ export default function PublicProfilePage() {
       {/* Hero */}
       <div className={styles.hero}>
         <div className={styles.heroInner}>
-          <div className={styles.avatarBig}>{u.avatar || '🤖'}</div>
+          <div className={styles.avatarBig}>
+            <AvatarDisplay avatar={u.avatar || '🤖'} size={80} />
+          </div>
           <div className={styles.heroInfo}>
             <h1 className={styles.displayName}>{u.displayName}</h1>
             <p className={styles.username}>@{u.username}</p>

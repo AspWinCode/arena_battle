@@ -166,7 +166,12 @@ export default function LeaderboardPage() {
                   {RANK_MEDAL[p.rank] ?? `#${p.rank}`}
                 </span>
                 <span className={styles.colName}>
-                  <span className={styles.playerAvatar}>{p.avatar}</span>
+                  <span className={styles.playerAvatar}>
+                    {p.avatar?.startsWith('data:') || p.avatar?.startsWith('/')
+                      ? <img src={p.avatar} style={{ width: 28, height: 28, borderRadius: '50%', objectFit: 'cover', verticalAlign: 'middle' }} alt="" />
+                      : p.avatar
+                    }
+                  </span>
                   {p.name}
                 </span>
                 <span className={styles.colXp} style={{ color: '#a78bfa', fontWeight: 800 }}>
