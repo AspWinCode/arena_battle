@@ -21,16 +21,29 @@ const SKIN_COLORS: Record<SkinId, { primary: string; secondary: string; accent: 
 }
 
 const GL = '#f1cf68'
-const GLADIATOR_SOURCE_WIDTH = 853
+
+// ── Gladiator normal sprite ─────────────────────────────────────────────────
+const GLADIATOR_SOURCE_WIDTH  = 853
 const GLADIATOR_SOURCE_HEIGHT = 900
-const PNG_RATIO = GLADIATOR_SOURCE_WIDTH / GLADIATOR_SOURCE_HEIGHT
-const GLADIATOR_SPRITE_HREF = '/skins/gladiator.png?v=6'
-const GLADIATOR_HEIGHT = 200
-const GLADIATOR_WIDTH = Math.round(GLADIATOR_HEIGHT * PNG_RATIO)
-const GLADIATOR_X = -GLADIATOR_WIDTH / 2
-const GLADIATOR_Y = -GLADIATOR_HEIGHT
-const GLADIATOR_SCALE = GLADIATOR_HEIGHT / GLADIATOR_SOURCE_HEIGHT
-const GENERIC_SCALE = 0.70
+const GLADIATOR_SPRITE_HREF   = '/skins/gladiator.png?v=6'
+const GLADIATOR_HEIGHT        = 200
+const GLADIATOR_WIDTH         = Math.round(GLADIATOR_HEIGHT * (GLADIATOR_SOURCE_WIDTH / GLADIATOR_SOURCE_HEIGHT))
+const GLADIATOR_X             = -GLADIATOR_WIDTH / 2
+const GLADIATOR_Y             = -GLADIATOR_HEIGHT
+const GLADIATOR_SCALE         = GLADIATOR_HEIGHT / GLADIATOR_SOURCE_HEIGHT
+
+// ── Gladiator shield sprite ─────────────────────────────────────────────────
+// Source image: gladiator holding axe + round shield (921 × 690 px)
+const SHIELD_SOURCE_WIDTH  = 921
+const SHIELD_SOURCE_HEIGHT = 690
+const SHIELD_SPRITE_HREF   = '/skins/gladiator_shield.png?v=1'
+const SHIELD_HEIGHT        = 200
+const SHIELD_WIDTH         = Math.round(SHIELD_HEIGHT * (SHIELD_SOURCE_WIDTH / SHIELD_SOURCE_HEIGHT))
+const SHIELD_X             = -SHIELD_WIDTH / 2
+const SHIELD_Y             = -SHIELD_HEIGHT
+const SHIELD_SCALE         = SHIELD_HEIGHT / SHIELD_SOURCE_HEIGHT
+
+const GENERIC_SCALE  = 0.70
 const GENERIC_FOOT_Y = 51 * GENERIC_SCALE
 const HP_BAR_X = -55
 const HP_BAR_Y = -220
@@ -41,21 +54,11 @@ function GladiatorBody({ action, shieldActive }: {
   action?: ActionName | null
   shieldActive?: boolean
 }) {
-  const attacking = action === 'attack' || action === 'heavy' || action === 'special' || action === 'laser'
+  const isShield   = action === 'shield' || shieldActive
+  const attacking  = action === 'attack' || action === 'heavy' || action === 'special' || action === 'laser'
 
   return (
     <g>
-      {shieldActive && (
-        <ellipse
-          cx={0} cy={-GLADIATOR_HEIGHT * 0.52}
-          rx={GLADIATOR_WIDTH * 0.36} ry={GLADIATOR_HEIGHT * 0.38}
-          fill="none" stroke={GL} strokeWidth={2.5} strokeDasharray="5 3"
-        >
-          <animate attributeName="opacity" values="0.72;0.25;0.72" dur="0.85s" repeatCount="indefinite" />
-          <animate attributeName="rx" values={`${GLADIATOR_WIDTH * 0.36};${GLADIATOR_WIDTH * 0.39};${GLADIATOR_WIDTH * 0.36}`} dur="0.85s" repeatCount="indefinite" />
-        </ellipse>
-      )}
-
       {/* Idle bob */}
       <g>
         <animateTransform
@@ -64,51 +67,81 @@ function GladiatorBody({ action, shieldActive }: {
           calcMode="spline" keySplines="0.45 0 0.55 1; 0.45 0 0.55 1"
         />
 
-        {/* Attack swing */}
-        <g>
-          <animateTransform
-            attributeName="transform" type="rotate"
-            values={attacking ? '-7 0 -20; 5 0 -20; -7 0 -20' : '0 0 0; 0 0 0; 0 0 0'}
-            dur={attacking ? '0.34s' : '1s'}
-            repeatCount="indefinite" calcMode="spline"
-            keySplines="0.4 0 0.6 1; 0.4 0 0.6 1"
-          />
+        {isShield ? (
+          /* ── Shield stance PNG ── */
+          <g>
+            {/* Golden shield glow pulse */}
+            <ellipse
+              cx={SHIELD_WIDTH * 0.08} cy={-SHIELD_HEIGHT * 0.52}
+              rx={SHIELD_WIDTH * 0.32} ry={SHIELD_HEIGHT * 0.36}
+              fill={`${GL}18`} stroke={GL} strokeWidth={2}
+            >
+              <animate attributeName="opacity" values="0.7;0.2;0.7" dur="0.75s" repeatCount="indefinite" />
+              <animate attributeName="rx" values={`${SHIELD_WIDTH * 0.32};${SHIELD_WIDTH * 0.36};${SHIELD_WIDTH * 0.32}`} dur="0.75s" repeatCount="indefinite" />
+            </ellipse>
 
-          <g transform={`translate(${GLADIATOR_X}, ${GLADIATOR_Y}) scale(${GLADIATOR_SCALE})`}>
-            <image
-              x={0} y={0}
-              width={GLADIATOR_SOURCE_WIDTH} height={GLADIATOR_SOURCE_HEIGHT}
-              href={GLADIATOR_SPRITE_HREF} preserveAspectRatio="none"
-            />
+            <g transform={`translate(${SHIELD_X}, ${SHIELD_Y}) scale(${SHIELD_SCALE})`}>
+              <image
+                x={0} y={0}
+                width={SHIELD_SOURCE_WIDTH} height={SHIELD_SOURCE_HEIGHT}
+                href={SHIELD_SPRITE_HREF} preserveAspectRatio="none"
+              />
+            </g>
+
+            <text
+              x={SHIELD_WIDTH * 0.1} y={SHIELD_Y + SHIELD_HEIGHT * 0.46}
+              fill={GL} fontSize={10} fontWeight={800} fontFamily="monospace" textAnchor="start"
+            >
+              SHIELD
+            </text>
           </g>
-        </g>
+        ) : (
+          /* ── Normal / attacking stance PNG ── */
+          <g>
+            <animateTransform
+              attributeName="transform" type="rotate"
+              values={attacking ? '-7 0 -20; 5 0 -20; -7 0 -20' : '0 0 0; 0 0 0; 0 0 0'}
+              dur={attacking ? '0.34s' : '1s'}
+              repeatCount="indefinite" calcMode="spline"
+              keySplines="0.4 0 0.6 1; 0.4 0 0.6 1"
+            />
 
-        {/* Laser spear overlay */}
-        {action === 'laser' && (
-          <line
-            x1={GLADIATOR_WIDTH * 0.2} y1={-GLADIATOR_HEIGHT * 0.4}
-            x2={GLADIATOR_WIDTH * 0.8} y2={-GLADIATOR_HEIGHT * 0.4}
-            stroke={GL} strokeWidth={3} strokeLinecap="round"
-          >
-            <animate attributeName="opacity" values="0.9;0.3;0.9" dur="0.2s" repeatCount="indefinite" />
-          </line>
-        )}
+            <g transform={`translate(${GLADIATOR_X}, ${GLADIATOR_Y}) scale(${GLADIATOR_SCALE})`}>
+              <image
+                x={0} y={0}
+                width={GLADIATOR_SOURCE_WIDTH} height={GLADIATOR_SOURCE_HEIGHT}
+                href={GLADIATOR_SPRITE_HREF} preserveAspectRatio="none"
+              />
+            </g>
 
-        {/* Repair potion bubble */}
-        {action === 'repair' && (
-          <circle cx={GLADIATOR_WIDTH * 0.1} cy={-GLADIATOR_HEIGHT * 0.7} r={10} fill="#22c55e" opacity={0.7}>
-            <animate attributeName="cy" values={`${-GLADIATOR_HEIGHT * 0.7};${-GLADIATOR_HEIGHT * 0.8};${-GLADIATOR_HEIGHT * 0.7}`} dur="0.5s" repeatCount="3" />
-            <animate attributeName="opacity" values="0.7;0;0.7" dur="0.5s" repeatCount="3" />
-          </circle>
-        )}
+            {/* Laser spear overlay */}
+            {action === 'laser' && (
+              <line
+                x1={GLADIATOR_WIDTH * 0.2} y1={-GLADIATOR_HEIGHT * 0.4}
+                x2={GLADIATOR_WIDTH * 0.8} y2={-GLADIATOR_HEIGHT * 0.4}
+                stroke={GL} strokeWidth={3} strokeLinecap="round"
+              >
+                <animate attributeName="opacity" values="0.9;0.3;0.9" dur="0.2s" repeatCount="indefinite" />
+              </line>
+            )}
 
-        {action && (
-          <text
-            x={GLADIATOR_WIDTH * 0.2} y={GLADIATOR_Y + GLADIATOR_HEIGHT * 0.46}
-            fill={GL} fontSize={10} fontWeight={800} fontFamily="monospace" textAnchor="start"
-          >
-            {action.toUpperCase()}
-          </text>
+            {/* Repair potion bubble */}
+            {action === 'repair' && (
+              <circle cx={GLADIATOR_WIDTH * 0.1} cy={-GLADIATOR_HEIGHT * 0.7} r={10} fill="#22c55e" opacity={0.7}>
+                <animate attributeName="cy" values={`${-GLADIATOR_HEIGHT * 0.7};${-GLADIATOR_HEIGHT * 0.8};${-GLADIATOR_HEIGHT * 0.7}`} dur="0.5s" repeatCount="3" />
+                <animate attributeName="opacity" values="0.7;0;0.7" dur="0.5s" repeatCount="3" />
+              </circle>
+            )}
+
+            {action && action !== 'shield' && (
+              <text
+                x={GLADIATOR_WIDTH * 0.2} y={GLADIATOR_Y + GLADIATOR_HEIGHT * 0.46}
+                fill={GL} fontSize={10} fontWeight={800} fontFamily="monospace" textAnchor="start"
+              >
+                {action.toUpperCase()}
+              </text>
+            )}
+          </g>
         )}
       </g>
     </g>
