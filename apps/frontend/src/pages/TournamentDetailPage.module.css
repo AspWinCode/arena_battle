@@ -22,6 +22,98 @@
 .dateLabel { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--text-muted); }
 .dateVal   { font-size: 14px; font-weight: 700; white-space: nowrap; }
 
+/* ── Мой матч ─────────────────────────────────────────────────────── */
+.myMatchBanner {
+  background: linear-gradient(135deg, rgba(0,229,255,.07), rgba(124,58,237,.07));
+  border-bottom: 1px solid rgba(0,229,255,.2);
+  padding: 20px 32px;
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
+.myMatchLeft {
+  min-width: 120px;
+}
+
+.myMatchTitle {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .07em;
+  color: var(--accent);
+  margin-bottom: 4px;
+}
+
+.myMatchRound {
+  font-size: 18px;
+  font-weight: 900;
+}
+
+.myMatchVs {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-width: 260px;
+}
+
+.myMatchPlayer {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.myMatchName {
+  font-size: 16px;
+  font-weight: 800;
+}
+
+.myMatchLang {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.myMatchVsText {
+  font-size: 13px;
+  font-weight: 900;
+  color: var(--text-muted);
+  padding: 0 4px;
+}
+
+.myMatchActions {
+  flex-shrink: 0;
+}
+
+.enterBattleBtn {
+  background: linear-gradient(135deg, #00e5ff, #7c3aed);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 800;
+  padding: 12px 28px;
+  border-radius: 10px;
+  border: none;
+  cursor: pointer;
+  transition: opacity .15s, transform .15s;
+  letter-spacing: .03em;
+}
+
+.enterBattleBtn:hover { opacity: .88; transform: translateY(-1px); }
+
+.myMatchWaiting {
+  font-size: 13px;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+.myMatchWaiting span {
+  display: block;
+  font-size: 12px;
+  margin-top: 2px;
+}
+
 /* Tabs */
 .tabs {
   display: flex;

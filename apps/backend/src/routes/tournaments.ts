@@ -6,6 +6,12 @@ import {
   generateBracket,
   advanceWinner,
 } from '../tournament/tournament-service.js'
+import bcrypt from 'bcryptjs'
+import {
+  sendApprovalWithCredentials,
+  sendApprovalNotification,
+  sendRejectionNotification,
+} from '../services/email.js'
 
 // ── Schemas ────────────────────────────────────────────────────────────────────
 
@@ -109,8 +115,15 @@ export const tournamentRoutes: FastifyPluginAsync = async (fastify) => {
       body.data.programmingYears,
     )
 
+    // Link to user account if logged in
+    let userId: string | undefined
+    try {
+      const payload = await req.jwtVerify<{ userId: string; type: string }>()
+      if (payload.type === 'user') userId = payload.userId
+    } catch { /* not logged in — ok */ }
+
     const application = await prisma.tournamentApplication.create({
-      data: { tournamentId: req.params.id, skillScore, ...body.data },
+      data: { tournamentId: req.params.id, skillScore, ...body.data, ...(userId ? { userId } : {}) },
     })
 
     return reply.status(201).send({
@@ -193,7 +206,7 @@ export const tournamentRoutes: FastifyPluginAsync = async (fastify) => {
     }
   )
 
-  // Review application (approve / reject)
+  // Review application (approve / reject) — auto-creates user account on approval
   fastify.patch<{ Params: { id: string; appId: string } }>(
     '/:id/applications/:appId',
     { onRequest: [fastify.authenticate] },
@@ -201,11 +214,81 @@ export const tournamentRoutes: FastifyPluginAsync = async (fastify) => {
       const body = reviewSchema.safeParse(req.body)
       if (!body.success) return reply.status(400).send({ error: 'Invalid input' })
 
-      const app = await prisma.tournamentApplication.update({
+      const app = await prisma.tournamentApplication.findUnique({
         where: { id: req.params.appId },
-        data:  body.data,
+        include: { tournament: { select: { name: true } } },
       })
-      return reply.send(app)
+      if (!app) return reply.status(404).send({ error: 'Not found' })
+
+      let userId = app.userId
+
+      // On approval: create user account if doesn't exist
+      if (body.data.status === 'APPROVED' && !userId) {
+        const existing = await prisma.user.findUnique({ where: { email: app.playerEmail } })
+
+        if (existing) {
+          userId = existing.id
+          await sendApprovalNotification({
+            to: app.playerEmail,
+            playerName: app.playerName,
+            tournamentName: app.tournament.name,
+          })
+        } else {
+          // Auto-generate username & password
+          const baseUsername = app.playerName
+            .toLowerCase()
+            .replace(/\s+/g, '_')
+            .replace(/[^a-z0-9_]/g, '')
+            .slice(0, 20) || 'player'
+
+          // Ensure unique username
+          let username = baseUsername
+          let suffix = 1
+          while (await prisma.user.findUnique({ where: { username } })) {
+            username = `${baseUsername}${suffix++}`
+          }
+
+          const password = Math.random().toString(36).slice(2, 10) +
+                           Math.random().toString(36).slice(2, 6).toUpperCase()
+
+          const newUser = await prisma.user.create({
+            data: {
+              email:           app.playerEmail,
+              username,
+              displayName:     app.playerName,
+              passwordHash:    await bcrypt.hash(password, 10),
+              preferredLang:   app.preferredLang,
+              experienceLevel: app.experienceLevel,
+              programmingYears: app.programmingYears,
+            },
+          })
+          userId = newUser.id
+
+          await sendApprovalWithCredentials({
+            to:             app.playerEmail,
+            playerName:     app.playerName,
+            username,
+            password,
+            tournamentName: app.tournament.name,
+          })
+        }
+      }
+
+      // On rejection: send notification email
+      if (body.data.status === 'REJECTED' && app.status !== 'REJECTED') {
+        await sendRejectionNotification({
+          to:             app.playerEmail,
+          playerName:     app.playerName,
+          tournamentName: app.tournament.name,
+          reason:         body.data.adminNote,
+        })
+      }
+
+      const updated = await prisma.tournamentApplication.update({
+        where: { id: req.params.appId },
+        data:  { ...body.data, ...(userId ? { userId } : {}) },
+      })
+      return reply.send(updated)
     }
   )
 
@@ -233,6 +316,67 @@ export const tournamentRoutes: FastifyPluginAsync = async (fastify) => {
       } catch (e) {
         return reply.status(400).send({ error: e instanceof Error ? e.message : 'Ошибка генерации' })
       }
+    }
+  )
+
+  // Get current user's match in a tournament (JWT user auth)
+  fastify.get<{ Params: { id: string } }>(
+    '/:id/my-match',
+    async (req, reply) => {
+      let userId: string
+      try {
+        const payload = await req.jwtVerify<{ userId: string; type: string }>()
+        if (payload.type !== 'user') throw new Error()
+        userId = payload.userId
+      } catch {
+        return reply.status(401).send({ error: 'Unauthorized' })
+      }
+
+      // Find approved application for this user in this tournament
+      const app = await prisma.tournamentApplication.findFirst({
+        where: { tournamentId: req.params.id, userId, status: 'APPROVED' },
+      })
+      if (!app) return reply.status(404).send({ error: 'No approved application' })
+
+      // Find their current active (non-finished) match
+      const match = await prisma.tournamentMatch.findFirst({
+        where: {
+          tournamentId: req.params.id,
+          winnerId: null,
+          OR: [{ p1Id: app.id }, { p2Id: app.id }],
+        },
+        orderBy: { round: 'asc' },
+        include: {
+          p1:      { select: { id: true, playerName: true, preferredLang: true } },
+          p2:      { select: { id: true, playerName: true, preferredLang: true } },
+          session: { select: { id: true, code1: true, code2: true } },
+        },
+      })
+
+      if (!match) {
+        // Check if they've won (all their matches have winners = them)
+        const won = await prisma.tournamentMatch.findFirst({
+          where: { tournamentId: req.params.id, winnerId: app.id },
+          orderBy: { round: 'desc' },
+        })
+        return reply.send({ status: 'waiting', wonLastMatch: !!won })
+      }
+
+      const isP1     = match.p1Id === app.id
+      const opponent = isP1 ? match.p2 : match.p1
+      const myCode   = isP1 ? match.session?.code1 : match.session?.code2
+
+      return reply.send({
+        status:    'active',
+        matchId:   match.id,
+        round:     match.round,
+        position:  match.position,
+        isP1,
+        opponent,
+        sessionId: match.session?.id ?? null,
+        joinCode:  myCode ?? null,
+        hasSession: !!match.session,
+      })
     }
   )
 

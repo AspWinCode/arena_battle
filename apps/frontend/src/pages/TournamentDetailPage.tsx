@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useParams, Link } from 'react-router-dom'
+import { useParams, Link, useNavigate } from 'react-router-dom'
 import { api } from '../api/client'
 import BracketView from '../components/tournament/BracketView'
 import { useUserStore } from '../stores/userStore'
@@ -28,30 +28,45 @@ interface TournamentDetail {
   }>
 }
 
+interface MyMatch {
+  status: 'active' | 'waiting'
+  matchId?: string
+  round?: number
+  position?: number
+  isP1?: boolean
+  opponent?: { id: string; playerName: string; preferredLang: string } | null
+  sessionId?: string | null
+  joinCode?: string | null
+  hasSession?: boolean
+  wonLastMatch?: boolean
+}
+
 const LEVEL_ICON: Record<string, string> = { BLOCKS: '🧩', CODE: '💻', PRO: '⚡' }
-const LANG_ICON: Record<string, string> = { js: '🟨', py: '🐍', cpp: '⚙️', java: '☕', auto: '🤖' }
-const EXP_LABEL: Record<string, string> = { beginner: 'Начинающий', intermediate: 'Средний', advanced: 'Продвинутый' }
+const LANG_ICON:  Record<string, string>  = { js: '🟨', py: '🐍', cpp: '⚙️', java: '☕', auto: '🤖' }
+const LANG_LABEL: Record<string, string>  = { js: 'JavaScript', py: 'Python', cpp: 'C++', java: 'Java', auto: 'Авто' }
+const EXP_LABEL:  Record<string, string>  = { beginner: 'Начинающий', intermediate: 'Средний', advanced: 'Продвинутый' }
 
 const APPLY_LANGS = ['js', 'py', 'cpp', 'java'] as const
 
 export default function TournamentDetailPage() {
-  const { id } = useParams<{ id: string }>()
-  const { user } = useUserStore()
+  const { id }     = useParams<{ id: string }>()
+  const { user, token } = useUserStore()
+  const navigate   = useNavigate()
   const [tournament, setTournament] = useState<TournamentDetail | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [myMatch,    setMyMatch]    = useState<MyMatch | null>(null)
+  const [loading,    setLoading]    = useState(true)
   const [tab, setTab] = useState<'bracket' | 'participants' | 'apply'>('bracket')
 
-  // Application form state — pre-fill from user profile if logged in
   const [form, setForm] = useState({
-    playerName: user?.displayName ?? '',
-    playerEmail: '',
-    experienceLevel: (user?.experienceLevel ?? 'beginner') as 'beginner' | 'intermediate' | 'advanced',
+    playerName:       user?.displayName ?? '',
+    playerEmail:      user?.email ?? '',
+    experienceLevel:  (user?.experienceLevel ?? 'beginner') as 'beginner' | 'intermediate' | 'advanced',
     programmingYears: user?.programmingYears ?? 0,
-    preferredLang: (user?.preferredLang ?? 'js') as typeof APPLY_LANGS[number],
+    preferredLang:    (user?.preferredLang ?? 'js') as typeof APPLY_LANGS[number],
     about: '',
   })
-  const [submitting, setSubmitting] = useState(false)
-  const [applyResult, setApplyResult] = useState<{ ok: boolean; message: string } | null>(null)
+  const [submitting,   setSubmitting]   = useState(false)
+  const [applyResult,  setApplyResult]  = useState<{ ok: boolean; message: string } | null>(null)
 
   const load = () => {
     if (!id) return
@@ -61,6 +76,14 @@ export default function TournamentDetailPage() {
       .finally(() => setLoading(false))
   }
 
+  // Fetch "my match" if user is logged in
+  useEffect(() => {
+    if (!id || !token) return
+    api.get<MyMatch>(`/tournament/${id}/my-match`, token)
+      .then(setMyMatch)
+      .catch(() => setMyMatch(null)) // not an error — just not a participant
+  }, [id, token])
+
   useEffect(() => { load() }, [id])
 
   const handleApply = async (e: React.FormEvent) => {
@@ -69,7 +92,7 @@ export default function TournamentDetailPage() {
     setSubmitting(true)
     setApplyResult(null)
     try {
-      const res = await api.post<{ message: string }>(`/tournament/${id}/apply`, form)
+      const res = await api.post<{ message: string }>(`/tournament/${id}/apply`, form, token ?? undefined)
       setApplyResult({ ok: true, message: res.message })
     } catch (err) {
       setApplyResult({ ok: false, message: err instanceof Error ? err.message : 'Ошибка' })
@@ -85,6 +108,13 @@ export default function TournamentDetailPage() {
   const totalRounds = tournament.matches.length > 0
     ? Math.max(...tournament.matches.map(m => m.round))
     : 0
+
+  const roundLabel = (r: number) => {
+    if (r === totalRounds) return 'Финал'
+    if (r === totalRounds - 1) return 'Полуфинал'
+    if (r === totalRounds - 2) return 'Четвертьфинал'
+    return `Раунд ${r}`
+  }
 
   return (
     <div className={styles.root}>
@@ -126,6 +156,62 @@ export default function TournamentDetailPage() {
         </div>
       </div>
 
+      {/* ── МОЙ МАТЧ ────────────────────────────────────────────────── */}
+      {myMatch && (
+        <div className={styles.myMatchBanner}>
+          {myMatch.status === 'active' && myMatch.opponent && (
+            <>
+              <div className={styles.myMatchLeft}>
+                <div className={styles.myMatchTitle}>⚔️ Твой матч</div>
+                <div className={styles.myMatchRound}>{roundLabel(myMatch.round!)}</div>
+              </div>
+
+              <div className={styles.myMatchVs}>
+                <div className={styles.myMatchPlayer}>
+                  <span className={styles.myMatchName}>Ты</span>
+                  <span className={styles.myMatchLang}>{LANG_ICON[form.preferredLang]} {LANG_LABEL[form.preferredLang]}</span>
+                </div>
+                <span className={styles.myMatchVsText}>VS</span>
+                <div className={styles.myMatchPlayer} style={{ textAlign: 'right' }}>
+                  <span className={styles.myMatchName}>{myMatch.opponent.playerName}</span>
+                  <span className={styles.myMatchLang}>{LANG_ICON[myMatch.opponent.preferredLang]} {LANG_LABEL[myMatch.opponent.preferredLang]}</span>
+                </div>
+              </div>
+
+              <div className={styles.myMatchActions}>
+                {myMatch.hasSession && myMatch.joinCode ? (
+                  <button
+                    className={styles.enterBattleBtn}
+                    onClick={() => navigate(`/join?code=${myMatch.joinCode}`)}
+                  >
+                    🎮 Войти в бой
+                  </button>
+                ) : (
+                  <div className={styles.myMatchWaiting}>
+                    ⏳ Сессия ещё не открыта.<br />
+                    <span>Организатор запустит бой — страница обновится.</span>
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+
+          {myMatch.status === 'active' && !myMatch.opponent && (
+            <div className={styles.myMatchWaiting}>
+              ⏳ Ожидаем соперника — сетка ещё формируется
+            </div>
+          )}
+
+          {myMatch.status === 'waiting' && (
+            <div className={styles.myMatchWaiting} style={{ padding: '20px 24px' }}>
+              {myMatch.wonLastMatch
+                ? '🏆 Ты победил в последнем матче! Ожидай следующего раунда...'
+                : '✅ Ты в турнире. Ожидай начала своего матча...'}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Tabs */}
       <div className={styles.tabs}>
         {(['bracket', 'participants', ...(isRegistrationOpen ? ['apply'] : [])] as const).map(t => (
@@ -142,7 +228,6 @@ export default function TournamentDetailPage() {
       </div>
 
       <div className={styles.body}>
-        {/* Bracket */}
         {tab === 'bracket' && (
           tournament.matches.length > 0
             ? <BracketView matches={tournament.matches} totalRounds={totalRounds} />
@@ -154,7 +239,6 @@ export default function TournamentDetailPage() {
               </div>
         )}
 
-        {/* Participants */}
         {tab === 'participants' && (
           <div className={styles.participantsList}>
             {tournament.applications.length === 0 && (
@@ -174,15 +258,19 @@ export default function TournamentDetailPage() {
           </div>
         )}
 
-        {/* Application form */}
         {tab === 'apply' && (
           <div className={styles.applyWrap}>
+            {!user && (
+              <div style={{ marginBottom: 16, padding: '12px 16px', background: 'rgba(0,229,255,.06)', border: '1px solid rgba(0,229,255,.2)', borderRadius: 10, fontSize: 13 }}>
+                💡 <Link to="/login">Войди в аккаунт</Link> — тогда твоя заявка будет автоматически привязана к профилю.
+              </div>
+            )}
             {applyResult?.ok ? (
               <div className={styles.applySuccess}>
                 <div style={{ fontSize: 48 }}>✅</div>
                 <h3>Заявка принята!</h3>
                 <p>{applyResult.message}</p>
-                <p className={styles.applySuccessSub}>Проверяй статус по email. Организатор рассмотрит заявку и уведомит тебя.</p>
+                <p className={styles.applySuccessSub}>Организатор рассмотрит заявку и уведомит тебя по email. После одобрения — данные для входа придут автоматически.</p>
               </div>
             ) : (
               <form className={styles.applyForm} onSubmit={handleApply}>
@@ -198,7 +286,7 @@ export default function TournamentDetailPage() {
                   <div className={styles.field}>
                     <label className={styles.label}>Email *</label>
                     <input className={styles.input} type="email" required
-                      placeholder="для уведомлений" value={form.playerEmail}
+                      placeholder="для уведомлений и входа" value={form.playerEmail}
                       onChange={e => setForm(f => ({ ...f, playerEmail: e.target.value }))} />
                   </div>
                 </div>
