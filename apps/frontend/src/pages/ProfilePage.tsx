@@ -232,25 +232,45 @@ export default function ProfilePage() {
         )}
 
         {/* ── Local Progress tab ── */}
-        {tab === 'progress' && (
+        {tab === 'progress' && (() => {
+          // Merge localStorage + DB values (take max — both sources are valid)
+          const dbUser = data?.user as (typeof data extends null ? never : typeof data['user']) & {
+            currentStreak?: number; bestStreak?: number; totalXp?: number
+            totalWins?: number; totalBattles?: number
+          } | undefined
+          const streak   = Math.max(daily.currentStreak,  dbUser?.currentStreak  ?? 0)
+          const best     = Math.max(daily.bestStreak,     dbUser?.bestStreak     ?? 0)
+          const wins     = Math.max(daily.totalWins,      dbUser?.totalWins      ?? 0)
+          const battles  = Math.max(daily.totalBattles,   dbUser?.totalBattles   ?? 0)
+          const xp       = Math.max(daily.totalXp,        dbUser?.totalXp        ?? 0)
+          const synced   = !!(dbUser?.currentStreak !== undefined)
+          return (
           <div>
+            {/* Sync badge */}
+            {synced && (
+              <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 10 }}>
+                <span style={{ fontSize: 10, color: '#4ade80', fontWeight: 700, padding: '2px 8px', background: 'rgba(74,222,128,.1)', borderRadius: 99, border: '1px solid rgba(74,222,128,.3)' }}>
+                  ☁️ синхронизировано с сервером
+                </span>
+              </div>
+            )}
             {/* Streak */}
             <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
               <div className={styles.statBox} style={{ flex: 1, padding: 20, background: 'var(--bg-mid)', borderRadius: 'var(--radius-lg)', textAlign: 'center' }}>
                 <div style={{ fontSize: 48, lineHeight: 1, marginBottom: 8 }}>
-                  {daily.currentStreak === 0 ? '🌑' : daily.currentStreak < 3 ? '🔥' : daily.currentStreak < 7 ? '🔥' : '⚡🔥⚡'}
+                  {streak === 0 ? '🌑' : streak < 3 ? '🔥' : streak < 7 ? '🔥' : '⚡🔥⚡'}
                 </div>
-                <div style={{ fontSize: 36, fontWeight: 900, fontVariantNumeric: 'tabular-nums' }}>{daily.currentStreak}</div>
+                <div style={{ fontSize: 36, fontWeight: 900, fontVariantNumeric: 'tabular-nums' }}>{streak}</div>
                 <div style={{ fontSize: 11, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '.05em' }}>
-                  {daily.currentStreak === 0 ? 'серия прервана' : `${daily.currentStreak} побед подряд`}
+                  {streak === 0 ? 'серия прервана' : `${streak} побед подряд`}
                 </div>
               </div>
               <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {[
-                  { label: 'Лучшая серия',  val: daily.bestStreak,   color: '#fbbf24' },
-                  { label: 'Всего побед',   val: daily.totalWins,    color: '#4ade80' },
-                  { label: 'Всего боёв',    val: daily.totalBattles, color: 'var(--text)' },
-                  { label: 'Всего XP',      val: daily.totalXp,      color: '#a78bfa' },
+                  { label: 'Лучшая серия',  val: best,    color: '#fbbf24' },
+                  { label: 'Всего побед',   val: wins,    color: '#4ade80' },
+                  { label: 'Всего боёв',    val: battles, color: 'var(--text)' },
+                  { label: 'Всего XP',      val: xp,      color: '#a78bfa' },
                 ].map(({ label, val, color }) => (
                   <div key={label} style={{ flex: 1, padding: '8px 14px', background: 'var(--bg-mid)', borderRadius: 'var(--radius)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{label}</span>
@@ -262,7 +282,7 @@ export default function ProfilePage() {
             {/* Milestone badges */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10 }}>
               {[3, 7, 14, 30].map(m => {
-                const reached = daily.bestStreak >= m
+                const reached = best >= m
                 return (
                   <div key={m} style={{ padding: '12px 8px', background: reached ? 'rgba(251,191,36,.06)' : 'var(--bg-mid)', border: `1px solid ${reached ? '#fbbf24' : 'var(--border)'}`, borderRadius: 'var(--radius)', textAlign: 'center', opacity: reached ? 1 : 0.5, transition: 'all .2s' }}>
                     <div style={{ fontSize: 18 }}>{reached ? '✅' : '🔒'}</div>
@@ -279,7 +299,8 @@ export default function ProfilePage() {
               <Link to="/daily" className="btn btn-primary">📅 Ежедневные задания →</Link>
             </div>
           </div>
-        )}
+          )
+        })()}
 
         {/* ── Battle history tab ── */}
         {tab === 'history' && (

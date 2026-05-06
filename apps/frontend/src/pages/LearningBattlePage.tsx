@@ -4,7 +4,8 @@ import { MISSIONS, MAX_HP, MAX_STAMINA, MAX_RAGE } from '@robocode/shared'
 import type { RoundResult, TurnResult } from '@robocode/shared'
 import { runLocalMatch } from '../engine/battleEngine'
 import { runCodeToStrategy } from '../engine/codeRunner'
-import { analyzeMatch, ACTION_COLOR, ACTION_LABEL } from '../engine/matchAnalysis'
+import { analyzeMatch, evaluateTurns, ACTION_COLOR, ACTION_LABEL } from '../engine/matchAnalysis'
+import DecisionGraph from '../components/battle/DecisionGraph'
 import { useLearnStore } from '../stores/learnStore'
 import { useDailyStore } from '../stores/dailyStore'
 import CodeEditor from '../components/CodeEditor/CodeEditor'
@@ -46,6 +47,10 @@ export default function LearningBattlePage() {
   // Compute analytics once rounds are ready
   const matchAnalysis = useMemo(
     () => (rounds.length > 0 ? analyzeMatch(rounds) : null),
+    [rounds],
+  )
+  const graphEvals = useMemo(
+    () => rounds.length > 0 ? evaluateTurns(rounds.flatMap(r => r.turns), 1) : [],
     [rounds],
   )
 
@@ -402,6 +407,14 @@ export default function LearningBattlePage() {
                       <div key={i} className={styles.miniRecItem}>{r}</div>
                     ))}
                   </div>
+
+                  {/* Decision Graph */}
+                  {graphEvals.length > 0 && (
+                    <div style={{ marginTop: 14 }}>
+                      <div className={styles.miniAnalysisTitle}>🧠 Граф решений</div>
+                      <DecisionGraph evals={graphEvals} />
+                    </div>
+                  )}
                 </div>
               )}
             </div>
