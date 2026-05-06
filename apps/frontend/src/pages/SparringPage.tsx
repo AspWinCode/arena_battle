@@ -78,6 +78,7 @@ export default function SparringPage() {
   const currentStreak  = useDailyStore(s => s.currentStreak)
   const checkAchievements = useAchievementsStore(s => s.checkBattle)
   const token          = useUserStore(s => s.token)
+  const user           = useUserStore(s => s.user)
   const completedCount = useMemo(
     () => MISSIONS.filter(m => progress[m.id]?.completed).length,
     [progress],
@@ -142,6 +143,10 @@ export default function SparringPage() {
     const { strategy: playerStrategy, error } = runCodeToStrategy(code)
     if (error) { setCodeError(`Ошибка: ${error}`); return }
     setCodeError('')
+
+    // Apply the player's chosen character skin to their strategy
+    const playerSkin = (user?.preferredSkin ?? 'robot') as 'robot' | 'gladiator' | 'boxer' | 'cosmonaut'
+    playerStrategy.character = playerSkin
 
     const result = runLocalMatch(
       playerStrategy,

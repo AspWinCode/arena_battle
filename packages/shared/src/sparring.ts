@@ -14,6 +14,10 @@ export interface SparringBot {
   tags:        string[]
 }
 
+function withCharacter(strategy: Strategy, skin: SkinId): Strategy {
+  return { ...strategy, character: skin }
+}
+
 export const SPARRING_BOTS: SparringBot[] = [
   {
     id: 'dummy',
@@ -22,10 +26,10 @@ export const SPARRING_BOTS: SparringBot[] = [
     skin: 'robot',
     difficulty: 1,
     tags: ['attack only'],
-    strategy: {
+    strategy: withCharacter({
       primary: 'attack', lowHp: 'attack', onHit: 'attack',
       style: 'Standard', position: 'mid',
-    },
+    }, 'robot'),
   },
   {
     id: 'heavy_spammer',
@@ -34,7 +38,7 @@ export const SPARRING_BOTS: SparringBot[] = [
     skin: 'gladiator',
     difficulty: 2,
     tags: ['heavy spam', 'stamina trap'],
-    strategy: HEAVY_SPAMMER,
+    strategy: withCharacter(HEAVY_SPAMMER, 'gladiator'),
   },
   {
     id: 'laser_sniper',
@@ -43,7 +47,7 @@ export const SPARRING_BOTS: SparringBot[] = [
     skin: 'cosmonaut',
     difficulty: 2,
     tags: ['laser', 'far range'],
-    strategy: LASER_SNIPER,
+    strategy: withCharacter(LASER_SNIPER, 'cosmonaut'),
   },
   {
     id: 'shield_turtle',
@@ -52,7 +56,7 @@ export const SPARRING_BOTS: SparringBot[] = [
     skin: 'gladiator',
     difficulty: 2,
     tags: ['shield', 'defensive'],
-    strategy: SHIELD_TURTLE,
+    strategy: withCharacter(SHIELD_TURTLE, 'gladiator'),
   },
   {
     id: 'combo_boxer',
@@ -61,7 +65,7 @@ export const SPARRING_BOTS: SparringBot[] = [
     skin: 'boxer',
     difficulty: 3,
     tags: ['heavy', 'close range'],
-    strategy: COMBO_BOXER,
+    strategy: withCharacter(COMBO_BOXER, 'boxer'),
   },
   {
     id: 'healer',
@@ -70,7 +74,7 @@ export const SPARRING_BOTS: SparringBot[] = [
     skin: 'robot',
     difficulty: 3,
     tags: ['repair', 'sustain'],
-    strategy: HEALER,
+    strategy: withCharacter(HEALER, 'robot'),
   },
   {
     id: 'ghost_sniper',
@@ -79,7 +83,7 @@ export const SPARRING_BOTS: SparringBot[] = [
     skin: 'cosmonaut',
     difficulty: 3,
     tags: ['dodge', 'laser', 'evasive'],
-    strategy: GHOST_SNIPER,
+    strategy: withCharacter(GHOST_SNIPER, 'cosmonaut'),
   },
   {
     id: 'berserker',
@@ -88,7 +92,7 @@ export const SPARRING_BOTS: SparringBot[] = [
     skin: 'gladiator',
     difficulty: 4,
     tags: ['heavy', 'special', 'rage'],
-    strategy: BERSERKER,
+    strategy: withCharacter(BERSERKER, 'gladiator'),
   },
   {
     id: 'veteran',
@@ -97,7 +101,7 @@ export const SPARRING_BOTS: SparringBot[] = [
     skin: 'boxer',
     difficulty: 4,
     tags: ['adaptive', 'balanced'],
-    strategy: VETERAN,
+    strategy: withCharacter(VETERAN, 'boxer'),
   },
   {
     id: 'champion',
@@ -106,7 +110,7 @@ export const SPARRING_BOTS: SparringBot[] = [
     skin: 'robot',
     difficulty: 5,
     tags: ['all mechanics', 'boss'],
-    strategy: CHAMPION,
+    strategy: withCharacter(CHAMPION, 'robot'),
   },
 ]
 

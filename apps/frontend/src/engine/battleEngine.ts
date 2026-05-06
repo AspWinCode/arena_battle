@@ -1,5 +1,6 @@
 import {
-  MAX_HP, MAX_STAMINA, MAX_RAGE, MAX_TURNS,
+  MAX_STAMINA, MAX_RAGE, MAX_TURNS,
+  // Note: MAX_HP not imported — each character has their own maxHp via CHARACTER_STATS
   STAMINA_REGEN, STAMINA_COSTS,
   STAMINA_THRESHOLD_HEAVY, STAMINA_THRESHOLD_ATTACK, STAMINA_THRESHOLD_LASER,
   ATTACK_EXHAUSTED_DAMAGE,
@@ -9,9 +10,10 @@ import {
   REPEAT_PENALTY_AFTER, REPEAT_DAMAGE_FACTOR,
   COOLDOWNS, REPAIR_AMOUNT,
   applyPositionModifier, getPositionMultiplier,
+  CHARACTER_STATS,
 } from '@robocode/shared'
 import type {
-  Strategy, StrategyContext, ActionName, PlayerState, TurnResult, RoundResult,
+  Strategy, StrategyContext, ActionName, SkinId, PlayerState, TurnResult, RoundResult,
 } from '@robocode/shared'
 import type { PerkEffect } from '@robocode/shared'
 
@@ -23,6 +25,13 @@ function isValidAction(v: unknown): v is ActionName {
 
 interface ExtState extends PlayerState {
   repeatCount: number
+  character: SkinId
+  maxHp: number
+  dmgMult: number
+  rageMult: number
+  repairBonus: number
+  shieldBonus: number
+  counterReady: boolean
 }
 
 export class BattleEngine {
@@ -37,16 +46,26 @@ export class BattleEngine {
   ) {}
 
   private initState(s: Strategy, perks: PerkEffect = {}): ExtState {
+    const charId = s.character ?? 'robot'
+    const char   = CHARACTER_STATS[charId] ?? CHARACTER_STATS.robot
+    const baseHp = char.maxHp + (perks.bonusHp ?? 0)
     return {
-      hp:       Math.min(MAX_HP,      MAX_HP      + (perks.bonusHp      ?? 0)),
+      hp:       baseHp,
       stamina:  Math.min(MAX_STAMINA, MAX_STAMINA + (perks.bonusStamina ?? 0)),
       rage:     Math.min(MAX_RAGE,    0           + (perks.bonusRage    ?? 0)),
       position: s.position ?? 'mid',
       cooldowns: { attack: 0, heavy: 0, laser: 0, shield: 0, dodge: 0, repair: 0, special: 0 },
-      lastAction: null,
+      lastAction:   null,
       shieldActive: false,
       strategy: s,
-      repeatCount: 0,
+      repeatCount:  0,
+      character:    charId,
+      maxHp:        baseHp,
+      dmgMult:      char.dmgMult,
+      rageMult:     char.rageMult,
+      repairBonus:  char.repairBonus,
+      shieldBonus:  char.shieldBonus,
+      counterReady: false,
     }
   }
 
@@ -79,13 +98,19 @@ export class BattleEngine {
 
   private buildContext(self: ExtState, enemy: ExtState, turn: number): StrategyContext {
     return {
-      myHp: self.hp, myStamina: self.stamina, myRage: self.rage,
-      enemyHp: enemy.hp, enemyStamina: enemy.stamina, enemyRage: enemy.rage,
+      myHp:         self.hp,
+      myMaxHp:      self.maxHp,
+      myStamina:    self.stamina,
+      myRage:       self.rage,
+      enemyHp:      enemy.hp,
+      enemyMaxHp:   enemy.maxHp,
+      enemyStamina: enemy.stamina,
+      enemyRage:    enemy.rage,
       turn,
-      myLastAction: self.lastAction,
+      myLastAction:    self.lastAction,
       enemyLastAction: enemy.lastAction,
       cooldowns: { ...self.cooldowns },
-      myPosition: self.position,
+      myPosition:    self.position,
       enemyPosition: enemy.position,
       distanceModifier: getPositionMultiplier(self.strategy.primary, self.position),
       myRepeatCount: self.repeatCount,
@@ -122,7 +147,7 @@ export class BattleEngine {
 
     if (self.rage >= SPECIAL_RAGE_COST && this.isAvailable(self, 'special')) return 'special'
 
-    if (enemy.hp < 30) return this.resolveStatic(self, strategy.lowHp)
+    if (self.hp < 30) return this.resolveStatic(self, strategy.lowHp)
     if (enemy.lastAction === 'laser' && strategy.onHit === 'dodge') return 'dodge'
     if (enemy.shieldActive && (strategy.primary === 'attack' || strategy.primary === 'heavy')) return 'heavy'
     return this.resolveStatic(self, strategy.primary)
@@ -131,7 +156,7 @@ export class BattleEngine {
   private calcDamage(
     attAction: ActionName, att: ExtState,
     defAction: ActionName,
-    def?: ExtState,
+    def: ExtState,
   ): number {
     let dmg = BASE_DAMAGE[attAction] ?? 0
     if (dmg === 0) return 0
@@ -145,15 +170,18 @@ export class BattleEngine {
     if (attAction === 'attack' && att.stamina < STAMINA_THRESHOLD_ATTACK) dmg = ATTACK_EXHAUSTED_DAMAGE
     if (attAction === 'laser'  && att.stamina < STAMINA_THRESHOLD_LASER)  dmg = Math.floor(dmg * 0.5)
 
+    // Apply character damage multiplier (Gladiator ×1.35, Cosmonaut ×0.8, etc.)
+    if (att.dmgMult !== 1.0) dmg = Math.floor(dmg * att.dmgMult)
+
     dmg = applyPositionModifier(attAction, att.position, dmg)
 
-    // Perk: shieldAbsorb override for p1 defender
-    const shieldAbs = (def === this.p1 && this.p1Perks.shieldAbsorb)
+    // Defender: perk shieldAbsorb OR character shieldBonus (Cosmonaut +10%)
+    const baseShield = (def === this.p1 && this.p1Perks.shieldAbsorb)
       ? this.p1Perks.shieldAbsorb
-      : SHIELD_ABSORB
+      : SHIELD_ABSORB + def.shieldBonus
 
     if (defAction === 'shield') {
-      dmg = Math.round(dmg * (1 - shieldAbs))
+      dmg = Math.round(dmg * (1 - baseShield))
     } else if (defAction === 'dodge') {
       if (attAction === 'attack' || attAction === 'heavy') dmg = 0
       else if (attAction === 'laser'  && Math.random() < DODGE_LASER_EVADE_CHANCE) dmg = 0
@@ -184,8 +212,29 @@ export class BattleEngine {
     const p1Factor = this.p1.repeatCount >= REPEAT_PENALTY_AFTER ? REPEAT_DAMAGE_FACTOR : 1
     const p2Factor = this.p2.repeatCount >= REPEAT_PENALTY_AFTER ? REPEAT_DAMAGE_FACTOR : 1
 
-    const p2Dealt = Math.round(this.calcDamage(a1, this.p1, a2, this.p2) * p1Factor)
-    const p1Dealt = Math.round(this.calcDamage(a2, this.p2, a1, this.p1) * p2Factor)
+    let p2Dealt = Math.round(this.calcDamage(a1, this.p1, a2, this.p2) * p1Factor)
+    let p1Dealt = Math.round(this.calcDamage(a2, this.p2, a1, this.p1) * p2Factor)
+
+    // ── Boxer counter-strike passive ─────────────────────────────────────────
+    if (this.p1.counterReady && a1 !== 'attack') this.p1.counterReady = false
+    if (this.p2.counterReady && a2 !== 'attack') this.p2.counterReady = false
+
+    if (this.p1.counterReady && a1 === 'attack' && p2Dealt > 0) {
+      p2Dealt = Math.round(p2Dealt * 2)
+      this.p1.counterReady = false
+    }
+    if (this.p2.counterReady && a2 === 'attack' && p1Dealt > 0) {
+      p1Dealt = Math.round(p1Dealt * 2)
+      this.p2.counterReady = false
+    }
+
+    if (this.p1.character === 'boxer' && a1 === 'dodge' && (a2 === 'attack' || a2 === 'heavy')) {
+      this.p1.counterReady = true
+    }
+    if (this.p2.character === 'boxer' && a2 === 'dodge' && (a1 === 'attack' || a1 === 'heavy')) {
+      this.p2.counterReady = true
+    }
+    // ── End boxer passive ────────────────────────────────────────────────────
 
     this.applyStaminaCost(this.p1, a1)
     this.applyStaminaCost(this.p2, a2)
@@ -193,14 +242,15 @@ export class BattleEngine {
     if (a1 === 'special') this.p1.rage = 0
     if (a2 === 'special') this.p2.rage = 0
 
-    const p1Heal = a1 === 'repair' ? REPAIR_AMOUNT : 0
-    const p2Heal = a2 === 'repair' ? REPAIR_AMOUNT : 0
+    const p1Heal = a1 === 'repair' ? REPAIR_AMOUNT + this.p1.repairBonus : 0
+    const p2Heal = a2 === 'repair' ? REPAIR_AMOUNT + this.p2.repairBonus : 0
 
-    this.p1.hp = Math.min(MAX_HP, Math.max(0, this.p1.hp - p1Dealt + p1Heal))
-    this.p2.hp = Math.min(MAX_HP, Math.max(0, this.p2.hp - p2Dealt + p2Heal))
+    this.p1.hp = Math.min(this.p1.maxHp, Math.max(0, this.p1.hp - p1Dealt + p1Heal))
+    this.p2.hp = Math.min(this.p2.maxHp, Math.max(0, this.p2.hp - p2Dealt + p2Heal))
 
-    if (p1Dealt > 0) this.p1.rage = Math.min(MAX_RAGE, this.p1.rage + p1Dealt * RAGE_PER_DAMAGE)
-    if (p2Dealt > 0) this.p2.rage = Math.min(MAX_RAGE, this.p2.rage + p2Dealt * RAGE_PER_DAMAGE)
+    // Gladiator gets rage faster (rageMult = 1.5)
+    if (p1Dealt > 0) this.p1.rage = Math.min(MAX_RAGE, this.p1.rage + p1Dealt * RAGE_PER_DAMAGE * this.p1.rageMult)
+    if (p2Dealt > 0) this.p2.rage = Math.min(MAX_RAGE, this.p2.rage + p2Dealt * RAGE_PER_DAMAGE * this.p2.rageMult)
 
     for (const s of [this.p1, this.p2]) {
       for (const k of Object.keys(s.cooldowns) as (keyof typeof s.cooldowns)[]) {

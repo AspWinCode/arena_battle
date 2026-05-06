@@ -279,3 +279,85 @@
   color: var(--accent);
   font-weight: 600;
 }
+
+/* ── Character stats panel ────────────────────────────────────────────────── */
+
+.charPanel {
+  background: var(--bg-mid);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  animation: fadeIn .15s ease;
+}
+
+.charPanelHeader {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.charPanelIcon {
+  font-size: 22px;
+  line-height: 1;
+}
+
+.charPanelName {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.charPanelTagline {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.charStats {
+  display: flex;
+  gap: 12px;
+}
+
+.charStat {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  flex: 1;
+}
+
+.charStatLabel {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  color: var(--text-muted);
+}
+
+.charStatBar {
+  height: 5px;
+  border-radius: 3px;
+  background: var(--bg);
+  overflow: hidden;
+}
+
+.charStatFill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width .3s ease;
+}
+
+.charStatValue {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.charPassive {
+  font-size: 11px;
+  color: var(--text-muted);
+  line-height: 1.5;
+  padding-top: 2px;
+  border-top: 1px solid var(--border);
+}

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import type { SkinId, JoinSessionResponse } from '@robocode/shared'
+import { CHARACTER_STATS } from '@robocode/shared'
 import { api } from '../api/client'
 import { useBattleStore } from '../stores/battleStore'
 import { useUserStore } from '../stores/userStore'
@@ -11,7 +12,7 @@ const SKINS: { id: SkinId; label: string; icon: string; color: string }[] = [
   { id: 'robot',     label: 'Робот',     icon: '🤖', color: '#00e5ff' },
   { id: 'gladiator', label: 'Гладиатор', icon: '⚔️', color: '#d97706' },
   { id: 'boxer',     label: 'Боксёр',    icon: '🥊', color: '#e6261f' },
-  { id: 'cosmonaut', label: 'Космонавт', icon: '🚀', color: '#f0f9ff' },
+  { id: 'cosmonaut', label: 'Космонавт', icon: '🚀', color: '#7c3aed' },
 ]
 
 export default function JoinPage() {
@@ -127,6 +128,53 @@ export default function JoinPage() {
                 </button>
               ))}
             </div>
+
+            {/* Character stats panel */}
+            {(() => {
+              const ch    = CHARACTER_STATS[skin]
+              const skinMeta = SKINS.find(s => s.id === skin)!
+              // Normalise bars: HP out of 120, dmg out of 1.35, rage out of 1.5
+              const hpPct  = Math.round((ch.maxHp / 120) * 100)
+              const dmgPct = Math.round((ch.dmgMult / 1.35) * 100)
+              const ragePct = Math.round((ch.rageMult / 1.5) * 100)
+              return (
+                <div className={styles.charPanel} style={{ borderColor: `${skinMeta.color}44` }}>
+                  <div className={styles.charPanelHeader}>
+                    <span className={styles.charPanelIcon}>{ch.icon}</span>
+                    <div>
+                      <div className={styles.charPanelName} style={{ color: skinMeta.color }}>{ch.name}</div>
+                      <div className={styles.charPanelTagline}>{ch.tagline}</div>
+                    </div>
+                  </div>
+
+                  <div className={styles.charStats}>
+                    <div className={styles.charStat}>
+                      <span className={styles.charStatLabel}>HP</span>
+                      <div className={styles.charStatBar}>
+                        <div className={styles.charStatFill} style={{ width: `${hpPct}%`, background: '#4ade80' }} />
+                      </div>
+                      <span className={styles.charStatValue}>{ch.maxHp}</span>
+                    </div>
+                    <div className={styles.charStat}>
+                      <span className={styles.charStatLabel}>Урон</span>
+                      <div className={styles.charStatBar}>
+                        <div className={styles.charStatFill} style={{ width: `${dmgPct}%`, background: '#f87171' }} />
+                      </div>
+                      <span className={styles.charStatValue}>×{ch.dmgMult.toFixed(2)}</span>
+                    </div>
+                    <div className={styles.charStat}>
+                      <span className={styles.charStatLabel}>Ярость</span>
+                      <div className={styles.charStatBar}>
+                        <div className={styles.charStatFill} style={{ width: `${ragePct}%`, background: '#fbbf24' }} />
+                      </div>
+                      <span className={styles.charStatValue}>×{ch.rageMult.toFixed(1)}</span>
+                    </div>
+                  </div>
+
+                  <div className={styles.charPassive}>{ch.passive}</div>
+                </div>
+              )
+            })()}
           </div>
 
           {error && <div className={styles.error}>{error}</div>}

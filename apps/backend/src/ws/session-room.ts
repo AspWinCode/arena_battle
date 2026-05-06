@@ -1,4 +1,5 @@
 import type { ServerMessage, LobbyPlayer, SkinId, Lang, Strategy } from '@robocode/shared'
+import { CHARACTER_STATS } from '@robocode/shared'
 import { prisma } from '../db/client.js'
 import { runInSandbox } from '../sandbox/sandbox-service.js'
 import { runRound } from '../engine/battle-engine.js'
@@ -164,8 +165,8 @@ export class SessionRoom {
 
     try {
       // Asymmetric fallbacks so two fallback players don't always draw
-      const FALLBACK_P1: Strategy = { primary: 'attack', lowHp: 'repair', onHit: 'dodge', style: 'Fallback', position: 'close' }
-      const FALLBACK_P2: Strategy = { primary: 'laser',  lowHp: 'repair', onHit: 'shield', style: 'Fallback', position: 'far' }
+      const FALLBACK_P1: Strategy = { primary: 'attack', lowHp: 'repair', onHit: 'dodge', style: 'Fallback', position: 'close', character: p1.skin }
+      const FALLBACK_P2: Strategy = { primary: 'laser',  lowHp: 'repair', onHit: 'shield', style: 'Fallback', position: 'far',   character: p2.skin }
 
       // Compile both players independently — on error notify that player and use fallback
       const compileWithFallback = async (player: PlayerConn, isP1: boolean): Promise<Strategy> => {
@@ -204,8 +205,8 @@ export class SessionRoom {
         type: 'battle_start',
         payload: {
           round: round.round,
-          p1: { name: p1.name, skin: p1.skin, hp: 100 },
-          p2: { name: p2.name, skin: p2.skin, hp: 100 },
+          p1: { name: p1.name, skin: p1.skin, hp: CHARACTER_STATS[p1.skin]?.maxHp ?? 100 },
+          p2: { name: p2.name, skin: p2.skin, hp: CHARACTER_STATS[p2.skin]?.maxHp ?? 100 },
         },
       })
 
@@ -291,12 +292,18 @@ export class SessionRoom {
   }
 
   private async compilePlayer(player: PlayerConn): Promise<Strategy> {
-    if (player.strategy) return player.strategy
+    if (player.strategy) {
+      player.strategy.character = player.skin  // keep character in sync
+      return player.strategy
+    }
 
     const code = player.code ?? ''
     const lang = player.lang ?? 'js'
 
     const strategy = await runInSandbox(code, lang)
+
+    // Wire the player's chosen character into the strategy
+    strategy.character = player.skin
 
     await prisma.player.updateMany({
       where: { sessionId: this.sessionId, slot: player.slot },

@@ -11,8 +11,8 @@ function isValidAction(v: unknown): v is ActionName {
 // ── Test contexts ──────────────────────────────────────────────────────────────
 
 const MOCK_CTX_NORMAL: StrategyContext = {
-  myHp: 80, myStamina: 100, myRage: 0,
-  enemyHp: 60, enemyStamina: 100, enemyRage: 0,
+  myHp: 80, myMaxHp: 100, myStamina: 100, myRage: 0,
+  enemyHp: 60, enemyMaxHp: 100, enemyStamina: 100, enemyRage: 0,
   turn: 1,
   myLastAction: null, enemyLastAction: null,
   cooldowns: { attack: 0, heavy: 0, laser: 0, shield: 0, dodge: 0, repair: 0, special: 0 },
@@ -22,8 +22,8 @@ const MOCK_CTX_NORMAL: StrategyContext = {
 }
 
 const MOCK_CTX_LOW_HP: StrategyContext = {
-  myHp: 20, myStamina: 30, myRage: 80,
-  enemyHp: 70, enemyStamina: 60, enemyRage: 20,
+  myHp: 20, myMaxHp: 100, myStamina: 30, myRage: 80,
+  enemyHp: 70, enemyMaxHp: 100, enemyStamina: 60, enemyRage: 20,
   turn: 8,
   myLastAction: 'attack', enemyLastAction: 'heavy',
   cooldowns: { attack: 0, heavy: 0, laser: 0, shield: 0, dodge: 0, repair: 0, special: 0 },

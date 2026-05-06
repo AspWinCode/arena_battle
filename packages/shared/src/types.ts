@@ -23,8 +23,10 @@ export type Position = 'close' | 'mid' | 'far'
  * Context passed to strategy(ctx) every turn.
  */
 export interface StrategyContext {
-  /** Your HP (0–100) */
+  /** Your HP (0–maxHp) */
   myHp: number
+  /** Your max HP — depends on chosen character (100–120) */
+  myMaxHp: number
   /** Your stamina (0–100). Low stamina = weak attacks or misses */
   myStamina: number
   /** Your rage (0–100). At 100 you can use 'special' */
@@ -32,6 +34,8 @@ export interface StrategyContext {
 
   /** Enemy HP */
   enemyHp: number
+  /** Enemy max HP */
+  enemyMaxHp: number
   /** Enemy stamina — use it to predict if they can heavy-attack */
   enemyStamina: number
   /** Enemy rage — danger when it hits 100 */
@@ -75,8 +79,10 @@ export interface Strategy {
   primary: ActionName
   lowHp: ActionName
   onHit: ActionName
-  style: 'Aggressive' | 'Defensive' | 'Evasive' | 'Balanced' | 'Standard'
+  style: 'Aggressive' | 'Defensive' | 'Evasive' | 'Balanced' | 'Standard' | 'Fallback'
   position: Position
+  /** Which character skin this strategy belongs to — sets HP, damage multiplier, passive */
+  character?: SkinId
   /** Synchronous per-turn fn (JS strategies via isolated-vm) */
   fn?: (ctx: StrategyContext) => ActionName
   /** Async per-turn fn (Python strategies via persistent subprocess) */
