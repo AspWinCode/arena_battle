@@ -4,7 +4,7 @@ import type {
   LobbyPlayer, SkinId, SessionLevel, Lang,
 } from '@robocode/shared'
 
-type BattlePhase = 'lobby' | 'coding' | 'compiling' | 'battle' | 'result'
+type BattlePhase = 'lobby' | 'coding' | 'inter_round' | 'compiling' | 'battle' | 'result'
 
 interface BattleState {
   // Connection
@@ -26,6 +26,10 @@ interface BattleState {
   // Code
   code: string
   lang: Lang
+
+  // Inter-round context
+  interRoundScore: [number, number] | null
+  nextRound: number | null
 
   // Battle
   currentRound: number
@@ -65,6 +69,8 @@ const initialState = {
   timeLeft: 0,
   code: '',
   lang: 'js' as Lang,
+  interRoundScore: null,
+  nextRound: null,
   currentRound: 1,
   p1Hp: 100,
   p2Hp: 100,
@@ -104,9 +110,16 @@ export const useBattleStore = create<BattleState>((set) => ({
         set({ p1: msg.payload.p1, p2: msg.payload.p2 })
         break
 
-      case 'coding_start':
-        set({ phase: 'coding', timeLeft: msg.payload.timeLimit })
+      case 'coding_start': {
+        const isInterRound = msg.payload.score !== undefined
+        set({
+          phase: isInterRound ? 'inter_round' : 'coding',
+          timeLeft: msg.payload.timeLimit,
+          interRoundScore: msg.payload.score ?? null,
+          nextRound: msg.payload.round ?? null,
+        })
         break
+      }
 
       case 'timer_tick':
         set({ timeLeft: msg.payload.remaining })

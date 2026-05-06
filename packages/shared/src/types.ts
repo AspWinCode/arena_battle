@@ -149,7 +149,7 @@ export type ClientMessage =
 export type ServerMessage =
   | { type: 'connected'; payload: { slot: 1 | 2; sessionLevel: SessionLevel; allowedSkins: SkinId[] } }
   | { type: 'lobby_update'; payload: { p1: LobbyPlayer | null; p2: LobbyPlayer | null } }
-  | { type: 'coding_start'; payload: { timeLimit: number } }
+  | { type: 'coding_start'; payload: { timeLimit: number; round?: number; score?: [number, number] } }
   | { type: 'timer_tick'; payload: { remaining: number } }
   | { type: 'battle_start'; payload: { round: number; p1: BattlePlayerInfo; p2: BattlePlayerInfo } }
   | { type: 'turn_result'; payload: TurnResult }

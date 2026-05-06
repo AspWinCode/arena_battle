@@ -12,9 +12,11 @@ export default function BattlePage() {
   const { sessionId } = useParams<{ sessionId: string }>()
   const navigate = useNavigate()
 
-  const phase   = useBattleStore(s => s.phase)
-  const slot    = useBattleStore(s => s.slot)
-  const wsToken = useBattleStore(s => s.wsToken)
+  const phase            = useBattleStore(s => s.phase)
+  const slot             = useBattleStore(s => s.slot)
+  const wsToken          = useBattleStore(s => s.wsToken)
+  const interRoundScore  = useBattleStore(s => s.interRoundScore)
+  const nextRound        = useBattleStore(s => s.nextRound)
   // myName/mySkin saved at join — p1/p2 are null until lobby_update arrives from server
   const myName  = useBattleStore(s => s.myName)
   const mySkin  = useBattleStore(s => s.mySkin)
@@ -55,9 +57,10 @@ export default function BattlePage() {
   return (
     <div className={styles.root}>
       {phase === 'lobby' && <LobbyScreen />}
-      {phase === 'coding' && (
+      {(phase === 'coding' || phase === 'inter_round') && (
         <CodingScreen
           onReady={(code, lang) => send({ type: 'ready', payload: { code, lang } })}
+          interRound={phase === 'inter_round' ? { score: interRoundScore!, nextRound: nextRound! } : undefined}
         />
       )}
       {(phase === 'compiling' || phase === 'battle') && <BattleScreen />}

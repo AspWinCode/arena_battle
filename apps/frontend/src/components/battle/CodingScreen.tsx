@@ -66,7 +66,18 @@ public static String strategy(Ctx ctx) {
 }`,
 }
 
-export default function CodingScreen({ onReady }: { onReady: (code: string, lang: Lang) => void }) {
+interface InterRoundInfo {
+  score: [number, number]
+  nextRound: number
+}
+
+export default function CodingScreen({
+  onReady,
+  interRound,
+}: {
+  onReady: (code: string, lang: Lang) => void
+  interRound?: InterRoundInfo
+}) {
   const sessionLevel = useBattleStore(s => s.sessionLevel)
   const timeLeft = useBattleStore(s => s.timeLeft)
   const code = useBattleStore(s => s.code)
@@ -96,6 +107,9 @@ export default function CodingScreen({ onReady }: { onReady: (code: string, lang
   if (sessionLevel === 'blocks') {
     return (
       <div className={styles.root} style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+        {interRound && (
+          <InterRoundBanner score={interRound.score} nextRound={interRound.nextRound} />
+        )}
         {/* Header (same as text editor) */}
         <div className={styles.header}>
           <div className={styles.players}>
@@ -134,6 +148,9 @@ export default function CodingScreen({ onReady }: { onReady: (code: string, lang
 
   return (
     <div className={styles.root}>
+      {interRound && (
+        <InterRoundBanner score={interRound.score} nextRound={interRound.nextRound} />
+      )}
       {/* Header */}
       <div className={styles.header}>
         <div className={styles.players}>
@@ -197,6 +214,35 @@ export default function CodingScreen({ onReady }: { onReady: (code: string, lang
           <code key={p} className={styles.apiChip}>{p}</code>
         ))}
       </div>
+    </div>
+  )
+}
+
+function InterRoundBanner({ score, nextRound }: { score: [number, number]; nextRound: number }) {
+  return (
+    <div style={{
+      background: 'linear-gradient(135deg, rgba(124,58,237,.15), rgba(0,229,255,.1))',
+      borderBottom: '1px solid rgba(124,58,237,.3)',
+      padding: '10px 24px',
+      display: 'flex',
+      alignItems: 'center',
+      gap: 20,
+    }}>
+      <span style={{ fontSize: 18, fontWeight: 900, color: '#a78bfa' }}>
+        ⚔️ Раунд {nextRound - 1} завершён
+      </span>
+      <div style={{
+        display: 'flex', alignItems: 'center', gap: 12,
+        background: 'rgba(0,0,0,.3)', borderRadius: 8, padding: '4px 16px',
+        fontSize: 20, fontWeight: 900,
+      }}>
+        <span style={{ color: score[0] > score[1] ? '#4ade80' : '#e2e8f0' }}>{score[0]}</span>
+        <span style={{ color: 'var(--text-muted)', fontSize: 13 }}>:</span>
+        <span style={{ color: score[1] > score[0] ? '#4ade80' : '#e2e8f0' }}>{score[1]}</span>
+      </div>
+      <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>
+        → Обнови стратегию и нажми <strong style={{ color: '#e2e8f0' }}>«Готов к бою»</strong>
+      </span>
     </div>
   )
 }

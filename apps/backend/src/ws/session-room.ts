@@ -1,7 +1,7 @@
 import type { ServerMessage, LobbyPlayer, SkinId, Lang, Strategy } from '@robocode/shared'
 import { prisma } from '../db/client.js'
 import { runInSandbox } from '../sandbox/sandbox-service.js'
-import { runMatch } from '../engine/battle-engine.js'
+import { runRound } from '../engine/battle-engine.js'
 
 // Minimal WS interface to avoid @types/ws issues
 interface WsSocket {
@@ -20,11 +20,19 @@ interface PlayerConn {
   ready: boolean
 }
 
+// How many round wins needed to win the match
+const WINS_NEEDED: Record<string, number> = { bo1: 1, bo3: 2, bo5: 3 }
+
 export class SessionRoom {
-  private players  = new Map<1 | 2, PlayerConn>()
-  private observers = new Set<WsSocket>()
+  private players       = new Map<1 | 2, PlayerConn>()
+  private observers     = new Set<WsSocket>()
   private timerInterval?: ReturnType<typeof setInterval>
   private codingTimeLeft = 0
+
+  // Match state
+  private currentRound = 0
+  private score: [number, number] = [0, 0]   // [p1wins, p2wins]
+  private completedRounds: import('@robocode/shared').RoundResult[] = []
 
   constructor(
     private sessionId: string,
@@ -61,18 +69,19 @@ export class SessionRoom {
     player.code = code
     player.lang = lang
     player.ready = true
+    // Reset compiled strategy so new code is used
+    player.strategy = undefined
 
     this.broadcastLobbyUpdate()
 
     if ([...this.players.values()].every(p => p.ready)) {
       this.stopCodingTimer()
-      this.startBattle()
+      this.startNextRound()
     }
   }
 
   addObserver(ws: WsSocket) {
     this.observers.add(ws)
-    // Send current lobby state as snapshot
     this.sendLobbyUpdateTo(ws)
   }
 
@@ -94,13 +103,24 @@ export class SessionRoom {
     }
   }
 
-  private startCoding() {
+  // ── Private ────────────────────────────────────────────────────────────────
+
+  private startCoding(isInterRound = false) {
     this.codingTimeLeft = this.timeLimit * 60
+
+    // Reset ready flags for next round
+    for (const p of this.players.values()) p.ready = false
 
     this.broadcastAll({
       type: 'coding_start',
-      payload: { timeLimit: this.codingTimeLeft },
+      payload: {
+        timeLimit: this.codingTimeLeft,
+        round: isInterRound ? this.currentRound + 1 : 1,
+        score: isInterRound ? this.score : undefined,
+      },
     })
+
+    this.broadcastLobbyUpdate()
 
     this.timerInterval = setInterval(() => {
       this.codingTimeLeft--
@@ -111,7 +131,7 @@ export class SessionRoom {
 
       if (this.codingTimeLeft <= 0) {
         this.stopCodingTimer()
-        this.startBattle()
+        this.startNextRound()
       }
     }, 1000)
   }
@@ -123,99 +143,112 @@ export class SessionRoom {
     }
   }
 
-  private async startBattle() {
+  private async startNextRound() {
     const p1 = this.players.get(1)
     const p2 = this.players.get(2)
     if (!p1 || !p2) return
 
-    const p1Lang = p1.lang ?? 'js'
-    const p2Lang = p2.lang ?? 'js'
+    this.currentRound++
 
     this.broadcastAll({
       type: 'compile_status',
       payload: { status: 'compiling', p1Done: false, p2Done: false },
     })
 
-    // Mark session active
     await prisma.session.update({
       where: { id: this.sessionId },
       data: { status: 'BATTLE' },
     }).catch(() => {})
 
     try {
-      // Compile in parallel, report per-player progress
+      // Compile both players (fresh — strategy reset on handleReady)
       const [s1, s2] = await Promise.all([
         this.compilePlayer(p1).then(s => {
-          this.broadcastAll({
-            type: 'compile_status',
-            payload: { status: 'compiling', lang: p1Lang, p1Done: true, p2Done: false },
-          })
+          this.broadcastAll({ type: 'compile_status', payload: { status: 'compiling', p1Done: true, p2Done: false } })
           return s
         }),
         this.compilePlayer(p2).then(s => {
-          this.broadcastAll({
-            type: 'compile_status',
-            payload: { status: 'compiling', lang: p2Lang, p1Done: false, p2Done: true },
-          })
+          this.broadcastAll({ type: 'compile_status', payload: { status: 'compiling', p1Done: true, p2Done: true } })
           return s
         }),
       ])
 
       this.broadcastAll({ type: 'compile_status', payload: { status: 'done', p1Done: true, p2Done: true } })
 
-      const { winner, score, rounds } = await runMatch(s1, s2, this.format)
-
-      for (const round of rounds) {
-        this.broadcastAll({
-          type: 'battle_start',
-          payload: {
-            round: round.round,
-            p1: { name: p1.name, skin: p1.skin, hp: 100 },
-            p2: { name: p2.name, skin: p2.skin, hp: 100 },
-          },
-        })
-
-        for (const turn of round.turns) {
-          await sleep(400)
-          this.broadcastAll({ type: 'turn_result', payload: turn })
-        }
-
-        await sleep(500)
-        this.broadcastAll({
-          type: 'round_end',
-          payload: {
-            round: round.round,
-            winner: round.winner,
-            p1Hp: round.p1Hp,
-            p2Hp: round.p2Hp,
-            reason: round.reason,
-          },
-        })
-
-        await prisma.battle.create({
-          data: {
-            sessionId: this.sessionId,
-            round: round.round,
-            winner: round.winner,
-            hp1Final: round.p1Hp,
-            hp2Final: round.p2Hp,
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            log: round.turns as any,
-          },
-        })
-
-        await sleep(1500)
-      }
+      // Run ONE round
+      const round = await runRound(s1, s2, this.currentRound)
 
       this.broadcastAll({
-        type: 'match_end',
-        payload: { winner, score, rounds },
+        type: 'battle_start',
+        payload: {
+          round: round.round,
+          p1: { name: p1.name, skin: p1.skin, hp: 100 },
+          p2: { name: p2.name, skin: p2.skin, hp: 100 },
+        },
       })
 
-      await prisma.session.update({
-        where: { id: this.sessionId },
-        data: { status: 'DONE' },
+      for (const turn of round.turns) {
+        await sleep(400)
+        this.broadcastAll({ type: 'turn_result', payload: turn })
+      }
+
+      await sleep(500)
+      this.broadcastAll({
+        type: 'round_end',
+        payload: {
+          round: round.round,
+          winner: round.winner,
+          p1Hp: round.p1Hp,
+          p2Hp: round.p2Hp,
+          reason: round.reason,
+        },
       })
+
+      await prisma.battle.create({
+        data: {
+          sessionId: this.sessionId,
+          round: round.round,
+          winner: round.winner,
+          hp1Final: round.p1Hp,
+          hp2Final: round.p2Hp,
+          log: round.turns as never,
+        },
+      })
+
+      // Update score
+      if (round.winner === 1) this.score[0]++
+      else if (round.winner === 2) this.score[1]++
+
+      this.completedRounds.push({ ...round, turns: round.turns })
+
+      await sleep(1500)
+
+      // Check if match is over
+      const winsNeeded = WINS_NEEDED[this.format] ?? 2
+      const matchWinner: 0 | 1 | 2 =
+        this.score[0] >= winsNeeded ? 1 :
+        this.score[1] >= winsNeeded ? 2 : 0
+
+      if (matchWinner !== 0) {
+        // Match finished
+        this.broadcastAll({
+          type: 'match_end',
+          payload: {
+            winner: matchWinner,
+            score: this.score,
+            rounds: this.completedRounds,
+          },
+        })
+
+        await prisma.session.update({
+          where: { id: this.sessionId },
+          data: { status: 'DONE' },
+        })
+      } else {
+        // More rounds — go back to coding
+        this.startCoding(true)
+      }
+
     } catch (err) {
       console.error('[room] Battle error:', err)
       this.broadcastAll({
@@ -236,8 +269,7 @@ export class SessionRoom {
 
       await prisma.player.updateMany({
         where: { sessionId: this.sessionId, slot: player.slot },
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        data: { code, lang, strategy: strategy as any },
+        data: { code, lang, strategy: strategy as never },
       })
 
       player.strategy = strategy

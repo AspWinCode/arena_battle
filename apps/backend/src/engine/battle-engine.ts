@@ -291,6 +291,16 @@ export class BattleEngine {
   }
 }
 
+/** Run a single round — used when rounds are interleaved with coding phases */
+export async function runRound(
+  p1Strategy: Strategy,
+  p2Strategy: Strategy,
+  roundNumber: number,
+): Promise<RoundResult> {
+  const engine = new BattleEngine(p1Strategy, p2Strategy)
+  return engine.runRound(roundNumber)
+}
+
 export async function runMatch(
   p1Strategy: Strategy,
   p2Strategy: Strategy,
