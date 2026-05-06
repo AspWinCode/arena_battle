@@ -13,11 +13,21 @@ interface Props {
   isDead?: boolean
 }
 
-const SKIN_COLORS: Record<SkinId, { primary: string; secondary: string; accent: string }> = {
+const SKIN_COLORS: Record<string, { primary: string; secondary: string; accent: string }> = {
   robot:     { primary: '#00e5ff', secondary: '#0a3a4a', accent: '#7de8ff' },
   gladiator: { primary: '#d97706', secondary: '#3a2800', accent: '#fbbf24' },
   boxer:     { primary: '#e6261f', secondary: '#3a0a0a', accent: '#f87171' },
   cosmonaut: { primary: '#f0f9ff', secondary: '#1a2a3a', accent: '#bae6fd' },
+  ninja:     { primary: '#1a1a2e', secondary: '#0d0d1a', accent: '#7c3aed' },
+  mage:      { primary: '#7c3aed', secondary: '#1e1033', accent: '#c4b5fd' },
+  paladin:   { primary: '#f8d94e', secondary: '#3a2e00', accent: '#fef08a' },
+  sniper:    { primary: '#4a7c59', secondary: '#1a2e1f', accent: '#86efac' },
+  tank:      { primary: '#6b7280', secondary: '#1f2937', accent: '#d1d5db' },
+  vampire:   { primary: '#991b1b', secondary: '#1a0a0a', accent: '#fca5a5' },
+  samurai:   { primary: '#dc2626', secondary: '#2d0a0a', accent: '#fca5a5' },
+  phantom:   { primary: '#6d28d9', secondary: '#12082a', accent: '#a78bfa' },
+  engineer:  { primary: '#f59e0b', secondary: '#2d1a00', accent: '#fde68a' },
+  berserker: { primary: '#b91c1c', secondary: '#1a0505', accent: '#f87171' },
 }
 
 const GL = '#f1cf68'

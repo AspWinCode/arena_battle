@@ -3,12 +3,9 @@ import { useBattleStore } from '../../stores/battleStore'
 import { analyzeMatch, evaluateTurns, ACTION_LABEL, ACTION_COLOR } from '../../engine/matchAnalysis'
 import type { HpPoint, PlayerAnalysis } from '../../engine/matchAnalysis'
 import type { ActionName } from '@robocode/shared'
+import { SKIN_ICON as SKIN_ICONS } from '@robocode/shared'
 import DecisionGraph from './DecisionGraph'
 import styles from './ResultScreen.module.css'
-
-const SKIN_ICONS: Record<string, string> = {
-  robot: '🤖', gladiator: '⚔️', boxer: '🥊', cosmonaut: '🚀',
-}
 
 // ── HP Timeline SVG ───────────────────────────────────────────────────────────
 

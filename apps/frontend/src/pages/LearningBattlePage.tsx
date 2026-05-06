@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback, useMemo } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
-import { MISSIONS, MAX_HP, MAX_STAMINA, MAX_RAGE } from '@robocode/shared'
+import { MISSIONS, MAX_HP, MAX_STAMINA, MAX_RAGE, SKIN_ICON } from '@robocode/shared'
 import type { RoundResult, TurnResult } from '@robocode/shared'
 import { runLocalMatch } from '../engine/battleEngine'
 import { runCodeToStrategy } from '../engine/codeRunner'
@@ -11,10 +11,6 @@ import { useDailyStore } from '../stores/dailyStore'
 import CodeEditor from '../components/CodeEditor/CodeEditor'
 import TutorialOverlay from '../components/tutorial/TutorialOverlay'
 import styles from './LearningBattlePage.module.css'
-
-const SKIN_ICON: Record<string, string> = {
-  robot: '🤖', gladiator: '⚔️', boxer: '🥊', cosmonaut: '🚀',
-}
 
 const ACTION_ICON: Record<string, string> = {
   attack: '👊', heavy: '💥', laser: '⚡', shield: '🛡️',

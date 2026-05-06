@@ -3,7 +3,7 @@ import {
   STAMINA_REGEN, STAMINA_COSTS,
   STAMINA_THRESHOLD_HEAVY, STAMINA_THRESHOLD_ATTACK, STAMINA_THRESHOLD_LASER,
   ATTACK_EXHAUSTED_DAMAGE,
-  RAGE_PER_DAMAGE, SPECIAL_RAGE_COST,
+  RAGE_PER_DAMAGE,
   BASE_DAMAGE, SHIELD_ABSORB,
   DODGE_LASER_EVADE_CHANCE, DODGE_SPECIAL_ABSORB,
   REPEAT_PENALTY_AFTER, REPEAT_DAMAGE_FACTOR,
@@ -22,16 +22,28 @@ function isValidAction(v: unknown): v is ActionName {
 }
 
 interface ExtState extends PlayerState {
-  repeatCount: number
-  // ── Character stats (resolved once at round start) ──────────────────────────
-  character: SkinId
-  maxHp: number
-  dmgMult: number
-  rageMult: number
-  repairBonus: number
-  shieldBonus: number
-  // ── Boxer passive ───────────────────────────────────────────────────────────
-  counterReady: boolean
+  repeatCount:  number
+  // ── Character identity ───────────────────────────────────────────────────────
+  character:    SkinId
+  maxHp:        number
+  dmgMult:      number
+  rageMult:     number
+  repairBonus:  number
+  shieldBonus:  number
+  // ── Active passives ──────────────────────────────────────────────────────────
+  hasCounter:          boolean
+  counterReady:        boolean   // Boxer: set after successful dodge
+  superDodge:          boolean   // Ninja
+  shieldHealAmount:    number    // Paladin
+  lifestealRate:       number    // Vampire
+  bushidoThreshold:    number    // Samurai
+  bushidoMult:         number    // Samurai
+  flatDmgReduction:    number    // Tank
+  specialRageCost:     number    // Engineer (60), others (100)
+  rageFromDealt:       boolean   // Berserker
+  actionDmgOverrides:  Partial<Record<ActionName, number>>  // Sniper
+  cooldownOverrides:   Partial<Record<ActionName, number>>  // Phantom, Sniper
+  staminaCostOverrides:Partial<Record<ActionName, number>>  // Mage
 }
 
 export class BattleEngine {
@@ -63,7 +75,19 @@ export class BattleEngine {
       rageMult:     char.rageMult,
       repairBonus:  char.repairBonus,
       shieldBonus:  char.shieldBonus,
-      counterReady: false,
+      hasCounter:          char.hasCounter,
+      counterReady:        false,
+      superDodge:          char.superDodge,
+      shieldHealAmount:    char.shieldHealAmount,
+      lifestealRate:       char.lifestealRate,
+      bushidoThreshold:    char.bushidoThreshold,
+      bushidoMult:         char.bushidoMult,
+      flatDmgReduction:    char.flatDmgReduction,
+      specialRageCost:     char.specialRageCost,
+      rageFromDealt:       char.rageFromDealt,
+      actionDmgOverrides:  char.actionDmgOverrides,
+      cooldownOverrides:   char.cooldownOverrides,
+      staminaCostOverrides:char.staminaCostOverrides,
     }
   }
 
@@ -94,7 +118,7 @@ export class BattleEngine {
     }
   }
 
-  // ── Context builder ─────────────────────────────────────────────────────────
+  // ── Context ─────────────────────────────────────────────────────────────────
 
   private buildContext(self: ExtState, enemy: ExtState, turn: number): StrategyContext {
     return {
@@ -120,33 +144,26 @@ export class BattleEngine {
   // ── Action selection ────────────────────────────────────────────────────────
 
   private async pickActionAsync(self: ExtState, enemy: ExtState, turn: number): Promise<ActionName> {
-    const { strategy } = self
     const ctx = this.buildContext(self, enemy, turn)
 
-    // 1. Async fn (Python strategies)
-    if (strategy.asyncFn) {
+    if (self.strategy.asyncFn) {
       try {
-        const chosen = await strategy.asyncFn(ctx)
+        const chosen = await self.strategy.asyncFn(ctx)
         if (isValidAction(chosen) && this.isActionAvailable(self, chosen)) return chosen
       } catch { /* fall through */ }
     }
-
-    // 2. Sync fn (JS isolated-vm strategies)
-    if (strategy.fn) {
+    if (self.strategy.fn) {
       try {
-        const chosen = strategy.fn(ctx)
+        const chosen = self.strategy.fn(ctx)
         if (isValidAction(chosen) && this.isActionAvailable(self, chosen)) return chosen
       } catch { /* fall through */ }
     }
-
-    // 3. Static fallback
     return this.pickStaticAction(self, enemy)
   }
 
   private pickStaticAction(self: ExtState, enemy: ExtState): ActionName {
     const { strategy } = self
-
-    if (self.rage >= SPECIAL_RAGE_COST && this.isActionAvailable(self, 'special')) return 'special'
+    if (self.rage >= self.specialRageCost && this.isActionAvailable(self, 'special')) return 'special'
     if (self.hp < 30) return this.resolveStaticAction(self, strategy.lowHp)
     if (enemy.lastAction === 'laser' && strategy.onHit === 'dodge') return 'dodge'
     if (enemy.shieldActive && (strategy.primary === 'attack' || strategy.primary === 'heavy')) return 'heavy'
@@ -155,16 +172,16 @@ export class BattleEngine {
 
   private isActionAvailable(state: ExtState, action: ActionName): boolean {
     if ((state.cooldowns[action as keyof typeof state.cooldowns] ?? 0) > 0) return false
-    if (action === 'special' && state.rage < SPECIAL_RAGE_COST) return false
+    if (action === 'special' && state.rage < state.specialRageCost) return false
     return true
   }
 
   private resolveStaticAction(self: ExtState, act: ActionName): ActionName {
     if (!this.isActionAvailable(self, act)) {
-      if (act === 'heavy'  ) return self.cooldowns.laser === 0 ? 'laser' : 'attack'
-      if (act === 'laser'  ) return 'attack'
-      if (act === 'repair' ) return 'shield'
-      if (act === 'shield' ) return 'attack'
+      if (act === 'heavy')  return self.cooldowns.laser === 0 ? 'laser' : 'attack'
+      if (act === 'laser')  return 'attack'
+      if (act === 'repair') return 'shield'
+      if (act === 'shield') return 'attack'
       return 'attack'
     }
     return act
@@ -173,7 +190,6 @@ export class BattleEngine {
   // ── Turn resolution ─────────────────────────────────────────────────────────
 
   private async resolveTurn(turn: number): Promise<TurnResult> {
-    // Stamina regens at start of turn
     this.p1.stamina = Math.min(MAX_STAMINA, this.p1.stamina + STAMINA_REGEN)
     this.p2.stamina = Math.min(MAX_STAMINA, this.p2.stamina + STAMINA_REGEN)
 
@@ -191,33 +207,27 @@ export class BattleEngine {
     const p1Factor = this.p1.repeatCount >= REPEAT_PENALTY_AFTER ? REPEAT_DAMAGE_FACTOR : 1
     const p2Factor = this.p2.repeatCount >= REPEAT_PENALTY_AFTER ? REPEAT_DAMAGE_FACTOR : 1
 
-    // Base damage: p1 attacks p2, p2 attacks p1
+    // Base damage
     let p2DmgDealt = Math.round(this.calcDamage(a1, this.p1, a2, this.p2) * p1Factor)
     let p1DmgDealt = Math.round(this.calcDamage(a2, this.p2, a1, this.p1) * p2Factor)
 
-    // ── Boxer counter-strike passive ─────────────────────────────────────────
-    // Counter expires if boxer does anything other than attack
+    // ── Boxer counter-strike ─────────────────────────────────────────────────
     if (this.p1.counterReady && a1 !== 'attack') this.p1.counterReady = false
     if (this.p2.counterReady && a2 !== 'attack') this.p2.counterReady = false
-
-    // Apply counter boost
     if (this.p1.counterReady && a1 === 'attack' && p2DmgDealt > 0) {
-      p2DmgDealt = Math.round(p2DmgDealt * 2)
-      this.p1.counterReady = false
+      p2DmgDealt = Math.round(p2DmgDealt * 2); this.p1.counterReady = false
     }
     if (this.p2.counterReady && a2 === 'attack' && p1DmgDealt > 0) {
-      p1DmgDealt = Math.round(p1DmgDealt * 2)
-      this.p2.counterReady = false
+      p1DmgDealt = Math.round(p1DmgDealt * 2); this.p2.counterReady = false
     }
+    if (this.p1.hasCounter && a1 === 'dodge' && (a2 === 'attack' || a2 === 'heavy')) this.p1.counterReady = true
+    if (this.p2.hasCounter && a2 === 'dodge' && (a1 === 'attack' || a1 === 'heavy')) this.p2.counterReady = true
 
-    // Set counter ready for NEXT turn if boxer successfully dodged a melee attack
-    if (this.p1.character === 'boxer' && a1 === 'dodge' && (a2 === 'attack' || a2 === 'heavy')) {
-      this.p1.counterReady = true
-    }
-    if (this.p2.character === 'boxer' && a2 === 'dodge' && (a1 === 'attack' || a1 === 'heavy')) {
-      this.p2.counterReady = true
-    }
-    // ── End boxer passive ────────────────────────────────────────────────────
+    // ── Vampire lifesteal ────────────────────────────────────────────────────
+    const p1Lifesteal = (this.p1.lifestealRate > 0 && (a1 === 'attack' || a1 === 'heavy') && p2DmgDealt > 0)
+      ? Math.round(p2DmgDealt * this.p1.lifestealRate) : 0
+    const p2Lifesteal = (this.p2.lifestealRate > 0 && (a2 === 'attack' || a2 === 'heavy') && p1DmgDealt > 0)
+      ? Math.round(p1DmgDealt * this.p2.lifestealRate) : 0
 
     this.applyStaminaCost(this.p1, a1)
     this.applyStaminaCost(this.p2, a2)
@@ -225,28 +235,31 @@ export class BattleEngine {
     if (a1 === 'special') this.p1.rage = 0
     if (a2 === 'special') this.p2.rage = 0
 
-    // Cosmonaut gets bonus repair
-    const p1Heal = a1 === 'repair' ? REPAIR_AMOUNT + this.p1.repairBonus : 0
-    const p2Heal = a2 === 'repair' ? REPAIR_AMOUNT + this.p2.repairBonus : 0
+    // ── Healing: repair (+ Cosmonaut bonus) + Paladin shield heal ────────────
+    let p1Heal = a1 === 'repair' ? REPAIR_AMOUNT + this.p1.repairBonus : 0
+    if (a1 === 'shield' && this.p1.shieldHealAmount > 0) p1Heal += this.p1.shieldHealAmount
+    p1Heal += p1Lifesteal
 
-    // HP cap at character's maxHp (Cosmonaut can have up to 120)
+    let p2Heal = a2 === 'repair' ? REPAIR_AMOUNT + this.p2.repairBonus : 0
+    if (a2 === 'shield' && this.p2.shieldHealAmount > 0) p2Heal += this.p2.shieldHealAmount
+    p2Heal += p2Lifesteal
+
     this.p1.hp = Math.min(this.p1.maxHp, Math.max(0, this.p1.hp - p1DmgDealt + p1Heal))
     this.p2.hp = Math.min(this.p2.maxHp, Math.max(0, this.p2.hp - p2DmgDealt + p2Heal))
 
-    // Gladiator gets rage faster (rageMult = 1.5)
+    // ── Rage accumulation ────────────────────────────────────────────────────
+    // Base: rage from damage taken
     if (p1DmgDealt > 0) this.p1.rage = Math.min(MAX_RAGE, this.p1.rage + p1DmgDealt * RAGE_PER_DAMAGE * this.p1.rageMult)
     if (p2DmgDealt > 0) this.p2.rage = Math.min(MAX_RAGE, this.p2.rage + p2DmgDealt * RAGE_PER_DAMAGE * this.p2.rageMult)
+    // Berserker: also gain rage from damage dealt
+    if (this.p1.rageFromDealt && p2DmgDealt > 0) this.p1.rage = Math.min(MAX_RAGE, this.p1.rage + p2DmgDealt * RAGE_PER_DAMAGE)
+    if (this.p2.rageFromDealt && p1DmgDealt > 0) this.p2.rage = Math.min(MAX_RAGE, this.p2.rage + p1DmgDealt * RAGE_PER_DAMAGE)
 
-    this.tickCooldowns(this.p1)
-    this.tickCooldowns(this.p2)
-    this.applyCooldown(this.p1, a1)
-    this.applyCooldown(this.p2, a2)
+    this.tickCooldowns(this.p1); this.tickCooldowns(this.p2)
+    this.applyCooldown(this.p1, a1); this.applyCooldown(this.p2, a2)
 
-    this.p1.lastAction = a1
-    this.p2.lastAction = a2
-
-    this.updatePosition(this.p1, a1)
-    this.updatePosition(this.p2, a2)
+    this.p1.lastAction = a1; this.p2.lastAction = a2
+    this.updatePosition(this.p1, a1); this.updatePosition(this.p2, a2)
 
     return {
       turn, p1Action: a1, p2Action: a2,
@@ -264,9 +277,7 @@ export class BattleEngine {
 
   // ── Damage calculation ──────────────────────────────────────────────────────
 
-  private calcDamage(
-    attAction: ActionName, att: ExtState, defAction: ActionName, def: ExtState,
-  ): number {
+  private calcDamage(attAction: ActionName, att: ExtState, defAction: ActionName, def: ExtState): number {
     let dmg = BASE_DAMAGE[attAction] ?? 0
     if (dmg === 0) return 0
 
@@ -274,19 +285,40 @@ export class BattleEngine {
     if (attAction === 'attack' && att.stamina < STAMINA_THRESHOLD_ATTACK) dmg = ATTACK_EXHAUSTED_DAMAGE
     if (attAction === 'laser'  && att.stamina < STAMINA_THRESHOLD_LASER)  dmg = Math.floor(dmg * 0.5)
 
-    // Apply character damage multiplier (Gladiator ×1.35, Cosmonaut ×0.8, etc.)
+    // Global character damage multiplier
     if (att.dmgMult !== 1.0) dmg = Math.floor(dmg * att.dmgMult)
+
+    // Per-action override (e.g. Sniper: attack × 0.5)
+    const actionOverride = att.actionDmgOverrides[attAction]
+    if (actionOverride !== undefined) dmg = Math.floor(dmg * actionOverride)
+
+    // Samurai bushido: HP ≤ 25% → all damage × 2
+    if (att.bushidoThreshold > 0 && att.hp <= att.maxHp * att.bushidoThreshold) {
+      dmg = Math.floor(dmg * att.bushidoMult)
+    }
 
     dmg = applyPositionModifier(attAction, att.position, dmg)
 
-    // Defender: shield uses character-specific absorption (Cosmonaut +10%)
+    // Defender passives
     const shieldAbsorb = SHIELD_ABSORB + def.shieldBonus
     if (defAction === 'shield') {
       dmg = Math.round(dmg * (1 - shieldAbsorb))
     } else if (defAction === 'dodge') {
-      if (attAction === 'attack' || attAction === 'heavy') dmg = 0
-      else if (attAction === 'laser' && Math.random() < DODGE_LASER_EVADE_CHANCE) dmg = 0
-      else if (attAction === 'special') dmg = Math.floor(dmg * (1 - DODGE_SPECIAL_ABSORB))
+      if (attAction === 'attack' || attAction === 'heavy') {
+        dmg = 0
+      } else if (attAction === 'laser') {
+        // Ninja: 100% evade; others: 50%
+        if (def.superDodge || Math.random() < DODGE_LASER_EVADE_CHANCE) dmg = 0
+      } else if (attAction === 'special') {
+        // Ninja: blocks 80%; others: 50%
+        const absorb = def.superDodge ? 0.8 : DODGE_SPECIAL_ABSORB
+        dmg = Math.floor(dmg * (1 - absorb))
+      }
+    }
+
+    // Tank: flat damage reduction (minimum 1 always gets through)
+    if (def.flatDmgReduction > 0 && dmg > 0) {
+      dmg = Math.max(1, dmg - def.flatDmgReduction)
     }
 
     return Math.max(0, dmg)
@@ -295,7 +327,7 @@ export class BattleEngine {
   // ── Helpers ─────────────────────────────────────────────────────────────────
 
   private applyStaminaCost(state: ExtState, action: ActionName) {
-    const cost = STAMINA_COSTS[action] ?? 0
+    const cost = state.staminaCostOverrides[action] ?? STAMINA_COSTS[action] ?? 0
     state.stamina = Math.min(MAX_STAMINA, Math.max(0, state.stamina - cost))
   }
 
@@ -306,7 +338,7 @@ export class BattleEngine {
   }
 
   private applyCooldown(state: ExtState, action: ActionName) {
-    const cd = COOLDOWNS[action]
+    const cd = state.cooldownOverrides[action] ?? COOLDOWNS[action]
     if (cd > 0) state.cooldowns[action as keyof typeof state.cooldowns] = cd
   }
 
@@ -314,51 +346,39 @@ export class BattleEngine {
     if (action === 'attack' || action === 'heavy') state.position = 'close'
     else if (action === 'laser') state.position = 'far'
     else if (action === 'dodge') {
-      state.position = state.position === 'close' ? 'mid'
-        : state.position === 'mid' ? 'far' : 'mid'
+      state.position = state.position === 'close' ? 'mid' : state.position === 'mid' ? 'far' : 'mid'
     }
   }
 
-  private buildLog(
-    a1: ActionName, a2: ActionName,
-    d1: number, d2: number,
-    h1: number, h2: number,
-    p1: ExtState, p2: ExtState,
-  ): string {
+  private buildLog(a1: ActionName, a2: ActionName, d1: number, d2: number, h1: number, h2: number, p1: ExtState, p2: ExtState): string {
     const parts: string[] = []
     const pen1 = p1.repeatCount >= REPEAT_PENALTY_AFTER
     const pen2 = p2.repeatCount >= REPEAT_PENALTY_AFTER
-    const p1Miss = a1 === 'heavy' && d2 === 0 && p1.stamina < STAMINA_THRESHOLD_HEAVY
-    const p2Miss = a2 === 'heavy' && d1 === 0 && p2.stamina < STAMINA_THRESHOLD_HEAVY
-    if (p1Miss) parts.push('P1 ПРОМАХ (нет выносливости!)')
-    if (p2Miss) parts.push('P2 ПРОМАХ (нет выносливости!)')
-    if (!p1Miss && !p2Miss) {
-      if (d2 > 0) parts.push(`P2 -${d2}HP${pen1 ? ' ⚠️' : ''}${p1.counterReady === false && a1 === 'attack' && p1.character === 'boxer' ? ' 🥊×2' : ''}`)
-      if (d1 > 0) parts.push(`P1 -${d1}HP${pen2 ? ' ⚠️' : ''}${p2.counterReady === false && a2 === 'attack' && p2.character === 'boxer' ? ' 🥊×2' : ''}`)
-    }
+    if (a1 === 'heavy' && d2 === 0 && p1.stamina < STAMINA_THRESHOLD_HEAVY) parts.push('P1 ПРОМАХ!')
+    if (a2 === 'heavy' && d1 === 0 && p2.stamina < STAMINA_THRESHOLD_HEAVY) parts.push('P2 ПРОМАХ!')
+    if (d2 > 0) parts.push(`P2 -${d2}HP${pen1 ? '⚠️' : ''}`)
+    if (d1 > 0) parts.push(`P1 -${d1}HP${pen2 ? '⚠️' : ''}`)
     if (h1 > 0) parts.push(`P1 +${h1}HP`)
     if (h2 > 0) parts.push(`P2 +${h2}HP`)
-    if (a1 === 'special') parts.push('⚡ P1 RAGE STRIKE!')
-    if (a2 === 'special') parts.push('⚡ P2 RAGE STRIKE!')
+    if (a1 === 'special') parts.push('⚡ P1 RAGE!')
+    if (a2 === 'special') parts.push('⚡ P2 RAGE!')
+    if (p1.character === 'ninja' && a1 === 'dodge') parts.push('🌑 Ниндзя уклонился!')
+    if (p2.character === 'ninja' && a2 === 'dodge') parts.push('🌑 Ниндзя уклонился!')
+    if (p1.character === 'samurai' && p1.hp <= p1.maxHp * p1.bushidoThreshold && d2 > 0) parts.push('⚔️ БУСИДО!')
+    if (p2.character === 'samurai' && p2.hp <= p2.maxHp * p2.bushidoThreshold && d1 > 0) parts.push('⚔️ БУСИДО!')
     if (parts.length === 0) parts.push(`${a1} vs ${a2}`)
     return parts.join(' | ')
   }
 }
 
-/** Run a single round — used when rounds are interleaved with coding phases */
-export async function runRound(
-  p1Strategy: Strategy,
-  p2Strategy: Strategy,
-  roundNumber: number,
-): Promise<RoundResult> {
-  const engine = new BattleEngine(p1Strategy, p2Strategy)
-  return engine.runRound(roundNumber)
+export async function runRound(p1Strategy: Strategy, p2Strategy: Strategy, roundNumber: number): Promise<RoundResult> {
+  return new BattleEngine(p1Strategy, p2Strategy).runRound(roundNumber)
 }
 
 export async function runMatch(
   p1Strategy: Strategy,
   p2Strategy: Strategy,
-  format: 'bo1' | 'bo3' | 'bo5'
+  format: 'bo1' | 'bo3' | 'bo5',
 ): Promise<{ winner: 1 | 2 | 0; score: [number, number]; rounds: RoundResult[] }> {
   const maxRounds  = format === 'bo1' ? 1 : format === 'bo3' ? 3 : 5
   const winsNeeded = Math.ceil(maxRounds / 2)
@@ -374,7 +394,6 @@ export async function runMatch(
     if (wins[0] >= winsNeeded || wins[1] >= winsNeeded) break
   }
 
-  // Cleanup Python processes after match
   p1Strategy.dispose?.()
   p2Strategy.dispose?.()
 

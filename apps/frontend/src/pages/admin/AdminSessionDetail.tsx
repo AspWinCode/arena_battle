@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import type { ServerMessage, TurnResult } from '@robocode/shared'
+import { SKIN_ICON as SKIN_ICONS } from '@robocode/shared'
 import { api } from '../../api/client'
 import { useAdminStore } from '../../stores/adminStore'
 import styles from './AdminSessionDetail.module.css'
@@ -50,9 +51,6 @@ interface SessionDetail {
   }>
 }
 
-const SKIN_ICONS: Record<string, string> = {
-  robot: '🤖', gladiator: '⚔️', boxer: '🥊', cosmonaut: '🚀',
-}
 
 const STATUS_MAP: Record<string, { label: string; css: string }> = {
   WAITING: { label: 'Ожидание', css: 'badge-waiting' },

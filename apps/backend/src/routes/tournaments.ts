@@ -12,6 +12,7 @@ import {
   sendApprovalNotification,
   sendRejectionNotification,
 } from '../services/email.js'
+import { ALL_SKIN_IDS } from '@robocode/shared'
 
 // ── Schemas ────────────────────────────────────────────────────────────────────
 
@@ -410,7 +411,7 @@ export const tournamentRoutes: FastifyPluginAsync = async (fastify) => {
           level: match.tournament.level as 'BLOCKS' | 'CODE' | 'PRO',
           format: match.tournament.format as 'bo1' | 'bo3' | 'bo5',
           timeLimit: 10,
-          allowedSkins: ['robot', 'gladiator', 'boxer', 'cosmonaut'],
+          allowedSkins: [...ALL_SKIN_IDS],
           code1,
           code2,
         },

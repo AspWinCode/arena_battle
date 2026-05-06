@@ -1,9 +1,6 @@
 import { useBattleStore } from '../../stores/battleStore'
+import { SKIN_ICON as SKIN_ICONS } from '@robocode/shared'
 import styles from './LobbyScreen.module.css'
-
-const SKIN_ICONS: Record<string, string> = {
-  robot: '🤖', gladiator: '⚔️', boxer: '🥊', cosmonaut: '🚀',
-}
 
 export default function LobbyScreen() {
   const p1 = useBattleStore(s => s.p1)

@@ -2,7 +2,7 @@ import { useState, useRef, useCallback, useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import {
   SPARRING_BOTS, PERKS, mergeEffects,
-  MAX_HP, MAX_STAMINA, MAX_RAGE, MISSIONS, STAMINA_COSTS,
+  MAX_HP, MAX_STAMINA, MAX_RAGE, MISSIONS, STAMINA_COSTS, SKIN_ICON,
 } from '@robocode/shared'
 import type { RoundResult, TurnResult } from '@robocode/shared'
 import { runLocalMatch } from '../engine/battleEngine'
@@ -16,9 +16,6 @@ import CodeEditor from '../components/CodeEditor/CodeEditor'
 import BlockEditor from '../components/BlockEditor/BlockEditor'
 import styles from './SparringPage.module.css'
 
-const SKIN_ICON: Record<string, string> = {
-  robot: '🤖', gladiator: '⚔️', boxer: '🥊', cosmonaut: '🚀',
-}
 const DIFF_STARS = (d: number) => '★'.repeat(d) + '☆'.repeat(5 - d)
 
 const FORMAT_OPTS = [

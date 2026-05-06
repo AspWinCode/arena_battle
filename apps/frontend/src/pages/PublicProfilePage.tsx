@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { api } from '../api/client'
+import { SKIN_ICON } from '@robocode/shared'
 import styles from './ProfilePage.module.css'
 
 interface Stats {
@@ -38,7 +39,6 @@ interface PublicProfile {
 
 const LANG_LABELS: Record<string, string> = { js: 'JavaScript', py: 'Python', cpp: 'C++', java: 'Java' }
 const EXP_LABELS:  Record<string, string>  = { beginner: 'Начинающий', intermediate: 'Средний', advanced: 'Продвинутый' }
-const SKIN_ICONS:  Record<string, string>  = { robot: '🤖', gladiator: '⚔️', boxer: '🥊', cosmonaut: '🚀' }
 
 /** Renders avatar: <img> for data-URL/path, emoji text otherwise */
 function AvatarDisplay({ avatar, size = 72 }: { avatar: string; size?: number }) {
@@ -102,7 +102,7 @@ export default function PublicProfilePage() {
               <span className={styles.badge}>{LANG_LABELS[u.preferredLang] ?? u.preferredLang}</span>
               <span className={styles.badge}>{EXP_LABELS[u.experienceLevel] ?? u.experienceLevel}</span>
               {u.programmingYears > 0 && <span className={styles.badge}>{u.programmingYears} {u.programmingYears === 1 ? 'год' : u.programmingYears < 5 ? 'года' : 'лет'} опыта</span>}
-              <span className={styles.badge}>{SKIN_ICONS[u.preferredSkin]} {u.preferredSkin}</span>
+              <span className={styles.badge}>{SKIN_ICON[u.preferredSkin]} {u.preferredSkin}</span>
               <span className={styles.badge}>с {new Date(u.createdAt).toLocaleDateString('ru', { month: 'long', year: 'numeric' })}</span>
             </div>
           </div>
@@ -172,7 +172,7 @@ export default function PublicProfilePage() {
                 </div>
                 <div className={styles.statRow}>
                   <span className={styles.statRowLabel}>Любимый персонаж</span>
-                  <span className={styles.statRowValue}>{SKIN_ICONS[stats.favoriteSkin]} {stats.favoriteSkin}</span>
+                  <span className={styles.statRowValue}>{SKIN_ICON[stats.favoriteSkin]} {stats.favoriteSkin}</span>
                 </div>
                 <div className={styles.statRow}>
                   <span className={styles.statRowLabel}>Языков использовано</span>
@@ -276,7 +276,7 @@ export default function PublicProfilePage() {
                         {s.sessionName || `Матч #${s.sessionId.slice(0, 6)}`}
                       </div>
                       <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>
-                        {LANG_LABELS[s.lang ?? ''] ?? s.lang ?? '—'} · {SKIN_ICONS[s.skin]} {s.skin}
+                        {LANG_LABELS[s.lang ?? ''] ?? s.lang ?? '—'} · {SKIN_ICON[s.skin]} {s.skin}
                       </div>
                     </div>
                     <div style={{ textAlign: 'right' }}>

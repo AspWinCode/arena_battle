@@ -1,10 +1,9 @@
 import {
   MAX_STAMINA, MAX_RAGE, MAX_TURNS,
-  // Note: MAX_HP not imported — each character has their own maxHp via CHARACTER_STATS
   STAMINA_REGEN, STAMINA_COSTS,
   STAMINA_THRESHOLD_HEAVY, STAMINA_THRESHOLD_ATTACK, STAMINA_THRESHOLD_LASER,
   ATTACK_EXHAUSTED_DAMAGE,
-  RAGE_PER_DAMAGE, SPECIAL_RAGE_COST,
+  RAGE_PER_DAMAGE,
   BASE_DAMAGE, SHIELD_ABSORB,
   DODGE_LASER_EVADE_CHANCE, DODGE_SPECIAL_ABSORB,
   REPEAT_PENALTY_AFTER, REPEAT_DAMAGE_FACTOR,
@@ -18,20 +17,31 @@ import type {
 import type { PerkEffect } from '@robocode/shared'
 
 const VALID_ACTIONS = new Set<ActionName>(['attack', 'heavy', 'laser', 'shield', 'dodge', 'repair', 'special'])
-
 function isValidAction(v: unknown): v is ActionName {
   return typeof v === 'string' && VALID_ACTIONS.has(v as ActionName)
 }
 
 interface ExtState extends PlayerState {
-  repeatCount: number
-  character: SkinId
-  maxHp: number
-  dmgMult: number
-  rageMult: number
-  repairBonus: number
-  shieldBonus: number
-  counterReady: boolean
+  repeatCount:  number
+  character:    SkinId
+  maxHp:        number
+  dmgMult:      number
+  rageMult:     number
+  repairBonus:  number
+  shieldBonus:  number
+  hasCounter:          boolean
+  counterReady:        boolean
+  superDodge:          boolean
+  shieldHealAmount:    number
+  lifestealRate:       number
+  bushidoThreshold:    number
+  bushidoMult:         number
+  flatDmgReduction:    number
+  specialRageCost:     number
+  rageFromDealt:       boolean
+  actionDmgOverrides:  Partial<Record<ActionName, number>>
+  cooldownOverrides:   Partial<Record<ActionName, number>>
+  staminaCostOverrides:Partial<Record<ActionName, number>>
 }
 
 export class BattleEngine {
@@ -65,7 +75,19 @@ export class BattleEngine {
       rageMult:     char.rageMult,
       repairBonus:  char.repairBonus,
       shieldBonus:  char.shieldBonus,
-      counterReady: false,
+      hasCounter:          char.hasCounter,
+      counterReady:        false,
+      superDodge:          char.superDodge,
+      shieldHealAmount:    char.shieldHealAmount,
+      lifestealRate:       char.lifestealRate,
+      bushidoThreshold:    char.bushidoThreshold,
+      bushidoMult:         char.bushidoMult,
+      flatDmgReduction:    char.flatDmgReduction,
+      specialRageCost:     char.specialRageCost,
+      rageFromDealt:       char.rageFromDealt,
+      actionDmgOverrides:  char.actionDmgOverrides,
+      cooldownOverrides:   char.cooldownOverrides,
+      staminaCostOverrides:char.staminaCostOverrides,
     }
   }
 
@@ -98,20 +120,12 @@ export class BattleEngine {
 
   private buildContext(self: ExtState, enemy: ExtState, turn: number): StrategyContext {
     return {
-      myHp:         self.hp,
-      myMaxHp:      self.maxHp,
-      myStamina:    self.stamina,
-      myRage:       self.rage,
-      enemyHp:      enemy.hp,
-      enemyMaxHp:   enemy.maxHp,
-      enemyStamina: enemy.stamina,
-      enemyRage:    enemy.rage,
+      myHp: self.hp, myMaxHp: self.maxHp, myStamina: self.stamina, myRage: self.rage,
+      enemyHp: enemy.hp, enemyMaxHp: enemy.maxHp, enemyStamina: enemy.stamina, enemyRage: enemy.rage,
       turn,
-      myLastAction:    self.lastAction,
-      enemyLastAction: enemy.lastAction,
+      myLastAction: self.lastAction, enemyLastAction: enemy.lastAction,
       cooldowns: { ...self.cooldowns },
-      myPosition:    self.position,
-      enemyPosition: enemy.position,
+      myPosition: self.position, enemyPosition: enemy.position,
       distanceModifier: getPositionMultiplier(self.strategy.primary, self.position),
       myRepeatCount: self.repeatCount,
     }
@@ -119,7 +133,7 @@ export class BattleEngine {
 
   private isAvailable(state: ExtState, action: ActionName): boolean {
     if ((state.cooldowns[action as keyof typeof state.cooldowns] ?? 0) > 0) return false
-    if (action === 'special' && state.rage < SPECIAL_RAGE_COST) return false
+    if (action === 'special' && state.rage < state.specialRageCost) return false
     return true
   }
 
@@ -135,33 +149,24 @@ export class BattleEngine {
   }
 
   private pickAction(self: ExtState, enemy: ExtState, turn: number): ActionName {
-    const { strategy } = self
-
-    if (strategy.fn) {
+    if (self.strategy.fn) {
       try {
         const ctx = this.buildContext(self, enemy, turn)
-        const chosen = strategy.fn(ctx)
+        const chosen = self.strategy.fn(ctx)
         if (isValidAction(chosen) && this.isAvailable(self, chosen)) return chosen
       } catch { /* fall through */ }
     }
-
-    if (self.rage >= SPECIAL_RAGE_COST && this.isAvailable(self, 'special')) return 'special'
-
-    if (self.hp < 30) return this.resolveStatic(self, strategy.lowHp)
-    if (enemy.lastAction === 'laser' && strategy.onHit === 'dodge') return 'dodge'
-    if (enemy.shieldActive && (strategy.primary === 'attack' || strategy.primary === 'heavy')) return 'heavy'
-    return this.resolveStatic(self, strategy.primary)
+    if (self.rage >= self.specialRageCost && this.isAvailable(self, 'special')) return 'special'
+    if (self.hp < 30) return this.resolveStatic(self, self.strategy.lowHp)
+    if (enemy.lastAction === 'laser' && self.strategy.onHit === 'dodge') return 'dodge'
+    if (enemy.shieldActive && (self.strategy.primary === 'attack' || self.strategy.primary === 'heavy')) return 'heavy'
+    return this.resolveStatic(self, self.strategy.primary)
   }
 
-  private calcDamage(
-    attAction: ActionName, att: ExtState,
-    defAction: ActionName,
-    def: ExtState,
-  ): number {
+  private calcDamage(attAction: ActionName, att: ExtState, defAction: ActionName, def: ExtState): number {
     let dmg = BASE_DAMAGE[attAction] ?? 0
     if (dmg === 0) return 0
 
-    // Perk: heavyThreshold override for p1
     const heavyThresh = att === this.p1
       ? (this.p1Perks.heavyThreshold ?? STAMINA_THRESHOLD_HEAVY)
       : STAMINA_THRESHOLD_HEAVY
@@ -170,29 +175,46 @@ export class BattleEngine {
     if (attAction === 'attack' && att.stamina < STAMINA_THRESHOLD_ATTACK) dmg = ATTACK_EXHAUSTED_DAMAGE
     if (attAction === 'laser'  && att.stamina < STAMINA_THRESHOLD_LASER)  dmg = Math.floor(dmg * 0.5)
 
-    // Apply character damage multiplier (Gladiator ×1.35, Cosmonaut ×0.8, etc.)
     if (att.dmgMult !== 1.0) dmg = Math.floor(dmg * att.dmgMult)
+
+    const actionOverride = att.actionDmgOverrides[attAction]
+    if (actionOverride !== undefined) dmg = Math.floor(dmg * actionOverride)
+
+    // Samurai bushido
+    if (att.bushidoThreshold > 0 && att.hp <= att.maxHp * att.bushidoThreshold) {
+      dmg = Math.floor(dmg * att.bushidoMult)
+    }
 
     dmg = applyPositionModifier(attAction, att.position, dmg)
 
-    // Defender: perk shieldAbsorb OR character shieldBonus (Cosmonaut +10%)
-    const baseShield = (def === this.p1 && this.p1Perks.shieldAbsorb)
+    // Perk shieldAbsorb override OR character shieldBonus
+    const shieldAbs = (def === this.p1 && this.p1Perks.shieldAbsorb)
       ? this.p1Perks.shieldAbsorb
       : SHIELD_ABSORB + def.shieldBonus
 
     if (defAction === 'shield') {
-      dmg = Math.round(dmg * (1 - baseShield))
+      dmg = Math.round(dmg * (1 - shieldAbs))
     } else if (defAction === 'dodge') {
-      if (attAction === 'attack' || attAction === 'heavy') dmg = 0
-      else if (attAction === 'laser'  && Math.random() < DODGE_LASER_EVADE_CHANCE) dmg = 0
-      else if (attAction === 'special') dmg = Math.floor(dmg * (1 - DODGE_SPECIAL_ABSORB))
+      if (attAction === 'attack' || attAction === 'heavy') {
+        dmg = 0
+      } else if (attAction === 'laser') {
+        if (def.superDodge || Math.random() < DODGE_LASER_EVADE_CHANCE) dmg = 0
+      } else if (attAction === 'special') {
+        const absorb = def.superDodge ? 0.8 : DODGE_SPECIAL_ABSORB
+        dmg = Math.floor(dmg * (1 - absorb))
+      }
+    }
+
+    // Tank flat reduction
+    if (def.flatDmgReduction > 0 && dmg > 0) {
+      dmg = Math.max(1, dmg - def.flatDmgReduction)
     }
 
     return Math.max(0, dmg)
   }
 
   private applyStaminaCost(state: ExtState, action: ActionName) {
-    const cost = STAMINA_COSTS[action] ?? 0
+    const cost = state.staminaCostOverrides[action] ?? STAMINA_COSTS[action] ?? 0
     state.stamina = Math.min(MAX_STAMINA, Math.max(0, state.stamina - cost))
   }
 
@@ -205,7 +227,6 @@ export class BattleEngine {
 
     this.p1.repeatCount = a1 === this.p1.lastAction ? this.p1.repeatCount + 1 : 1
     this.p2.repeatCount = a2 === this.p2.lastAction ? this.p2.repeatCount + 1 : 1
-
     this.p1.shieldActive = a1 === 'shield'
     this.p2.shieldActive = a2 === 'shield'
 
@@ -215,50 +236,48 @@ export class BattleEngine {
     let p2Dealt = Math.round(this.calcDamage(a1, this.p1, a2, this.p2) * p1Factor)
     let p1Dealt = Math.round(this.calcDamage(a2, this.p2, a1, this.p1) * p2Factor)
 
-    // ── Boxer counter-strike passive ─────────────────────────────────────────
+    // Boxer counter
     if (this.p1.counterReady && a1 !== 'attack') this.p1.counterReady = false
     if (this.p2.counterReady && a2 !== 'attack') this.p2.counterReady = false
+    if (this.p1.counterReady && a1 === 'attack' && p2Dealt > 0) { p2Dealt = Math.round(p2Dealt * 2); this.p1.counterReady = false }
+    if (this.p2.counterReady && a2 === 'attack' && p1Dealt > 0) { p1Dealt = Math.round(p1Dealt * 2); this.p2.counterReady = false }
+    if (this.p1.hasCounter && a1 === 'dodge' && (a2 === 'attack' || a2 === 'heavy')) this.p1.counterReady = true
+    if (this.p2.hasCounter && a2 === 'dodge' && (a1 === 'attack' || a1 === 'heavy')) this.p2.counterReady = true
 
-    if (this.p1.counterReady && a1 === 'attack' && p2Dealt > 0) {
-      p2Dealt = Math.round(p2Dealt * 2)
-      this.p1.counterReady = false
-    }
-    if (this.p2.counterReady && a2 === 'attack' && p1Dealt > 0) {
-      p1Dealt = Math.round(p1Dealt * 2)
-      this.p2.counterReady = false
-    }
+    // Vampire lifesteal
+    const p1Lifesteal = (this.p1.lifestealRate > 0 && (a1 === 'attack' || a1 === 'heavy') && p2Dealt > 0)
+      ? Math.round(p2Dealt * this.p1.lifestealRate) : 0
+    const p2Lifesteal = (this.p2.lifestealRate > 0 && (a2 === 'attack' || a2 === 'heavy') && p1Dealt > 0)
+      ? Math.round(p1Dealt * this.p2.lifestealRate) : 0
 
-    if (this.p1.character === 'boxer' && a1 === 'dodge' && (a2 === 'attack' || a2 === 'heavy')) {
-      this.p1.counterReady = true
-    }
-    if (this.p2.character === 'boxer' && a2 === 'dodge' && (a1 === 'attack' || a1 === 'heavy')) {
-      this.p2.counterReady = true
-    }
-    // ── End boxer passive ────────────────────────────────────────────────────
-
-    this.applyStaminaCost(this.p1, a1)
-    this.applyStaminaCost(this.p2, a2)
-
+    this.applyStaminaCost(this.p1, a1); this.applyStaminaCost(this.p2, a2)
     if (a1 === 'special') this.p1.rage = 0
     if (a2 === 'special') this.p2.rage = 0
 
-    const p1Heal = a1 === 'repair' ? REPAIR_AMOUNT + this.p1.repairBonus : 0
-    const p2Heal = a2 === 'repair' ? REPAIR_AMOUNT + this.p2.repairBonus : 0
+    let p1Heal = a1 === 'repair' ? REPAIR_AMOUNT + this.p1.repairBonus : 0
+    if (a1 === 'shield' && this.p1.shieldHealAmount > 0) p1Heal += this.p1.shieldHealAmount
+    p1Heal += p1Lifesteal
+
+    let p2Heal = a2 === 'repair' ? REPAIR_AMOUNT + this.p2.repairBonus : 0
+    if (a2 === 'shield' && this.p2.shieldHealAmount > 0) p2Heal += this.p2.shieldHealAmount
+    p2Heal += p2Lifesteal
 
     this.p1.hp = Math.min(this.p1.maxHp, Math.max(0, this.p1.hp - p1Dealt + p1Heal))
     this.p2.hp = Math.min(this.p2.maxHp, Math.max(0, this.p2.hp - p2Dealt + p2Heal))
 
-    // Gladiator gets rage faster (rageMult = 1.5)
     if (p1Dealt > 0) this.p1.rage = Math.min(MAX_RAGE, this.p1.rage + p1Dealt * RAGE_PER_DAMAGE * this.p1.rageMult)
     if (p2Dealt > 0) this.p2.rage = Math.min(MAX_RAGE, this.p2.rage + p2Dealt * RAGE_PER_DAMAGE * this.p2.rageMult)
+    if (this.p1.rageFromDealt && p2Dealt > 0) this.p1.rage = Math.min(MAX_RAGE, this.p1.rage + p2Dealt * RAGE_PER_DAMAGE)
+    if (this.p2.rageFromDealt && p1Dealt > 0) this.p2.rage = Math.min(MAX_RAGE, this.p2.rage + p1Dealt * RAGE_PER_DAMAGE)
 
     for (const s of [this.p1, this.p2]) {
       for (const k of Object.keys(s.cooldowns) as (keyof typeof s.cooldowns)[]) {
         if (s.cooldowns[k] > 0) s.cooldowns[k]--
       }
     }
+
     const applyCd = (s: ExtState, a: ActionName) => {
-      let cd = COOLDOWNS[a]
+      let cd = s.cooldownOverrides[a] ?? COOLDOWNS[a]
       if (cd > 0 && s === this.p1) {
         if (a === 'laser') cd = Math.max(0, cd - (this.p1Perks.laserCooldownReduce ?? 0))
         if (a === 'heavy') cd = Math.max(0, cd - (this.p1Perks.heavyCooldownReduce ?? 0))
@@ -272,12 +291,11 @@ export class BattleEngine {
 
     const pen1 = this.p1.repeatCount >= REPEAT_PENALTY_AFTER
     const pen2 = this.p2.repeatCount >= REPEAT_PENALTY_AFTER
-
     const logParts: string[] = []
-    if (a1 === 'heavy' && p2Dealt === 0) logParts.push('P1 ПРОМАХ (выносливость!)')
-    if (a2 === 'heavy' && p1Dealt === 0) logParts.push('P2 ПРОМАХ (выносливость!)')
-    if (a1 === 'special') logParts.push('⚡ P1 RAGE STRIKE!')
-    if (a2 === 'special') logParts.push('⚡ P2 RAGE STRIKE!')
+    if (a1 === 'heavy' && p2Dealt === 0) logParts.push('P1 ПРОМАХ!')
+    if (a2 === 'heavy' && p1Dealt === 0) logParts.push('P2 ПРОМАХ!')
+    if (a1 === 'special') logParts.push('⚡ P1 RAGE!')
+    if (a2 === 'special') logParts.push('⚡ P2 RAGE!')
     if (p2Dealt > 0) logParts.push(`P2 -${p2Dealt}${pen1 ? '⚠️' : ''}`)
     if (p1Dealt > 0) logParts.push(`P1 -${p1Dealt}${pen2 ? '⚠️' : ''}`)
     if (p1Heal > 0) logParts.push(`P1 +${p1Heal}HP`)
@@ -303,12 +321,7 @@ export class BattleEngine {
   }
 }
 
-export function runLocalMatch(
-  p1: Strategy,
-  p2: Strategy,
-  format: 'bo1' | 'bo3' | 'bo5',
-  p1Perks: PerkEffect = {},
-) {
+export function runLocalMatch(p1: Strategy, p2: Strategy, format: 'bo1' | 'bo3' | 'bo5', p1Perks: PerkEffect = {}) {
   const maxRounds  = format === 'bo1' ? 1 : format === 'bo3' ? 3 : 5
   const winsNeeded = Math.ceil(maxRounds / 2)
   const engine     = new BattleEngine(p1, p2, p1Perks)

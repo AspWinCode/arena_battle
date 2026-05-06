@@ -4,6 +4,8 @@ import { api } from '../api/client'
 import { useUserStore } from '../stores/userStore'
 import { useDailyStore } from '../stores/dailyStore'
 import { useAchievementsStore, ACHIEVEMENTS } from '../stores/achievementsStore'
+import { SKIN_ICON, CHARACTER_STATS } from '@robocode/shared'
+import type { SkinId } from '@robocode/shared'
 import styles from './ProfilePage.module.css'
 
 // ── Types ──────────────────────────────────────────────────────────────────
@@ -44,8 +46,8 @@ interface FullProfile {
 // ── Helpers ────────────────────────────────────────────────────────────────
 const LANG_LABELS: Record<string, string> = { js: 'JavaScript', py: 'Python', cpp: 'C++', java: 'Java' }
 const EXP_LABELS: Record<string, string> = { beginner: 'Начинающий', intermediate: 'Средний', advanced: 'Продвинутый' }
-const SKIN_ICONS: Record<string, string> = { robot: '🤖', gladiator: '⚔️', boxer: '🥊', cosmonaut: '🚀' }
 const STATUS_LABELS: Record<string, string> = { PENDING: 'На рассмотрении', APPROVED: 'Одобрено', REJECTED: 'Отклонено' }
+const ALL_SKIN_IDS = Object.keys(CHARACTER_STATS) as SkinId[]
 const STATUS_COLORS: Record<string, string> = { PENDING: '#facc15', APPROVED: '#4ade80', REJECTED: '#f87171' }
 
 // ── Component ──────────────────────────────────────────────────────────────
@@ -185,7 +187,7 @@ export default function ProfilePage() {
               <span className={styles.badge}>{LANG_LABELS[u.preferredLang] ?? u.preferredLang}</span>
               <span className={styles.badge}>{EXP_LABELS[u.experienceLevel] ?? u.experienceLevel}</span>
               {u.programmingYears > 0 && <span className={styles.badge}>{u.programmingYears} {u.programmingYears === 1 ? 'год' : u.programmingYears < 5 ? 'года' : 'лет'} опыта</span>}
-              <span className={styles.badge}>{SKIN_ICONS[u.preferredSkin]} {u.preferredSkin}</span>
+              <span className={styles.badge}>{SKIN_ICON[u.preferredSkin]} {u.preferredSkin}</span>
             </div>
           </div>
           <div className={styles.heroActions}>
@@ -356,7 +358,7 @@ export default function ProfilePage() {
                 <span className={styles.historyResult}>{s.won ? '🏆' : '💀'}</span>
                 <div className={styles.historyInfo}>
                   <span className={styles.historyName}>{s.sessionName}</span>
-                  <span className={styles.historyMeta}>{SKIN_ICONS[s.skin]} {s.skin} · {s.lang ? LANG_LABELS[s.lang] ?? s.lang : '—'} · {new Date(s.playedAt).toLocaleDateString('ru')}</span>
+                  <span className={styles.historyMeta}>{SKIN_ICON[s.skin]} {s.skin} · {s.lang ? LANG_LABELS[s.lang] ?? s.lang : '—'} · {new Date(s.playedAt).toLocaleDateString('ru')}</span>
                 </div>
                 <span className={styles.historyScore}>{s.score[0]}:{s.score[1]}</span>
               </div>
@@ -467,10 +469,9 @@ export default function ProfilePage() {
                 <div className={styles.settingsField}>
                   <label className={styles.settingsLabel}>Любимый боец</label>
                   <select className={styles.settingsSelect} value={editSkin} onChange={e => setEditSkin(e.target.value)}>
-                    <option value="robot">🤖 Робот</option>
-                    <option value="gladiator">⚔️ Гладиатор</option>
-                    <option value="boxer">🥊 Боксёр</option>
-                    <option value="cosmonaut">🚀 Космонавт</option>
+                    {ALL_SKIN_IDS.map(id => (
+                      <option key={id} value={id}>{SKIN_ICON[id]} {CHARACTER_STATS[id].name}</option>
+                    ))}
                   </select>
                 </div>
               </div>

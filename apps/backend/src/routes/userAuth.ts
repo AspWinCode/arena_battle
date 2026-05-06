@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs'
 import { z } from 'zod'
 import { prisma } from '../db/client.js'
 import nodemailer from 'nodemailer'
+import { ALL_SKIN_IDS } from '@robocode/shared'
 
 function makeResetCode() {
   return Math.floor(100000 + Math.random() * 900000).toString()
@@ -32,7 +33,7 @@ const registerSchema = z.object({
   displayName:     z.string().min(1).max(30),
   password:        z.string().min(6).max(72),
   preferredLang:   z.enum(['js', 'py', 'cpp', 'java']).optional(),
-  preferredSkin:   z.enum(['robot', 'gladiator', 'boxer', 'cosmonaut']).optional(),
+  preferredSkin:   z.enum(ALL_SKIN_IDS).optional(),
   experienceLevel: z.enum(['beginner', 'intermediate', 'advanced']).optional(),
   programmingYears:z.number().int().min(0).max(40).optional(),
   avatar:          z.string().max(200000).optional(),

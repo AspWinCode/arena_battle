@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import type { Lang } from '@robocode/shared'
+import { SKIN_ICON } from '@robocode/shared'
 import { useBattleStore } from '../../stores/battleStore'
 import CodeEditor from '../CodeEditor/CodeEditor'
 import BlockEditor from '../BlockEditor/BlockEditor'
@@ -119,9 +120,9 @@ export default function CodingScreen({
         {/* Header (same as text editor) */}
         <div className={styles.header}>
           <div className={styles.players}>
-            <span>{myInfo?.skin === 'robot' ? '🤖' : myInfo?.skin === 'gladiator' ? '⚔️' : myInfo?.skin === 'boxer' ? '🥊' : '🚀'} {myInfo?.name ?? 'Ты'}</span>
+            <span>{SKIN_ICON[myInfo?.skin ?? ''] ?? '🤖'} {myInfo?.name ?? 'Ты'}</span>
             <span className={styles.vs}>VS</span>
-            <span>{opponentInfo ? `${opponentInfo.skin === 'robot' ? '🤖' : opponentInfo.skin === 'gladiator' ? '⚔️' : opponentInfo.skin === 'boxer' ? '🥊' : '🚀'} ${opponentInfo.name}` : '⏳ Ожидание...'}</span>
+            <span>{opponentInfo ? `${SKIN_ICON[opponentInfo.skin] ?? '🤖'} ${opponentInfo.name}` : '⏳ Ожидание...'}</span>
           </div>
           <div className={`${styles.timer} ${isUrgent ? styles.timerUrgent : ''}`}>
             ⏱ {minutes}:{seconds.toString().padStart(2, '0')}
@@ -162,9 +163,9 @@ export default function CodingScreen({
       {/* Header */}
       <div className={styles.header}>
         <div className={styles.players}>
-          <span>{myInfo?.skin === 'robot' ? '🤖' : myInfo?.skin === 'gladiator' ? '⚔️' : myInfo?.skin === 'boxer' ? '🥊' : '🚀'} {myInfo?.name ?? 'Ты'}</span>
+          <span>{SKIN_ICON[myInfo?.skin ?? ''] ?? '🤖'} {myInfo?.name ?? 'Ты'}</span>
           <span className={styles.vs}>VS</span>
-          <span>{opponentInfo ? `${opponentInfo.skin === 'robot' ? '🤖' : opponentInfo.skin === 'gladiator' ? '⚔️' : opponentInfo.skin === 'boxer' ? '🥊' : '🚀'} ${opponentInfo.name}` : '⏳ Ожидание...'}</span>
+          <span>{opponentInfo ? `${SKIN_ICON[opponentInfo.skin] ?? '🤖'} ${opponentInfo.name}` : '⏳ Ожидание...'}</span>
         </div>
 
         <div className={`${styles.timer} ${isUrgent ? styles.timerUrgent : ''}`}>

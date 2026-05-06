@@ -8,12 +8,18 @@ import { useUserStore } from '../stores/userStore'
 import UserMenu from '../components/UserMenu'
 import styles from './JoinPage.module.css'
 
-const SKINS: { id: SkinId; label: string; icon: string; color: string }[] = [
-  { id: 'robot',     label: 'Робот',     icon: '🤖', color: '#00e5ff' },
-  { id: 'gladiator', label: 'Гладиатор', icon: '⚔️', color: '#d97706' },
-  { id: 'boxer',     label: 'Боксёр',    icon: '🥊', color: '#e6261f' },
-  { id: 'cosmonaut', label: 'Космонавт', icon: '🚀', color: '#7c3aed' },
+const ALL_SKIN_IDS: SkinId[] = [
+  'robot', 'gladiator', 'boxer', 'cosmonaut',
+  'ninja', 'mage', 'paladin', 'sniper',
+  'tank', 'vampire', 'samurai', 'phantom',
+  'engineer', 'berserker',
 ]
+const SKINS = ALL_SKIN_IDS.map(id => ({
+  id,
+  label: CHARACTER_STATS[id].name,
+  icon:  CHARACTER_STATS[id].icon,
+  color: CHARACTER_STATS[id].color,
+}))
 
 export default function JoinPage() {
   const navigate   = useNavigate()
@@ -53,7 +59,7 @@ export default function JoinPage() {
       }, token ?? undefined)
 
       // 'code' level is a placeholder — real level arrives via WS 'connected' message
-      setSession(res.sessionId, res.playerSlot, 'code', ['robot', 'gladiator', 'boxer', 'cosmonaut'], res.wsToken, name.trim(), skin)
+      setSession(res.sessionId, res.playerSlot, 'code', ALL_SKIN_IDS, res.wsToken, name.trim(), skin)
       navigate(`/battle/${res.sessionId}`)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Ошибка подключения')

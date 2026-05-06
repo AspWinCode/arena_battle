@@ -1,11 +1,7 @@
 import { useBattleStore } from '../../stores/battleStore'
-import { MAX_HP, MAX_STAMINA, MAX_RAGE } from '@robocode/shared'
+import { MAX_HP, MAX_STAMINA, MAX_RAGE, SKIN_ICON as SKIN_ICONS } from '@robocode/shared'
 import ArenaComponent from '../Arena/ArenaComponent'
 import styles from './BattleScreen.module.css'
-
-const SKIN_ICONS: Record<string, string> = {
-  robot: '🤖', gladiator: '⚔️', boxer: '🥊', cosmonaut: '🚀',
-}
 
 const ACTION_LABELS: Record<string, string> = {
   attack:  '👊 Удар',

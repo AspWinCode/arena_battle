@@ -3,6 +3,7 @@ import { z } from 'zod'
 import { nanoid } from 'nanoid'
 import { prisma } from '../db/client.js'
 import type { JoinSessionResponse } from '@robocode/shared'
+import { ALL_SKIN_IDS } from '@robocode/shared'
 
 const createSessionSchema = z.object({
   name: z.string().min(1).max(50),
@@ -10,13 +11,13 @@ const createSessionSchema = z.object({
   lang: z.enum(['js', 'py', 'cpp', 'java', 'auto']).optional(),
   format: z.enum(['bo1', 'bo3', 'bo5']).default('bo3'),
   timeLimit: z.number().min(5).max(30).default(10),
-  allowedSkins: z.array(z.enum(['robot', 'gladiator', 'boxer', 'cosmonaut'])).optional(),
+  allowedSkins: z.array(z.enum(ALL_SKIN_IDS)).optional(),
 })
 
 const joinSchema = z.object({
   sessionCode: z.string().length(6),
   name: z.string().min(1).max(20),
-  skin: z.enum(['robot', 'gladiator', 'boxer', 'cosmonaut']),
+  skin: z.enum(ALL_SKIN_IDS),
 })
 
 function generateCode(): string {
@@ -47,7 +48,7 @@ export const sessionRoutes: FastifyPluginAsync = async (fastify) => {
         lang: body.data.lang,
         format: body.data.format,
         timeLimit: body.data.timeLimit,
-        allowedSkins: body.data.allowedSkins ?? ['robot', 'gladiator', 'boxer', 'cosmonaut'],
+        allowedSkins: body.data.allowedSkins ?? [...ALL_SKIN_IDS],
         code1,
         code2,
       },

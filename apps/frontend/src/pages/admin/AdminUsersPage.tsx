@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { api } from '../../api/client'
 import { useAdminStore } from '../../stores/adminStore'
+import { SKIN_ICON } from '@robocode/shared'
 import styles from './AdminUsersPage.module.css'
 
 interface UserRow {
@@ -13,7 +14,7 @@ interface UserRow {
 
 const LANG: Record<string, string> = { js: 'JS', py: 'Py', cpp: 'C++', java: 'Java' }
 const EXP: Record<string, string> = { beginner: 'Начинающий', intermediate: 'Средний', advanced: 'Продвинутый' }
-const SKIN: Record<string, string> = { robot: '🤖', gladiator: '⚔️', boxer: '🥊', cosmonaut: '🚀' }
+const SKIN: Record<string, string> = SKIN_ICON
 
 function AvatarCell({ avatar }: { avatar: string }) {
   const isImage = avatar.startsWith('data:') || avatar.startsWith('/')

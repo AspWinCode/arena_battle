@@ -1,11 +1,7 @@
 import { Link } from 'react-router-dom'
-import { MISSIONS } from '@robocode/shared'
+import { MISSIONS, SKIN_ICON } from '@robocode/shared'
 import { useLearnStore } from '../stores/learnStore'
 import styles from './LearnPage.module.css'
-
-const SKIN_ICON: Record<string, string> = {
-  robot: '🤖', gladiator: '⚔️', boxer: '🥊', cosmonaut: '🚀',
-}
 
 const DIFF_LABEL = ['', 'Легко', 'Легко', 'Средне', 'Сложно', 'Босс']
 const DIFF_COLOR = ['', '#4ade80', '#4ade80', '#facc15', '#f97316', '#f43f5e']

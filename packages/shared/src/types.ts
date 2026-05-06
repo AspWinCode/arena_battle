@@ -3,7 +3,11 @@
 export type SessionLevel = 'blocks' | 'code' | 'pro'
 export type SessionStatus = 'WAITING' | 'CODING' | 'BATTLE' | 'DONE'
 export type SessionFormat = 'bo1' | 'bo3' | 'bo5'
-export type SkinId = 'robot' | 'gladiator' | 'boxer' | 'cosmonaut'
+export type SkinId =
+  | 'robot'     | 'gladiator' | 'boxer'     | 'cosmonaut'
+  | 'ninja'     | 'mage'      | 'paladin'   | 'sniper'
+  | 'tank'      | 'vampire'   | 'samurai'   | 'phantom'
+  | 'engineer'  | 'berserker'
 export type Lang = 'js' | 'py' | 'cpp' | 'java' | 'auto'
 
 export type ActionName =
