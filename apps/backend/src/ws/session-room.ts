@@ -21,7 +21,9 @@ interface PlayerConn {
 }
 
 // How many round wins needed to win the match
-const WINS_NEEDED: Record<string, number> = { bo1: 1, bo3: 2, bo5: 3 }
+const WINS_NEEDED: Record<string, number>  = { bo1: 1, bo3: 2, bo5: 3 }
+// Maximum rounds in the format (after which match ends regardless)
+const MAX_ROUNDS:  Record<string, number>  = { bo1: 1, bo3: 3, bo5: 5 }
 
 export class SessionRoom {
   private players       = new Map<1 | 2, PlayerConn>()
@@ -161,7 +163,9 @@ export class SessionRoom {
     }).catch(() => {})
 
     try {
-      const FALLBACK: Strategy = { primary: 'attack', lowHp: 'repair', onHit: 'dodge', style: 'Fallback', position: 'mid' }
+      // Asymmetric fallbacks so two fallback players don't always draw
+      const FALLBACK_P1: Strategy = { primary: 'attack', lowHp: 'repair', onHit: 'dodge', style: 'Fallback', position: 'close' }
+      const FALLBACK_P2: Strategy = { primary: 'laser',  lowHp: 'repair', onHit: 'shield', style: 'Fallback', position: 'far' }
 
       // Compile both players independently — on error notify that player and use fallback
       const compileWithFallback = async (player: PlayerConn, isP1: boolean): Promise<Strategy> => {
@@ -182,7 +186,7 @@ export class SessionRoom {
           })
           // Delay slightly so the client receives the error before battle starts
           await sleep(100)
-          return FALLBACK
+          return isP1 ? FALLBACK_P1 : FALLBACK_P2
         }
       }
 
@@ -242,17 +246,27 @@ export class SessionRoom {
       await sleep(1500)
 
       // Check if match is over
-      const winsNeeded = WINS_NEEDED[this.format] ?? 2
-      const matchWinner: 0 | 1 | 2 =
+      const winsNeeded  = WINS_NEEDED[this.format] ?? 2
+      const maxRounds   = MAX_ROUNDS[this.format]  ?? 3
+
+      const leadWinner: 0 | 1 | 2 =
         this.score[0] >= winsNeeded ? 1 :
         this.score[1] >= winsNeeded ? 2 : 0
 
-      if (matchWinner !== 0) {
-        // Match finished
+      // Match ends when: someone has enough wins, OR max rounds exhausted
+      const roundsExhausted = this.currentRound >= maxRounds
+      const isMatchOver = leadWinner !== 0 || roundsExhausted
+
+      if (isMatchOver) {
+        // Tiebreak by score if rounds exhausted without a clear winner
+        const finalWinner: 0 | 1 | 2 = leadWinner !== 0 ? leadWinner :
+          this.score[0] > this.score[1] ? 1 :
+          this.score[1] > this.score[0] ? 2 : 0
+
         this.broadcastAll({
           type: 'match_end',
           payload: {
-            winner: matchWinner,
+            winner: finalWinner,
             score: this.score,
             rounds: this.completedRounds,
           },
