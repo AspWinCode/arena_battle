@@ -133,7 +133,7 @@ function GladiatorBody({ action, shieldActive }: {
               </circle>
             )}
 
-            {action && action !== 'shield' && (
+            {action && (
               <text
                 x={GLADIATOR_WIDTH * 0.2} y={GLADIATOR_Y + GLADIATOR_HEIGHT * 0.46}
                 fill={GL} fontSize={10} fontWeight={800} fontFamily="monospace" textAnchor="start"
