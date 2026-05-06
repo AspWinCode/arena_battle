@@ -1,11 +1,11 @@
 .root {
   min-height: 100vh;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
-  padding: 24px;
+  padding: 40px 24px;
   position: relative;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .bg {
