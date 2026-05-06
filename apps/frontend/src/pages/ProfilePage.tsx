@@ -72,6 +72,44 @@ export default function ProfilePage() {
 
   const AVATARS = ['🤖', '⚔️', '🥊', '🚀', '🦾', '🎮', '👾', '💻', '🧠', '🔥', '⚡', '🌀']
 
+  // Resize + compress image to 120×120 JPEG, return base64 data URL
+  const processImageFile = (file: File): Promise<string> =>
+    new Promise((resolve, reject) => {
+      if (!file.type.startsWith('image/')) { reject(new Error('Только изображения')); return }
+      const reader = new FileReader()
+      reader.onload = ev => {
+        const img = new Image()
+        img.onload = () => {
+          const SIZE = 120
+          const canvas = document.createElement('canvas')
+          canvas.width = SIZE; canvas.height = SIZE
+          const ctx = canvas.getContext('2d')!
+          // Crop to square from center
+          const side = Math.min(img.width, img.height)
+          const sx = (img.width - side) / 2
+          const sy = (img.height - side) / 2
+          ctx.drawImage(img, sx, sy, side, side, 0, 0, SIZE, SIZE)
+          resolve(canvas.toDataURL('image/jpeg', 0.82))
+        }
+        img.onerror = () => reject(new Error('Не удалось загрузить изображение'))
+        img.src = ev.target!.result as string
+      }
+      reader.onerror = () => reject(new Error('Ошибка чтения файла'))
+      reader.readAsDataURL(file)
+    })
+
+  const handleAvatarFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    try {
+      const dataUrl = await processImageFile(file)
+      setEditAvatar(dataUrl)
+    } catch (err: any) {
+      setSaveMsg('❌ ' + err.message)
+    }
+    e.target.value = ''
+  }
+
   useEffect(() => {
     if (!token) { navigate('/login'); return }
     api.get<FullProfile>('/user/profile/~me/full', token)
@@ -133,7 +171,12 @@ export default function ProfilePage() {
       {/* Hero */}
       <div className={styles.hero}>
         <div className={styles.heroInner}>
-          <div className={styles.avatarBig}>{u.avatar}</div>
+          <div className={styles.avatarBig}>
+            {u.avatar?.startsWith('data:') || u.avatar?.startsWith('/')
+              ? <img src={u.avatar} style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
+              : u.avatar
+            }
+          </div>
           <div className={styles.heroInfo}>
             <h1 className={styles.displayName}>{u.displayName}</h1>
             <p className={styles.username}>@{u.username}</p>
@@ -347,6 +390,33 @@ export default function ProfilePage() {
           <form onSubmit={handleSave} className={styles.settingsForm}>
             <div className={styles.settingsSection}>
               <h3 className={styles.sectionTitle}>Аватар</h3>
+
+              {/* Current avatar preview */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 16 }}>
+                <div style={{ width: 72, height: 72, borderRadius: '50%', background: 'var(--bg)', border: '2px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 40, overflow: 'hidden', flexShrink: 0 }}>
+                  {editAvatar?.startsWith('data:') || editAvatar?.startsWith('/')
+                    ? <img src={editAvatar} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    : editAvatar
+                  }
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  <label className="btn btn-ghost" style={{ fontSize: 12, cursor: 'pointer', display: 'inline-block' }}>
+                    📷 Загрузить фото
+                    <input type="file" accept="image/*" style={{ display: 'none' }} onChange={handleAvatarFile} />
+                  </label>
+                  {(editAvatar?.startsWith('data:') || editAvatar?.startsWith('/')) && (
+                    <button type="button" className="btn btn-ghost" style={{ fontSize: 11, color: '#f87171' }}
+                      onClick={() => setEditAvatar('🤖')}>
+                      × Удалить фото
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Emoji grid */}
+              <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '.05em' }}>
+                Или выберите эмодзи:
+              </div>
               <div className={styles.avatarGrid}>
                 {AVATARS.map(a => (
                   <button key={a} type="button"

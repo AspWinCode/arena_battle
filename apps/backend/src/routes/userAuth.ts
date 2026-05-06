@@ -2,6 +2,29 @@ import type { FastifyPluginAsync } from 'fastify'
 import bcrypt from 'bcryptjs'
 import { z } from 'zod'
 import { prisma } from '../db/client.js'
+import nodemailer from 'nodemailer'
+
+function makeResetCode() {
+  return Math.floor(100000 + Math.random() * 900000).toString()
+}
+
+async function sendResetEmail(to: string, code: string) {
+  const host = process.env.SMTP_HOST
+  if (!host) return // email not configured — skip silently
+  const transporter = nodemailer.createTransport({
+    host,
+    port: Number(process.env.SMTP_PORT ?? 587),
+    secure: process.env.SMTP_SECURE === 'true',
+    auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
+  })
+  await transporter.sendMail({
+    from: process.env.SMTP_FROM ?? 'no-reply@robocode.arena',
+    to,
+    subject: 'Восстановление пароля — RoboCode Arena',
+    text: `Ваш код сброса пароля: ${code}\n\nКод действует 10 минут.`,
+    html: `<h2>RoboCode Arena</h2><p>Ваш код сброса пароля:</p><h1 style="letter-spacing:8px;font-family:monospace">${code}</h1><p style="color:#888">Код действует 10 минут. Если вы не запрашивали сброс — проигнорируйте это письмо.</p>`,
+  })
+}
 
 const registerSchema = z.object({
   email:           z.string().email(),
@@ -12,7 +35,7 @@ const registerSchema = z.object({
   preferredSkin:   z.enum(['robot', 'gladiator', 'boxer', 'cosmonaut']).optional(),
   experienceLevel: z.enum(['beginner', 'intermediate', 'advanced']).optional(),
   programmingYears:z.number().int().min(0).max(40).optional(),
-  avatar:          z.string().max(4).optional(),
+  avatar:          z.string().max(200000).optional(),
 })
 
 const loginSchema = z.object({
@@ -23,7 +46,8 @@ const loginSchema = z.object({
 const updateSchema = z.object({
   displayName:      z.string().min(1).max(30).optional(),
   bio:              z.string().max(500).optional(),
-  avatar:           z.string().max(4).optional(),
+  // avatar can be an emoji (1-4 chars) OR a data: URL (base64) OR a /uploads/ path
+  avatar:           z.string().max(200000).optional(),
   preferredLang:    z.enum(['js', 'py', 'cpp', 'java']).optional(),
   preferredSkin:    z.enum(['robot', 'gladiator', 'boxer', 'cosmonaut']).optional(),
   experienceLevel:  z.enum(['beginner', 'intermediate', 'advanced']).optional(),
@@ -126,6 +150,53 @@ export const userAuthRoutes: FastifyPluginAsync = async (fastify) => {
       },
     })
     return reply.send(user)
+  })
+
+  // ── Forgot password ─────────────────────────────────────────────────────────
+  fastify.post('/forgot-password', async (req, reply) => {
+    const { email } = req.body as { email: string }
+    if (!email) return reply.status(400).send({ error: 'Email обязателен' })
+
+    const user = await prisma.user.findUnique({ where: { email } })
+    // Always return 200 to avoid user enumeration, but only store token if user exists
+    if (user) {
+      const code = makeResetCode()
+      const expiry = new Date(Date.now() + 10 * 60 * 1000) // 10 minutes
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { passwordResetToken: code, passwordResetExpiry: expiry },
+      })
+      await sendResetEmail(email, code).catch(err =>
+        console.error('[reset] Email send failed:', err)
+      )
+      // In dev/no-smtp mode: return code in response so admin can relay it
+      if (!process.env.SMTP_HOST) {
+        return reply.send({ ok: true, devCode: code, note: 'SMTP не настроен — код возвращён напрямую' })
+      }
+    }
+    return reply.send({ ok: true })
+  })
+
+  // ── Reset password with code ─────────────────────────────────────────────────
+  fastify.post('/reset-password', async (req, reply) => {
+    const { email, code, newPassword } = req.body as { email: string; code: string; newPassword: string }
+    if (!email || !code || !newPassword) return reply.status(400).send({ error: 'Все поля обязательны' })
+    if (newPassword.length < 6) return reply.status(400).send({ error: 'Пароль минимум 6 символов' })
+
+    const user = await prisma.user.findUnique({ where: { email } })
+    if (!user || user.passwordResetToken !== code) {
+      return reply.status(400).send({ error: 'Неверный или устаревший код' })
+    }
+    if (!user.passwordResetExpiry || user.passwordResetExpiry < new Date()) {
+      return reply.status(400).send({ error: 'Код истёк. Запросите новый.' })
+    }
+
+    const passwordHash = await bcrypt.hash(newPassword, 12)
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { passwordHash, passwordResetToken: null, passwordResetExpiry: null },
+    })
+    return reply.send({ ok: true })
   })
 
   // Change password

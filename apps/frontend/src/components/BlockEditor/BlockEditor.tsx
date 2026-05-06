@@ -8,6 +8,21 @@ import styles from './BlockEditor.module.css'
 let _nextId = 1
 const uid = () => `b${_nextId++}`
 
+// ── Action limit ──────────────────────────────────────────────────────────────
+const ACTION_BLOCK_IDS = new Set(['doAttack','doHeavy','doLaser','doShield','doDodge','doRepair','doSpecial'])
+const MAX_ACTIONS = 4
+
+function countUniqueActions(scripts: Script[]): Set<string> {
+  const found = new Set<string>()
+  function walk(inst: BlockInstance) {
+    if (ACTION_BLOCK_IDS.has(inst.defId)) found.add(inst.defId)
+    if (inst.next) walk(inst.next)
+    for (const b of inst.body ?? []) walk(b)
+  }
+  for (const s of scripts) walk(s.root)
+  return found
+}
+
 const SKINS = [
   { id: 'robot',     icon: '🤖', label: 'Робот' },
   { id: 'gladiator', icon: '⚔️', label: 'Гладиатор' },
@@ -108,9 +123,14 @@ export default function BlockEditor({ onChange, skin = 'robot', onSkinChange }: 
     setVariables(prev => [...prev, name])
   }
 
+  // ── Action limit ─────────────────────────────────────────────────────────
+  const usedActions = countUniqueActions(scripts)
+
   // ── Drag from palette ──────────────────────────────────────────────────────
 
   const handlePaletteMouseDown = (defId: string, e: React.MouseEvent) => {
+    // Block dragging if action limit reached and this is a new action type
+    if (ACTION_BLOCK_IDS.has(defId) && !usedActions.has(defId) && usedActions.size >= MAX_ACTIONS) return
     e.preventDefault()
     const inst = makeInstance(defId, e.clientX, e.clientY)
     if (variables.length > 0) {
@@ -292,20 +312,29 @@ export default function BlockEditor({ onChange, skin = 'robot', onSkinChange }: 
             </>
           )}
 
-          {blocksInCategory.map(def => (
-            <div
-              key={def.id}
-              className={styles.paletteBlock}
-              onMouseDown={e => handlePaletteMouseDown(def.id, e)}
-            >
-              <BlockShape
-                inst={makeInstance(def.id)}
-                def={def}
-                onSlotChange={() => {}}
-                variables={variables}
-              />
-            </div>
-          ))}
+          {blocksInCategory.map(def => {
+            const isAction = ACTION_BLOCK_IDS.has(def.id)
+            const isUsed   = usedActions.has(def.id)
+            const isLocked = isAction && !isUsed && usedActions.size >= MAX_ACTIONS
+            return (
+              <div
+                key={def.id}
+                className={`${styles.paletteBlock} ${isLocked ? styles.paletteBlockLocked : ''}`}
+                onMouseDown={e => handlePaletteMouseDown(def.id, e)}
+                title={isLocked ? `Лимит ${MAX_ACTIONS} приёма достигнут` : undefined}
+              >
+                <BlockShape
+                  inst={makeInstance(def.id)}
+                  def={def}
+                  onSlotChange={() => {}}
+                  variables={variables}
+                />
+                {isAction && isUsed && (
+                  <span className={styles.actionUsedDot} title="Используется" />
+                )}
+              </div>
+            )
+          })}
         </div>
       </div>
 
@@ -357,6 +386,13 @@ export default function BlockEditor({ onChange, skin = 'robot', onSkinChange }: 
           {/* Toolbar */}
           <div className={styles.toolbar}>
             <button className={`btn btn-ghost ${styles.toolBtn}`} onClick={() => setScripts([])}>🗑 Очистить</button>
+            <div className={styles.actionCounter}>
+              <span>⚔️ Приёмы:</span>
+              <span className={usedActions.size >= MAX_ACTIONS ? styles.actionCounterFull : ''}>
+                {usedActions.size}/{MAX_ACTIONS}
+              </span>
+              {usedActions.size >= MAX_ACTIONS && <span className={styles.actionCounterWarn}>лимит!</span>}
+            </div>
             <button className={`btn btn-ghost ${styles.toolBtn}`} onClick={() => { setZoom(1); setPanOffset({ x: 0, y: 0 }) }}>
               🔍 {Math.round(zoom * 100)}%
             </button>

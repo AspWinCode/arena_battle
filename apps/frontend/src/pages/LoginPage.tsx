@@ -67,6 +67,9 @@ export default function LoginPage() {
           Нет аккаунта? <Link to="/register">Создать →</Link>
         </p>
         <p className={styles.switch} style={{ marginTop: 6 }}>
+          <Link to="/forgot-password" style={{ color: 'var(--text-muted)', fontSize: 12 }}>🔐 Забыли пароль?</Link>
+        </p>
+        <p className={styles.switch} style={{ marginTop: 6 }}>
           <Link to="/join" style={{ color: 'var(--text-muted)', fontSize: 12 }}>← На главную</Link>
         </p>
       </div>

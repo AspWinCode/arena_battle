@@ -73,6 +73,21 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
     return { ok: true }
   })
 
+  // ── Admin: list all registered users ──────────────────────────────────────
+  fastify.get('/users', { onRequest: [fastify.authenticate] }, async (_req, reply) => {
+    const users = await prisma.user.findMany({
+      orderBy: { createdAt: 'desc' },
+      select: {
+        id: true, username: true, displayName: true, email: true,
+        avatar: true, preferredLang: true, preferredSkin: true,
+        experienceLevel: true, createdAt: true,
+        totalWins: true, totalBattles: true,
+        _count: { select: { players: true } },
+      },
+    })
+    return reply.send(users)
+  })
+
   // Bootstrap the very first admin. Once any admin exists, this route is closed.
   fastify.post('/seed-admin', async (request, reply) => {
     const body = loginSchema.safeParse(request.body)

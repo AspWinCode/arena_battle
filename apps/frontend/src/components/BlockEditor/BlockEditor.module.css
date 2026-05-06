@@ -71,6 +71,7 @@
 .paletteBlock {
   cursor: grab;
   transition: transform .1s, filter .1s;
+  position: relative;
 }
 .paletteBlock:hover { transform: translateX(3px); filter: brightness(1.1); }
 .paletteBlock:active { cursor: grabbing; }
@@ -249,3 +250,43 @@
   transition: background .1s;
 }
 .contextItem:hover { background: var(--bg-hover); }
+
+/* ── Action limit ────────────────────────────────────────────────── */
+.paletteBlockLocked {
+  opacity: 0.3;
+  cursor: not-allowed !important;
+  pointer-events: none;
+  filter: grayscale(1);
+}
+
+.actionUsedDot {
+  display: inline-block;
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: #4ade80;
+  position: absolute;
+  top: 4px; right: 4px;
+  box-shadow: 0 0 4px #4ade80;
+}
+
+.actionCounter {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  padding: 4px 8px;
+  background: var(--bg);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+}
+
+.actionCounterFull { color: #fbbf24; }
+
+.actionCounterWarn {
+  color: #f87171;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}

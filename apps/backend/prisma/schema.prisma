@@ -37,7 +37,7 @@ model User {
   displayName      String
   passwordHash     String
   bio              String?  @db.Text
-  avatar           String   @default("🤖")
+  avatar           String   @default("🤖") @db.Text
   preferredLang    String   @default("js")
   preferredSkin    String   @default("robot")
   experienceLevel  String   @default("beginner")
@@ -51,6 +51,10 @@ model User {
   totalWins      Int      @default(0)
   totalBattles   Int      @default(0)
   lastWinDate    String   @default("")
+
+  // Password reset
+  passwordResetToken  String?
+  passwordResetExpiry DateTime?
 
   players      Player[]
   applications TournamentApplication[]

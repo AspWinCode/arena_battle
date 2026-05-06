@@ -20,6 +20,8 @@ import AdminSessionDetail from './pages/admin/AdminSessionDetail'
 import AdminTournaments from './pages/admin/AdminTournaments'
 import AdminTournamentNew from './pages/admin/AdminTournamentNew'
 import AdminTournamentDetail from './pages/admin/AdminTournamentDetail'
+import AdminUsersPage from './pages/admin/AdminUsersPage'
+import ForgotPasswordPage from './pages/ForgotPasswordPage'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import AchievementToast from './components/AchievementToast'
 
@@ -40,8 +42,9 @@ export default function App() {
       <Route path="/tournaments/:id" element={<TournamentDetailPage />} />
 
       {/* User auth & profiles */}
-      <Route path="/register" element={<RegisterPage />} />
-      <Route path="/login"    element={<LoginPage />} />
+      <Route path="/register"         element={<RegisterPage />} />
+      <Route path="/login"            element={<LoginPage />} />
+      <Route path="/forgot-password"  element={<ForgotPasswordPage />} />
       <Route path="/profile"  element={<ProfilePage />} />
       <Route path="/profile/:username" element={<PublicProfilePage />} />
 
@@ -52,6 +55,7 @@ export default function App() {
       <Route path="/admin/tournaments" element={<ProtectedRoute><AdminTournaments /></ProtectedRoute>} />
       <Route path="/admin/tournaments/new" element={<ProtectedRoute><AdminTournamentNew /></ProtectedRoute>} />
       <Route path="/admin/tournaments/:id" element={<ProtectedRoute><AdminTournamentDetail /></ProtectedRoute>} />
+      <Route path="/admin/users" element={<ProtectedRoute><AdminUsersPage /></ProtectedRoute>} />
 
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
