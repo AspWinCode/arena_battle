@@ -22,7 +22,7 @@ const SKIN_COLORS: Record<string, { primary: string; secondary: string; accent: 
   mage:      { primary: '#7c3aed', secondary: '#1e1033', accent: '#c4b5fd' },
   paladin:   { primary: '#f8d94e', secondary: '#3a2e00', accent: '#fef08a' },
   sniper:    { primary: '#4a7c59', secondary: '#1a2e1f', accent: '#86efac' },
-  tank:      { primary: '#6b7280', secondary: '#1f2937', accent: '#d1d5db' },
+  tank:      { primary: '#78716c', secondary: '#1c1917', accent: '#d6d3d1' },
   vampire:   { primary: '#991b1b', secondary: '#1a0a0a', accent: '#fca5a5' },
   samurai:   { primary: '#dc2626', secondary: '#2d0a0a', accent: '#fca5a5' },
   phantom:   { primary: '#6d28d9', secondary: '#12082a', accent: '#a78bfa' },

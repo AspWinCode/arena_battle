@@ -168,11 +168,11 @@ export const CHARACTER_STATS: Record<SkinId, CharacterStats> = {
     ...DEFAULTS,
     maxHp: 130, dmgMult: 0.65, rageMult: 1.0,
     flatDmgReduction: 5,
-    name:    'Танк',
-    icon:    '🦾',
-    color:   '#6b7280',
-    tagline: 'Непробиваемая броня',
-    passive: '🛡 Броня: каждый входящий удар снижается на 5 HP (минимум 1). Живёт очень долго.',
+    name:    'Рино',
+    icon:    '🦏',
+    color:   '#78716c',
+    tagline: 'Непробиваемый носорог',
+    passive: '🦏 Броня носорога: каждый входящий удар снижается на 5 HP (минимум 1). Очень живуч.',
   },
 
   vampire: {
