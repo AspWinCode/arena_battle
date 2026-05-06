@@ -20,9 +20,12 @@ import AdminTournaments from './pages/admin/AdminTournaments'
 import AdminTournamentNew from './pages/admin/AdminTournamentNew'
 import AdminTournamentDetail from './pages/admin/AdminTournamentDetail'
 import { ProtectedRoute } from './components/ProtectedRoute'
+import AchievementToast from './components/AchievementToast'
 
 export default function App() {
   return (
+    <>
+    <AchievementToast />
     <Routes>
       <Route path="/" element={<Navigate to="/join" replace />} />
       <Route path="/join" element={<JoinPage />} />
@@ -51,5 +54,6 @@ export default function App() {
 
       <Route path="*" element={<Navigate to="/join" replace />} />
     </Routes>
+    </>
   )
 }

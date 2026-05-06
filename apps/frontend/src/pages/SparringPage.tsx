@@ -2,7 +2,7 @@ import { useState, useRef, useCallback, useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import {
   SPARRING_BOTS, PERKS, mergeEffects,
-  MAX_HP, MAX_STAMINA, MAX_RAGE, MISSIONS,
+  MAX_HP, MAX_STAMINA, MAX_RAGE, MISSIONS, STAMINA_COSTS,
 } from '@robocode/shared'
 import type { RoundResult, TurnResult } from '@robocode/shared'
 import { runLocalMatch } from '../engine/battleEngine'
@@ -10,6 +10,7 @@ import { runCodeToStrategy } from '../engine/codeRunner'
 import { analyzeMatch, ACTION_COLOR, ACTION_LABEL } from '../engine/matchAnalysis'
 import { useLearnStore } from '../stores/learnStore'
 import { useDailyStore } from '../stores/dailyStore'
+import { useAchievementsStore } from '../stores/achievementsStore'
 import CodeEditor from '../components/CodeEditor/CodeEditor'
 import BlockEditor from '../components/BlockEditor/BlockEditor'
 import styles from './SparringPage.module.css'
@@ -72,8 +73,9 @@ function RageBar({ value, max, flip }: { value: number; max: number; flip?: bool
 
 export default function SparringPage() {
   const progress      = useLearnStore(s => s.progress)
-  const recordBattle  = useDailyStore(s => s.recordBattle)
-  const currentStreak = useDailyStore(s => s.currentStreak)
+  const recordBattle   = useDailyStore(s => s.recordBattle)
+  const currentStreak  = useDailyStore(s => s.currentStreak)
+  const checkAchievements = useAchievementsStore(s => s.checkBattle)
   const completedCount = useMemo(
     () => MISSIONS.filter(m => progress[m.id]?.completed).length,
     [progress],
@@ -163,7 +165,7 @@ export default function SparringPage() {
         const won  = result.winner === 1
         const lastTurn = allT[allT.length - 1]
         const isKo = won && !!lastTurn && lastTurn.p2HpAfter === 0
-        recordBattle({
+        const battleRec = {
           won,
           isKo,
           damageDealt:  allT.reduce((s, t) => s + t.p2DmgTaken, 0),
@@ -174,6 +176,16 @@ export default function SparringPage() {
           laserUsed:    allT.filter(t => t.p1Action === 'laser').length,
           dodgeUsed:    allT.filter(t => t.p1Action === 'dodge').length,
           usedRepair:   allT.some(t => t.p1Action === 'repair'),
+        }
+        recordBattle(battleRec)
+        // Check achievements (extended record)
+        checkAchievements({
+          ...battleRec,
+          finalHp:      lastTurn ? lastTurn.p1HpAfter : 0,
+          damageTaken:  allT.reduce((s, t) => s + t.p1DmgTaken, 0),
+          laserDamage:  allT.filter(t => t.p1Action === 'laser').reduce((s, t) => s + t.p2DmgTaken, 0),
+          staminaSpent: allT.reduce((s, t) => s + Math.max(0, STAMINA_COSTS[t.p1Action] ?? 0), 0),
+          winStreak:    currentStreak,
         })
         return
       }

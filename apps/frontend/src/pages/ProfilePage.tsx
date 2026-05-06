@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { api } from '../api/client'
 import { useUserStore } from '../stores/userStore'
 import { useDailyStore } from '../stores/dailyStore'
+import { useAchievementsStore, ACHIEVEMENTS } from '../stores/achievementsStore'
 import styles from './ProfilePage.module.css'
 
 // ── Types ──────────────────────────────────────────────────────────────────
@@ -52,8 +53,9 @@ export default function ProfilePage() {
   const navigate = useNavigate()
   const { user, token, updateUser, logout } = useUserStore()
   const daily = useDailyStore()
+  const unlockedAch = useAchievementsStore(s => s.unlocked)
   const [data, setData]       = useState<FullProfile | null>(null)
-  const [tab,  setTab]        = useState<'stats' | 'progress' | 'history' | 'tournaments' | 'settings'>('stats')
+  const [tab,  setTab]        = useState<'stats' | 'progress' | 'achievements' | 'history' | 'tournaments' | 'settings'>('stats')
   const [loading, setLoading] = useState(true)
   const [error, setError]     = useState('')
 
@@ -162,9 +164,9 @@ export default function ProfilePage() {
 
       {/* Tabs */}
       <div className={styles.tabs}>
-        {(['stats', 'progress', 'history', 'tournaments', 'settings'] as const).map(t => (
+        {(['stats', 'progress', 'achievements', 'history', 'tournaments', 'settings'] as const).map(t => (
           <button key={t} className={`${styles.tab} ${tab === t ? styles.tabActive : ''}`} onClick={() => setTab(t)}>
-            {{ stats: '📊 Статистика', progress: '🔥 Прогресс', history: '⚔️ История', tournaments: '🏆 Турниры', settings: '⚙️ Настройки' }[t]}
+            {{ stats: '📊 Стат', progress: '🔥 Прогресс', achievements: '🏅 Ачивки', history: '⚔️ История', tournaments: '🏆 Турниры', settings: '⚙️ Настройки' }[t]}
           </button>
         ))}
       </div>
@@ -182,6 +184,50 @@ export default function ProfilePage() {
                 </div>
               </div>
             ))}
+          </div>
+        )}
+
+        {/* ── Local Achievements tab ── */}
+        {tab === 'achievements' && (
+          <div>
+            <div style={{ marginBottom: 12, fontSize: 12, color: 'var(--text-muted)' }}>
+              {unlockedAch.length} / {ACHIEVEMENTS.length} разблокировано
+            </div>
+            <div className={styles.achievementsGrid}>
+              {ACHIEVEMENTS.map(def => {
+                const unlocked = unlockedAch.some(u => u.id === def.id)
+                const isSecret = def.secret && !unlocked
+                return (
+                  <div
+                    key={def.id}
+                    className={`${styles.achCard} ${unlocked ? styles.achUnlocked : styles.achLocked}`}
+                    title={isSecret ? '???' : def.desc}
+                  >
+                    <span className={styles.achIcon}>
+                      {unlocked ? def.icon : isSecret ? '❓' : '🔒'}
+                    </span>
+                    <div style={{ minWidth: 0 }}>
+                      <div className={styles.achTitle}>
+                        {isSecret ? '???' : def.title}
+                      </div>
+                      <div className={styles.achDesc}>
+                        {isSecret ? 'Секретное достижение' : def.desc}
+                      </div>
+                      {unlocked && (
+                        <div style={{ fontSize: 10, color: '#fbbf24', marginTop: 2, fontWeight: 700 }}>
+                          +{def.xp} XP
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+            {unlockedAch.length === 0 && (
+              <div style={{ textAlign: 'center', padding: '24px 0', color: 'var(--text-muted)', fontSize: 13 }}>
+                Сыграй несколько боёв в Спарринге, чтобы разблокировать достижения
+              </div>
+            )}
           </div>
         )}
 

@@ -152,18 +152,29 @@ function computePlayer(
   const heavyCount     = counts['heavy']   ?? 0
   const laserCount     = counts['laser']   ?? 0
 
-  // ── Style detection ────────────────────────────────────────────
-  const aggPct   = ((counts['attack'] ?? 0) + (counts['heavy'] ?? 0) + (counts['laser'] ?? 0)) / Math.max(1, totalTurns)
-  const defPct   = ((counts['shield'] ?? 0) + (counts['dodge'] ?? 0)) / Math.max(1, totalTurns)
-  const healPct  = (counts['repair'] ?? 0) / Math.max(1, totalTurns)
+  // ── Style detection (v2) ──────────────────────────────────────
+  const aggPct     = ((counts['attack'] ?? 0) + (counts['heavy'] ?? 0) + (counts['laser'] ?? 0)) / Math.max(1, totalTurns)
+  const defPct     = ((counts['shield'] ?? 0) + (counts['dodge'] ?? 0)) / Math.max(1, totalTurns)
+  const shieldPct  = (counts['shield'] ?? 0) / Math.max(1, totalTurns)
+  const dodgePct   = (counts['dodge']  ?? 0) / Math.max(1, totalTurns)
+  const healPct    = (counts['repair'] ?? 0) / Math.max(1, totalTurns)
+  const specialPct = specialCount / Math.max(1, totalTurns)
+
+  // Counter-Style: shield/dodge >40% AND high attack rate (>50%)
+  // Rage Rusher: special used >2 AND avg rage high (approximated by specialCount)
+  const isCounterStyle = (shieldPct + dodgePct) > 0.40 && aggPct > 0.50
+  const isRageRusher   = specialCount > 2
 
   const detectedStyle =
+    isCounterStyle                   ? '🎯 Контратакер'    :
+    isRageRusher                     ? '💢 Rage Rusher'    :
     specialCount >= 2                ? '⚡ Rage Fighter'   :
     heavyCount >= totalTurns * 0.25  ? '💥 Heavy Puncher'  :
-    laserCount >= totalTurns * 0.25  ? '🔫 Sniper'         :
-    healPct  >= 0.2                  ? '💚 Sustainer'       :
-    defPct   >= 0.3 && aggPct < 0.5  ? '🛡️ Turtle'         :
-    aggPct   >= 0.7                  ? '⚔️ Berserker'       :
+    laserCount >= totalTurns * 0.25  ? '🔫 Снайпер'        :
+    healPct  >= 0.2                  ? '💚 Регенератор'    :
+    defPct   >= 0.3 && aggPct < 0.5  ? '🛡️ Черепаха'      :
+    aggPct   >= 0.7                  ? '⚔️ Берсерк'        :
+    specialPct > 0.1                 ? '⚡ Rage Fighter'   :
                                        '⚖️ Balanced'
 
   // ── Efficiency score ───────────────────────────────────────────
