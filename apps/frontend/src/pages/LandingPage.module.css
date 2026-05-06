@@ -395,9 +395,9 @@
 }
 
 .charsScroll {
-  display: flex;
-  gap: 12px;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 10px;
 }
 
 .charChip {
@@ -501,7 +501,7 @@
 
 .steps {
   display: flex;
-  align-items: flex-start;
+  align-items: stretch;
   gap: 16px;
   margin-bottom: 60px;
 }
@@ -531,7 +531,7 @@
   pointer-events: none;
   opacity: .5;
 }
-.stepArrow  { flex-shrink: 0; font-size: 24px; color: var(--border); margin-top: 56px; font-weight: 300; }
+.stepArrow  { flex-shrink: 0; font-size: 20px; color: rgba(29,233,124,.3); align-self: center; font-weight: 300; }
 .stepNum    { font-size: 11px; font-weight: 800; color: var(--accent); letter-spacing: .15em; margin-bottom: 12px; opacity: .7; }
 .stepIcon   { font-size: 36px; margin-bottom: 14px; }
 .stepTitle  { font-size: 18px; font-weight: 700; margin-bottom: 10px; }
@@ -736,7 +736,8 @@
   .codeSplit      { flex-direction: column; gap: 48px; }
   .codeLeft       { max-width: 100%; }
   .actionsRow     { flex-direction: column; gap: 12px; }
-  .charsScroll    { gap: 8px; }
+  .charsScroll    { grid-template-columns: repeat(4, 1fr); gap: 8px; }
+
 }
 @media (max-width: 700px) {
   .container  { padding: 0 20px; }
@@ -744,6 +745,7 @@
   .chars, .features, .how, .codeSection { padding: 60px 0; }
   .ctaSection { padding: 72px 0; }
   .featGrid   { grid-template-columns: 1fr; }
+  .charsScroll { grid-template-columns: repeat(2, 1fr); }
   .navInner   { padding: 0 20px; }
   .navLinks .navLink:not(.navBtn) { display: none; }
   .footerInner { flex-direction: column; align-items: center; text-align: center; }
