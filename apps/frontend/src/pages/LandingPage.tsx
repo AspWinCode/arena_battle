@@ -10,8 +10,7 @@ export default function LandingPage() {
       <nav className={styles.nav}>
         <div className={styles.navInner}>
           <div className={styles.navLogo}>
-            <span>⚔️</span>
-            <span>Code<span className={styles.accent}>Fighters</span></span>
+            <img src="/logo.png" alt="CodeFighters" className={styles.navLogoImg} />
           </div>
           <div className={styles.navLinks}>
             <Link to="/tournaments" className={styles.navLink}>Турниры</Link>
@@ -279,7 +278,9 @@ export default function LandingPage() {
       <footer className={styles.footer}>
         <div className={styles.container}>
           <div className={styles.footerInner}>
-            <div className={styles.footerLogo}>⚔️ Code<span className={styles.accent}>Fighters</span></div>
+            <div className={styles.footerLogo}>
+              <img src="/logo.png" alt="CodeFighters" className={styles.footerLogoImg} />
+            </div>
             <div className={styles.footerLinks}>
               <Link to="/tournaments">Турниры</Link>
               <Link to="/leaderboard">Рейтинг</Link>
