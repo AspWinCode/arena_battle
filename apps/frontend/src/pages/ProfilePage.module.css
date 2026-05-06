@@ -24,7 +24,7 @@
 
 /* ── Hero ─────────────────────────────────────────────────────────────── */
 .hero {
-  background: linear-gradient(135deg, rgba(0,229,255,.06) 0%, rgba(124,58,237,.08) 100%);
+  background: linear-gradient(135deg, rgba(0,230,118,.06) 0%, rgba(255,85,0,.07) 100%);
   border-bottom: 1px solid var(--border);
   padding: 40px 24px;
 }
@@ -40,7 +40,7 @@
 .avatarBig {
   font-size: 72px;
   line-height: 1;
-  filter: drop-shadow(0 0 20px rgba(0,229,255,.3));
+  filter: drop-shadow(0 0 20px rgba(0,230,118,.3));
   flex-shrink: 0;
 }
 
@@ -79,8 +79,8 @@
 }
 
 .badge {
-  background: rgba(0,229,255,.08);
-  border: 1px solid rgba(0,229,255,.2);
+  background: rgba(0,230,118,.08);
+  border: 1px solid rgba(0,230,118,.2);
   border-radius: 100px;
   padding: 4px 12px;
   font-size: 12px;
@@ -187,8 +187,8 @@
 }
 
 .achUnlocked {
-  border-color: rgba(0,229,255,.25);
-  box-shadow: 0 0 12px rgba(0,229,255,.05);
+  border-color: rgba(0,230,118,.25);
+  box-shadow: 0 0 12px rgba(0,230,118,.06);
 }
 
 .achLocked { opacity: .45; }
@@ -376,7 +376,7 @@
 .settingsSelect:focus {
   outline: none;
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(0,229,255,.1);
+  box-shadow: 0 0 0 3px rgba(0,230,118,.1);
 }
 
 .settingsTextarea { resize: vertical; }
@@ -403,7 +403,7 @@
 
 .avatarActive {
   border-color: var(--accent) !important;
-  background: rgba(0,229,255,.08) !important;
+  background: rgba(0,230,118,.08) !important;
 }
 
 .settingsActions {

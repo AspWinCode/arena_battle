@@ -16,7 +16,7 @@
   position: absolute;
   top: -200px; left: -200px;
   width: 600px; height: 600px;
-  background: radial-gradient(circle, rgba(99,102,241,.15) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(0,230,118,.1) 0%, transparent 70%);
   border-radius: 50%;
 }
 
@@ -24,7 +24,7 @@
   position: absolute;
   bottom: -100px; right: -100px;
   width: 500px; height: 500px;
-  background: radial-gradient(circle, rgba(236,72,153,.10) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(255,85,0,.08) 0%, transparent 70%);
   border-radius: 50%;
 }
 
@@ -82,7 +82,7 @@
 
 .progressFill {
   height: 100%;
-  background: linear-gradient(90deg, var(--accent), #a855f7);
+  background: linear-gradient(90deg, var(--accent), var(--lightning), var(--fire));
   border-radius: 99px;
   transition: width 0.5s;
 }

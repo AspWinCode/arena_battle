@@ -21,7 +21,7 @@
   left: -200px;
   width: 600px;
   height: 600px;
-  background: radial-gradient(circle, rgba(0,229,255,.12) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(0,230,118,.1) 0%, transparent 70%);
   border-radius: 50%;
 }
 
@@ -31,7 +31,7 @@
   right: -200px;
   width: 500px;
   height: 500px;
-  background: radial-gradient(circle, rgba(124,58,237,.1) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(255,85,0,.08) 0%, transparent 70%);
   border-radius: 50%;
 }
 
@@ -39,9 +39,10 @@
   position: absolute;
   inset: 0;
   background-image:
-    linear-gradient(rgba(0,229,255,.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(0,229,255,.03) 1px, transparent 1px);
-  background-size: 40px 40px;
+    radial-gradient(circle, rgba(0,230,118,.18) 1px, transparent 1px),
+    radial-gradient(circle, rgba(255,85,0,.1) 1px, transparent 1px);
+  background-size: 40px 40px, 80px 80px;
+  background-position: 0 0, 20px 20px;
 }
 
 .container {
@@ -70,13 +71,13 @@
 
 .logoIcon {
   font-size: 48px;
-  filter: drop-shadow(0 0 16px #00e5ff);
+  filter: drop-shadow(0 0 16px rgba(0,230,118,.6));
 }
 
 .logoTitle {
   font-size: 28px;
   font-weight: 800;
-  background: linear-gradient(135deg, #00e5ff, #7c3aed);
+  background: linear-gradient(135deg, var(--accent) 0%, var(--lightning) 50%, var(--fire) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -135,7 +136,7 @@
 
 .input:focus {
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(0,229,255,.12);
+  box-shadow: 0 0 0 3px rgba(0,230,118,.12);
 }
 
 .codeInput {
@@ -237,18 +238,20 @@
   display: inline-block;
   font-size: 14px;
   font-weight: 700;
-  color: #a855f7;
+  color: var(--fire);
   text-decoration: none;
   padding: 10px 20px;
-  border: 1px solid rgba(168,85,247,.3);
+  border: 1px solid rgba(255,85,0,.3);
   border-radius: var(--radius-lg);
-  background: rgba(168,85,247,.06);
+  background: rgba(255,85,0,.06);
   transition: background .2s, border-color .2s;
 }
 
 .learnLink:hover {
-  background: rgba(168,85,247,.12);
-  border-color: rgba(168,85,247,.5);
+  background: rgba(255,85,0,.12);
+  border-color: rgba(255,85,0,.5);
+  color: var(--fire2);
+  text-decoration: none;
 }
 
 .publicLinks {

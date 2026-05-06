@@ -13,24 +13,21 @@
   border-radius: var(--radius);
   transition: color .15s;
 }
-
-.authLink:hover { color: var(--text); }
+.authLink:hover { color: var(--text); text-decoration: none; }
 
 .authLinkPrimary {
-  background: rgba(0,229,255,.1);
-  border: 1px solid rgba(0,229,255,.25);
+  background: rgba(0,230,118,.1);
+  border: 1px solid rgba(0,230,118,.25);
   color: var(--accent);
 }
-
 .authLinkPrimary:hover {
-  background: rgba(0,229,255,.18);
+  background: rgba(0,230,118,.18);
   color: var(--accent);
+  text-decoration: none;
 }
 
-/* ── Trigger ─────────────────────────────────────────────────────────── */
-.wrap {
-  position: relative;
-}
+/* ── Trigger ─────────────────────────────────────────────── */
+.wrap { position: relative; }
 
 .trigger {
   display: flex;
@@ -43,17 +40,15 @@
   cursor: pointer;
   transition: border-color .15s, background .15s;
 }
-
 .trigger:hover {
-  border-color: rgba(0,229,255,.4);
+  border-color: rgba(0,230,118,.4);
   background: var(--bg-hover);
 }
 
 .avatar {
   font-size: 22px;
   line-height: 1;
-  width: 30px;
-  height: 30px;
+  width: 30px; height: 30px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -69,22 +64,19 @@
   white-space: nowrap;
 }
 
-.chevron {
-  font-size: 9px;
-  color: var(--text-muted);
-}
+.chevron { font-size: 9px; color: var(--text-muted); }
 
-/* ── Dropdown ────────────────────────────────────────────────────────── */
+/* ── Dropdown ────────────────────────────────────────────── */
 .dropdown {
   position: absolute;
   top: calc(100% + 8px);
   right: 0;
-  min-width: 220px;
+  min-width: 230px;
   background: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-  box-shadow: 0 12px 40px rgba(0,0,0,.6);
-  z-index: 100;
+  box-shadow: 0 16px 48px rgba(0,0,0,.7), 0 0 0 1px rgba(0,230,118,.06);
+  z-index: 200;
   overflow: hidden;
   animation: dropIn .15s ease;
 }
@@ -99,27 +91,15 @@
   align-items: center;
   gap: 12px;
   padding: 14px 16px;
+  background: linear-gradient(135deg, rgba(0,230,118,.05) 0%, rgba(255,85,0,.05) 100%);
 }
 
 .dropAvatar { font-size: 28px; }
 
-.dropName {
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--text);
-}
+.dropName { font-size: 14px; font-weight: 800; color: var(--text); letter-spacing: -.01em; }
+.dropUser  { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
 
-.dropUser {
-  font-size: 12px;
-  color: var(--text-muted);
-  margin-top: 2px;
-}
-
-.dropDivider {
-  height: 1px;
-  background: var(--border);
-  margin: 2px 0;
-}
+.dropDivider { height: 1px; background: var(--border); }
 
 .dropItem {
   display: block;
@@ -127,18 +107,20 @@
   padding: 10px 16px;
   font-size: 13px;
   font-weight: 600;
-  color: var(--text);
+  color: var(--text-muted);
   background: none;
   border: none;
   cursor: pointer;
   text-align: left;
   text-decoration: none;
-  transition: background .12s;
+  transition: background .12s, color .12s;
+  font-family: var(--font-main);
 }
-
 .dropItem:hover {
   background: var(--bg-hover);
+  color: var(--text);
+  text-decoration: none;
 }
 
-.dropItemDanger { color: #f87171; }
-.dropItemDanger:hover { background: rgba(248,113,113,.08); }
+.dropItemDanger { color: var(--red); }
+.dropItemDanger:hover { background: rgba(255,61,61,.08); color: var(--red); }

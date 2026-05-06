@@ -9,8 +9,8 @@
   position: fixed;
   inset: 0;
   background:
-    radial-gradient(ellipse 60% 40% at 20% 20%, rgba(251,191,36,.07) 0%, transparent 60%),
-    radial-gradient(ellipse 50% 40% at 80% 80%, rgba(99,102,241,.07) 0%, transparent 60%);
+    radial-gradient(ellipse 60% 40% at 20% 20%, rgba(0,230,118,.07) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 40% at 80% 80%, rgba(255,85,0,.06) 0%, transparent 60%);
   pointer-events: none;
 }
 
@@ -59,7 +59,7 @@
 .todayXpVal {
   font-size: 20px;
   font-weight: 800;
-  color: #a78bfa;
+  color: var(--lightning);
   font-variant-numeric: tabular-nums;
 }
 .todayXpLabel {
@@ -269,7 +269,7 @@
 .taskXp {
   font-size: 12px;
   font-weight: 700;
-  color: #a78bfa;
+  color: var(--lightning);
 }
 .taskStatus { font-size: 11px; color: var(--text-muted); }
 .taskCheckmark { font-size: 22px; }
