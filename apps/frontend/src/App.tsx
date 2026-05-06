@@ -1,4 +1,5 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
+import LandingPage from './pages/LandingPage'
 import JoinPage from './pages/JoinPage'
 import BattlePage from './pages/BattlePage'
 import LearnPage from './pages/LearnPage'
@@ -27,7 +28,7 @@ export default function App() {
     <>
     <AchievementToast />
     <Routes>
-      <Route path="/" element={<Navigate to="/join" replace />} />
+      <Route path="/" element={<LandingPage />} />
       <Route path="/join" element={<JoinPage />} />
       <Route path="/battle/:sessionId" element={<BattlePage />} />
       <Route path="/learn" element={<LearnPage />} />
@@ -52,7 +53,7 @@ export default function App() {
       <Route path="/admin/tournaments/new" element={<ProtectedRoute><AdminTournamentNew /></ProtectedRoute>} />
       <Route path="/admin/tournaments/:id" element={<ProtectedRoute><AdminTournamentDetail /></ProtectedRoute>} />
 
-      <Route path="*" element={<Navigate to="/join" replace />} />
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
     </>
   )
