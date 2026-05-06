@@ -92,7 +92,7 @@ export default function BattleScreen() {
         <div className={styles.statsDivider} />
 
         {/* P2 stats (mirrored) */}
-        <div className={styles.playerStats} style={{ alignItems: 'flex-end' }}>
+        <div className={styles.playerStats}>
           <StatRow
             label={`${p2Hp} HP`}
             pct={(p2Hp / (p2MaxHp || MAX_HP)) * 100}
@@ -154,7 +154,7 @@ function StatRow({ label, pct, color, flip }: { label: string; pct: number; colo
       <div className={styles.statTrack}>
         <div
           className={styles.statFill}
-          style={{ width: `${clamped}%`, background: color, marginLeft: flip ? 'auto' : undefined }}
+          style={{ width: `${clamped}%`, background: color }}
         />
       </div>
     </div>
@@ -175,7 +175,6 @@ function RageRow({ value, max, flip }: { value: number; max: number; flip?: bool
           style={{
             width: `${pct}%`,
             background: ready ? '#f97316' : '#a855f7',
-            marginLeft: flip ? 'auto' : undefined,
             boxShadow: ready ? '0 0 8px #f97316' : undefined,
           }}
         />
