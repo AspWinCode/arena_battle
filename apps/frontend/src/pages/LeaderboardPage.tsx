@@ -1,8 +1,10 @@
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { api } from '../api/client'
 import { useDailyStore } from '../stores/dailyStore'
 import styles from './LeaderboardPage.module.css'
 
-// ── Mock global leaderboard (until real backend endpoint exists) ───────────────
+// ── Mock global leaderboard (fallback when API unavailable) ───────────────────
 
 interface LeaderEntry {
   rank:     number
@@ -12,6 +14,17 @@ interface LeaderEntry {
   wins:     number
   streak:   number
   winRate:  number
+}
+
+// Shape returned by the real API
+interface ApiLeaderEntry {
+  rank:        number
+  username:    string
+  displayName: string
+  avatar:      string
+  wins:        number
+  total:       number
+  winRate:     number
 }
 
 const MOCK_LEADERS: LeaderEntry[] = [
@@ -37,6 +50,28 @@ export default function LeaderboardPage() {
     ? Math.round((store.totalWins / store.totalBattles) * 100)
     : 0
 
+  const [leaders, setLeaders] = useState<LeaderEntry[]>(MOCK_LEADERS)
+  const [isLive,  setIsLive]  = useState(false)
+
+  useEffect(() => {
+    api.get<ApiLeaderEntry[]>('/user/profile/leaderboard')
+      .then(data => {
+        if (data.length > 0) {
+          setLeaders(data.map(e => ({
+            rank:    e.rank,
+            name:    e.displayName || e.username,
+            avatar:  e.avatar,
+            xp:      e.wins * 100,   // approximate XP from wins
+            wins:    e.wins,
+            streak:  0,              // streak not returned by leaderboard endpoint
+            winRate: e.winRate,
+          })))
+          setIsLive(true)
+        }
+      })
+      .catch(() => { /* keep mock on error */ })
+  }, [])
+
   return (
     <div className={styles.root}>
       <div className={styles.bg}>
@@ -48,7 +83,19 @@ export default function LeaderboardPage() {
         {/* Header */}
         <Link to="/join" className={styles.back}>← Главная</Link>
         <div className={styles.headerRow}>
-          <h1 className={styles.title}>🏆 Лидерборд</h1>
+          <h1 className={styles.title}>
+            🏆 Лидерборд
+            {isLive && (
+              <span style={{
+                marginLeft: 10, fontSize: 12, fontWeight: 700,
+                background: '#4ade8033', color: '#4ade80',
+                border: '1px solid #4ade8066',
+                borderRadius: 6, padding: '2px 8px', verticalAlign: 'middle',
+              }}>
+                live
+              </span>
+            )}
+          </h1>
           <Link to="/daily" className="btn btn-ghost" style={{ fontSize: 13 }}>
             📅 Мои задания
           </Link>
@@ -108,7 +155,7 @@ export default function LeaderboardPage() {
               <span className={styles.colWr}>Винрейт</span>
             </div>
 
-            {MOCK_LEADERS.map(p => (
+            {leaders.map(p => (
               <div
                 key={p.rank}
                 className={`${styles.tableRow} ${p.rank <= 3 ? styles.tableRowTop : ''}`}

@@ -9,8 +9,9 @@ import { runLocalMatch } from '../engine/battleEngine'
 import { runCodeToStrategy } from '../engine/codeRunner'
 import { analyzeMatch, ACTION_COLOR, ACTION_LABEL } from '../engine/matchAnalysis'
 import { useLearnStore } from '../stores/learnStore'
-import { useDailyStore } from '../stores/dailyStore'
+import { useDailyStore, syncStatsToBackend } from '../stores/dailyStore'
 import { useAchievementsStore } from '../stores/achievementsStore'
+import { useUserStore } from '../stores/userStore'
 import CodeEditor from '../components/CodeEditor/CodeEditor'
 import BlockEditor from '../components/BlockEditor/BlockEditor'
 import styles from './SparringPage.module.css'
@@ -76,6 +77,7 @@ export default function SparringPage() {
   const recordBattle   = useDailyStore(s => s.recordBattle)
   const currentStreak  = useDailyStore(s => s.currentStreak)
   const checkAchievements = useAchievementsStore(s => s.checkBattle)
+  const token          = useUserStore(s => s.token)
   const completedCount = useMemo(
     () => MISSIONS.filter(m => progress[m.id]?.completed).length,
     [progress],
@@ -178,6 +180,8 @@ export default function SparringPage() {
           usedRepair:   allT.some(t => t.p1Action === 'repair'),
         }
         recordBattle(battleRec)
+        // Persist streak/XP to backend if logged in
+        if (token) syncStatsToBackend(useDailyStore.getState(), token)
         // Check achievements (extended record)
         checkAchievements({
           ...battleRec,

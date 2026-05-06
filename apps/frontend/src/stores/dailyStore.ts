@@ -133,6 +133,22 @@ function makeTasks(date: string): DailyTaskProgress[] {
   }))
 }
 
+// ── Backend sync helper ───────────────────────────────────────────────────────
+
+export function syncStatsToBackend(state: DailyState, token: string): void {
+  const { currentStreak, bestStreak, totalXp, totalWins, totalBattles, lastWinDate } = state
+  fetch('/api/v1/user/profile/~me/stats', {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ currentStreak, bestStreak, totalXp, totalWins, totalBattles, lastWinDate }),
+  }).catch(() => { /* silent — offline or unauthenticated */ })
+}
+
+// ── Store ─────────────────────────────────────────────────────────────────────
+
 export const useDailyStore = create<DailyState & DailyActions>()(
   persist(
     (set, get) => ({

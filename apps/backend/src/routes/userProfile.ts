@@ -168,6 +168,7 @@ export const userProfileRoutes: FastifyPluginAsync = async (fastify) => {
 
     const stats = await calcStats(user.id)
     const achievements = buildAchievements(stats)
+    // include streak/xp fields from DB in safeUser below
 
     // Recent sessions
     const recentPlayers = await prisma.player.findMany({
@@ -208,5 +209,83 @@ export const userProfileRoutes: FastifyPluginAsync = async (fastify) => {
 
     const { passwordHash: _, ...safeUser } = user
     return reply.send({ user: safeUser, stats, achievements, recentSessions, applications })
+  })
+
+  // Update streak/XP stats for authenticated user
+  fastify.patch('/~me/stats', async (req, reply) => {
+    let payload: { userId: string; type: string }
+    try {
+      payload = await req.jwtVerify<{ userId: string; type: string }>()
+      if (payload.type !== 'user') throw new Error()
+    } catch {
+      return reply.status(401).send({ error: 'Unauthorized' })
+    }
+
+    const body = req.body as {
+      currentStreak?: number
+      bestStreak?: number
+      totalXp?: number
+      totalWins?: number
+      totalBattles?: number
+      lastWinDate?: string
+    }
+
+    const data: Record<string, number | string> = {}
+    if (body.currentStreak !== undefined) data.currentStreak = body.currentStreak
+    if (body.bestStreak    !== undefined) data.bestStreak    = body.bestStreak
+    if (body.totalXp       !== undefined) data.totalXp       = body.totalXp
+    if (body.totalWins     !== undefined) data.totalWins     = body.totalWins
+    if (body.totalBattles  !== undefined) data.totalBattles  = body.totalBattles
+    if (body.lastWinDate   !== undefined) data.lastWinDate   = body.lastWinDate
+
+    const user = await prisma.user.update({
+      where: { id: payload.userId },
+      data,
+      select: {
+        id: true, currentStreak: true, bestStreak: true,
+        totalXp: true, totalWins: true, totalBattles: true, lastWinDate: true,
+      },
+    })
+    return reply.send(user)
+  })
+
+  // Global leaderboard — top 20 users by wins
+  fastify.get('/leaderboard', async (_req, reply) => {
+    // Find all users who have at least one Player linked
+    const usersWithPlayers = await prisma.user.findMany({
+      where: { players: { some: {} } },
+      select: {
+        id: true,
+        username: true,
+        displayName: true,
+        avatar: true,
+        players: {
+          select: {
+            slot: true,
+            session: {
+              select: { battles: { select: { winner: true } } },
+            },
+          },
+        },
+      },
+    })
+
+    const ranked = usersWithPlayers.map(u => {
+      let wins  = 0
+      let total = 0
+      for (const p of u.players) {
+        total++
+        const myWins  = p.session.battles.filter(b => b.winner === p.slot).length
+        const oppWins = p.session.battles.filter(b => b.winner !== p.slot && b.winner !== 0).length
+        if (myWins > oppWins) wins++
+      }
+      const winRate = total > 0 ? Math.round((wins / total) * 100) : 0
+      return { username: u.username, displayName: u.displayName, avatar: u.avatar, wins, total, winRate }
+    })
+
+    ranked.sort((a, b) => b.wins - a.wins || b.winRate - a.winRate)
+
+    const top20 = ranked.slice(0, 20).map((entry, i) => ({ rank: i + 1, ...entry }))
+    return reply.send(top20)
   })
 }

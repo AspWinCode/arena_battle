@@ -45,6 +45,13 @@ model User {
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
+  currentStreak  Int      @default(0)
+  bestStreak     Int      @default(0)
+  totalXp        Int      @default(0)
+  totalWins      Int      @default(0)
+  totalBattles   Int      @default(0)
+  lastWinDate    String   @default("")
+
   players      Player[]
   applications TournamentApplication[]
 }
