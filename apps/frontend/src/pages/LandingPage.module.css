@@ -4,17 +4,22 @@
 
 /* ── Local colour / font overrides (don't touch other pages) ─ */
 .page {
-  /* Pure-black background instead of blue-dark */
-  --bg-dark:    #080808;
-  --bg-mid:     #0f0f0f;
-  --bg-card:    #141414;
-  --bg-hover:   #1c1c1c;
-  --border:     #232323;
-  /* Hacker-green accent instead of cyan */
-  --accent:     #1de97c;
-  --accent2:    #00b559;
-  --text:       #e8ede8;
-  --text-muted: #7a8a7a;
+  /* Pure-black background */
+  --bg-dark:    #070709;
+  --bg-mid:     #0d0d10;
+  --bg-card:    #111114;
+  --bg-hover:   #1a1a1f;
+  --border:     #222228;
+  /* Player 1 — green (left fighter) */
+  --accent:     #00e676;
+  --accent2:    #00b54a;
+  /* Player 2 — orange/fire (right fighter) */
+  --fire:       #ff5500;
+  --fire2:      #ff8c00;
+  /* Lightning center */
+  --lightning:  #ffe566;
+  --text:       #ecedf0;
+  --text-muted: #7a7a88;
   /* Font */
   --font-main: 'Exo 2', 'Segoe UI', system-ui, sans-serif;
 
@@ -56,15 +61,21 @@
 }
 
 .accent { color: var(--accent); }
+.fire   { color: var(--fire); }
 
 /* ── Navbar ─────────────────────────────────────────────────── */
 .nav {
   position: sticky;
   top: 0;
   z-index: 100;
-  background: rgba(8,8,8,.92);
+  background: rgba(7,7,9,.93);
   backdrop-filter: blur(16px);
-  border-bottom: 1px solid rgba(29,233,124,.08);
+  /* Green left → orange right — like two fighters on either side */
+  border-bottom: 1px solid transparent;
+  background-clip: padding-box;
+  box-shadow: 0 1px 0 0 rgba(0,0,0,.6),
+              inset 0 -1px 0 0 rgba(0,230,118,.12);
+  position: sticky;
 }
 .navInner {
   max-width: 1200px;
@@ -131,28 +142,34 @@
 .heroGrid {
   position: absolute;
   inset: 0;
+  /* Subtle pixel-art dot grid — green & orange pixels scattered */
   background-image:
-    linear-gradient(rgba(29,233,124,.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(29,233,124,.03) 1px, transparent 1px);
-  background-size: 50px 50px;
-  mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black 0%, transparent 70%);
+    radial-gradient(circle, rgba(0,230,118,.55) 1px, transparent 1px),
+    radial-gradient(circle, rgba(255,85,0,.4) 1px, transparent 1px),
+    linear-gradient(rgba(0,230,118,.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,230,118,.025) 1px, transparent 1px);
+  background-size: 72px 72px, 96px 96px, 48px 48px, 48px 48px;
+  background-position: 0 0, 36px 36px, 0 0, 0 0;
+  mask-image: radial-gradient(ellipse 85% 85% at 50% 50%, black 0%, transparent 72%);
 }
 
+/* Player 1 — green glow (top-left) */
 .glow1 {
   position: absolute;
-  top: -150px; left: -150px;
-  width: 650px; height: 650px;
-  background: radial-gradient(circle, rgba(29,233,124,.12) 0%, transparent 65%);
+  top: -180px; left: -180px;
+  width: 700px; height: 700px;
+  background: radial-gradient(circle, rgba(0,230,118,.14) 0%, transparent 65%);
   border-radius: 50%;
   animation: glow1 9s ease-in-out infinite alternate;
 }
+/* Player 2 — orange/fire glow (bottom-right) */
 .glow2 {
   position: absolute;
-  bottom: -80px; right: -80px;
-  width: 550px; height: 550px;
-  background: radial-gradient(circle, rgba(0,181,89,.08) 0%, transparent 65%);
+  bottom: -100px; right: -100px;
+  width: 600px; height: 600px;
+  background: radial-gradient(circle, rgba(255,85,0,.12) 0%, transparent 65%);
   border-radius: 50%;
-  animation: glow2 12s ease-in-out infinite alternate;
+  animation: glow2 11s ease-in-out infinite alternate;
 }
 @keyframes glow1 {
   from { transform: translate(0,0); opacity: .7; }
@@ -183,21 +200,27 @@
   align-items: center;
   gap: 8px;
   padding: 6px 20px;
-  background: rgba(29,233,124,.06);
-  border: 1px solid rgba(29,233,124,.3);
+  /* Gradient border: green → orange */
+  background: linear-gradient(var(--bg-dark), var(--bg-dark)) padding-box,
+              linear-gradient(90deg, var(--accent), var(--fire)) border-box;
+  border: 1px solid transparent;
   border-radius: 4px;
   font-size: 11px;
   font-weight: 700;
-  color: var(--accent);
+  background-image: linear-gradient(var(--bg-dark), var(--bg-dark)),
+                    linear-gradient(90deg, rgba(0,230,118,.4), rgba(255,85,0,.4));
+  background-origin: border-box;
+  background-clip: padding-box, border-box;
+  color: var(--text);
   letter-spacing: .1em;
   text-transform: uppercase;
   margin-bottom: 26px;
 }
 .badgeDot {
   width: 6px; height: 6px;
-  background: var(--accent);
+  background: var(--lightning);
   border-radius: 50%;
-  box-shadow: 0 0 8px var(--accent);
+  box-shadow: 0 0 10px var(--lightning);
   animation: pulse 1.5s ease-in-out infinite;
 }
 @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
@@ -211,7 +234,8 @@
   font-family: var(--font-main);
 }
 .heroGrad {
-  background: linear-gradient(90deg, var(--accent) 0%, #00e676 50%, #69ff9e 100%);
+  /* Logo-style: green (P1) → lightning yellow → orange (P2) */
+  background: linear-gradient(100deg, var(--accent) 0%, var(--lightning) 48%, var(--fire) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -241,7 +265,10 @@
   flex-wrap: wrap;
 }
 .stat        { display: flex; flex-direction: column; gap: 2px; }
-.statNum     { font-size: 26px; font-weight: 900; color: var(--accent); letter-spacing: -.02em; }
+.statNum     { font-size: 26px; font-weight: 900; letter-spacing: -.02em;
+  background: linear-gradient(100deg, var(--accent), var(--fire));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+}
 .statLabel   { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .06em; }
 .statDiv     { width: 1px; height: 32px; background: var(--border); }
 
@@ -264,29 +291,29 @@
   position: relative;
   box-shadow: 0 0 60px rgba(0,0,0,.8), 0 0 30px rgba(29,233,124,.04);
 }
-/* HUD corner marks — top-left & bottom-right */
+/* HUD corner marks — P1 green: top-left & bottom-left */
 .arenaCard::before {
   content: '';
   position: absolute;
   inset: -2px;
   background:
-    linear-gradient(var(--accent), var(--accent)) top    left  / 16px 2px no-repeat,
-    linear-gradient(var(--accent), var(--accent)) top    left  / 2px 16px no-repeat,
-    linear-gradient(var(--accent), var(--accent)) bottom right / 16px 2px no-repeat,
-    linear-gradient(var(--accent), var(--accent)) bottom right / 2px 16px no-repeat;
+    linear-gradient(var(--accent), var(--accent)) top    left  / 18px 2px no-repeat,
+    linear-gradient(var(--accent), var(--accent)) top    left  / 2px 18px no-repeat,
+    linear-gradient(var(--accent), var(--accent)) bottom left  / 18px 2px no-repeat,
+    linear-gradient(var(--accent), var(--accent)) bottom left  / 2px 18px no-repeat;
   pointer-events: none;
   border-radius: 2px;
 }
-/* top-right & bottom-left */
+/* HUD corner marks — P2 orange: top-right & bottom-right */
 .arenaCard::after {
   content: '';
   position: absolute;
   inset: -2px;
   background:
-    linear-gradient(var(--accent), var(--accent)) top    right / 16px 2px no-repeat,
-    linear-gradient(var(--accent), var(--accent)) top    right / 2px 16px no-repeat,
-    linear-gradient(var(--accent), var(--accent)) bottom left  / 16px 2px no-repeat,
-    linear-gradient(var(--accent), var(--accent)) bottom left  / 2px 16px no-repeat;
+    linear-gradient(var(--fire), var(--fire)) top    right / 18px 2px no-repeat,
+    linear-gradient(var(--fire), var(--fire)) top    right / 2px 18px no-repeat,
+    linear-gradient(var(--fire), var(--fire)) bottom right / 18px 2px no-repeat,
+    linear-gradient(var(--fire), var(--fire)) bottom right / 2px 18px no-repeat;
   pointer-events: none;
   border-radius: 2px;
 }
@@ -300,9 +327,9 @@
 .roundPill {
   font-size: 11px; font-weight: 700; letter-spacing: .1em;
   color: var(--accent);
-  background: rgba(0,229,255,.1);
+  background: rgba(0,230,118,.08);
   padding: 4px 12px; border-radius: 99px;
-  border: 1px solid rgba(0,229,255,.2);
+  border: 1px solid rgba(0,230,118,.25);
 }
 .score    { display: flex; gap: 8px; align-items: center; font-size: 22px; font-weight: 900; }
 .scoreWin { color: #4ade80; }
@@ -321,7 +348,12 @@
 .hpTrack     { width: 100%; height: 5px; background: rgba(255,255,255,.07); border-radius: 99px; overflow: hidden; }
 .hpFill      { height: 100%; border-radius: 99px; transition: width .3s; }
 .hpNum       { font-size: 11px; color: var(--text-muted); }
-.vsChip      { font-size: 11px; font-weight: 900; color: var(--text-muted); letter-spacing: .1em; flex-shrink: 0; }
+.vsChip {
+  font-size: 13px; font-weight: 900; letter-spacing: .15em; flex-shrink: 0;
+  background: linear-gradient(100deg, var(--accent), var(--lightning), var(--fire));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+  filter: drop-shadow(0 0 6px rgba(255,229,102,.4));
+}
 
 .logWrap { display: flex; flex-direction: column; gap: 3px; }
 .logRow {
@@ -374,15 +406,15 @@
   overflow: hidden;
   position: relative;
 }
-/* codeby-style glowing divider line */
+/* Fighter duel divider: green ← lightning → orange */
 .chars::before {
   content: '';
   position: absolute;
   top: 0; left: 50%;
   transform: translateX(-50%);
-  width: 60%; height: 1px;
-  background: linear-gradient(90deg, transparent, var(--accent), transparent);
-  box-shadow: 0 0 20px var(--accent);
+  width: 70%; height: 1px;
+  background: linear-gradient(90deg, transparent, var(--accent) 35%, var(--lightning) 50%, var(--fire) 65%, transparent);
+  box-shadow: 0 0 24px var(--lightning);
 }
 
 .charsHead {
@@ -437,9 +469,9 @@
   position: absolute;
   top: 0; left: 50%;
   transform: translateX(-50%);
-  width: 50%; height: 1px;
-  background: linear-gradient(90deg, transparent, var(--accent), transparent);
-  box-shadow: 0 0 16px var(--accent);
+  width: 65%; height: 1px;
+  background: linear-gradient(90deg, transparent, var(--accent) 35%, var(--lightning) 50%, var(--fire) 65%, transparent);
+  box-shadow: 0 0 20px var(--lightning);
 }
 
 .featGrid {
@@ -457,7 +489,7 @@
   overflow: visible;
   transition: transform .2s, box-shadow .2s, border-color .2s;
 }
-/* HUD corners on feature cards */
+/* HUD corners on feature cards — dual color on hover */
 .featCard::before {
   content: '';
   position: absolute;
@@ -465,12 +497,12 @@
   background:
     linear-gradient(var(--accent), var(--accent)) top    left  / 12px 2px no-repeat,
     linear-gradient(var(--accent), var(--accent)) top    left  / 2px 12px no-repeat,
-    linear-gradient(var(--accent), var(--accent)) bottom right / 12px 2px no-repeat,
-    linear-gradient(var(--accent), var(--accent)) bottom right / 2px 12px no-repeat,
-    linear-gradient(var(--accent), var(--accent)) top    right / 12px 2px no-repeat,
-    linear-gradient(var(--accent), var(--accent)) top    right / 2px 12px no-repeat,
     linear-gradient(var(--accent), var(--accent)) bottom left  / 12px 2px no-repeat,
-    linear-gradient(var(--accent), var(--accent)) bottom left  / 2px 12px no-repeat;
+    linear-gradient(var(--accent), var(--accent)) bottom left  / 2px 12px no-repeat,
+    linear-gradient(var(--fire),   var(--fire))   top    right / 12px 2px no-repeat,
+    linear-gradient(var(--fire),   var(--fire))   top    right / 2px 12px no-repeat,
+    linear-gradient(var(--fire),   var(--fire))   bottom right / 12px 2px no-repeat,
+    linear-gradient(var(--fire),   var(--fire))   bottom right / 2px 12px no-repeat;
   opacity: 0;
   transition: opacity .25s;
   pointer-events: none;
@@ -497,9 +529,9 @@
   position: absolute;
   top: 0; left: 50%;
   transform: translateX(-50%);
-  width: 45%; height: 1px;
-  background: linear-gradient(90deg, transparent, var(--accent), transparent);
-  box-shadow: 0 0 16px var(--accent);
+  width: 65%; height: 1px;
+  background: linear-gradient(90deg, transparent, var(--accent) 35%, var(--lightning) 50%, var(--fire) 65%, transparent);
+  box-shadow: 0 0 20px var(--lightning);
 }
 
 .steps {
@@ -522,20 +554,24 @@
   content: '';
   position: absolute;
   inset: -2px;
+  /* P1 green on left, P2 orange on right */
   background:
     linear-gradient(var(--accent), var(--accent)) top    left  / 12px 2px no-repeat,
     linear-gradient(var(--accent), var(--accent)) top    left  / 2px 12px no-repeat,
-    linear-gradient(var(--accent), var(--accent)) bottom right / 12px 2px no-repeat,
-    linear-gradient(var(--accent), var(--accent)) bottom right / 2px 12px no-repeat,
-    linear-gradient(var(--accent), var(--accent)) top    right / 12px 2px no-repeat,
-    linear-gradient(var(--accent), var(--accent)) top    right / 2px 12px no-repeat,
     linear-gradient(var(--accent), var(--accent)) bottom left  / 12px 2px no-repeat,
-    linear-gradient(var(--accent), var(--accent)) bottom left  / 2px 12px no-repeat;
+    linear-gradient(var(--accent), var(--accent)) bottom left  / 2px 12px no-repeat,
+    linear-gradient(var(--fire),   var(--fire))   top    right / 12px 2px no-repeat,
+    linear-gradient(var(--fire),   var(--fire))   top    right / 2px 12px no-repeat,
+    linear-gradient(var(--fire),   var(--fire))   bottom right / 12px 2px no-repeat,
+    linear-gradient(var(--fire),   var(--fire))   bottom right / 2px 12px no-repeat;
   pointer-events: none;
-  opacity: .5;
+  opacity: .55;
 }
-.stepArrow  { flex-shrink: 0; font-size: 20px; color: rgba(29,233,124,.3); align-self: center; font-weight: 300; }
-.stepNum    { font-size: 11px; font-weight: 800; color: var(--accent); letter-spacing: .15em; margin-bottom: 12px; opacity: .7; }
+.stepArrow  { flex-shrink: 0; font-size: 24px; color: var(--lightning); align-self: center; font-weight: 300; opacity: .6; text-shadow: 0 0 12px var(--lightning); }
+.stepNum    { font-size: 11px; font-weight: 900; letter-spacing: .15em; margin-bottom: 12px;
+  background: linear-gradient(100deg, var(--accent), var(--fire));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+}
 .stepIcon   { font-size: 36px; margin-bottom: 14px; }
 .stepTitle  { font-size: 18px; font-weight: 700; margin-bottom: 10px; }
 .stepDesc   { font-size: 14px; color: var(--text-muted); line-height: 1.65; }
@@ -631,11 +667,17 @@
 
 .codeRight { flex: 1; }
 .codeWin {
-  background: #0c0c0c;
-  border: 1px solid rgba(29,233,124,.2);
+  background: #0a0a0c;
   border-radius: 14px;
   overflow: hidden;
-  box-shadow: 0 0 60px rgba(29,233,124,.06), 0 16px 60px rgba(0,0,0,.7);
+  /* Dual-color border: green left+top, orange right+bottom */
+  box-shadow:
+    -1px 0 0 0 rgba(0,230,118,.25),
+    0 -1px 0 0 rgba(0,230,118,.25),
+    1px 0 0 0 rgba(255,85,0,.25),
+    0 1px 0 0 rgba(255,85,0,.25),
+    0 0 60px rgba(0,230,118,.05),
+    0 16px 60px rgba(0,0,0,.7);
 }
 .codeWinBar {
   display: flex;
@@ -680,8 +722,12 @@
   position: absolute;
   top: 50%; left: 50%;
   transform: translate(-50%,-50%);
-  width: 600px; height: 400px;
-  background: radial-gradient(ellipse, rgba(124,58,237,.2) 0%, transparent 70%);
+  width: 800px; height: 500px;
+  /* Green P1 on left, orange P2 on right, lightning center */
+  background:
+    radial-gradient(ellipse at 30% 50%, rgba(0,230,118,.15) 0%, transparent 55%),
+    radial-gradient(ellipse at 70% 50%, rgba(255,85,0,.15) 0%, transparent 55%),
+    radial-gradient(ellipse at 50% 50%, rgba(255,229,102,.06) 0%, transparent 40%);
   pointer-events: none;
 }
 .ctaInner {
@@ -696,7 +742,8 @@
   letter-spacing: -.03em;
   margin-bottom: 18px;
   font-family: var(--font-main);
-  background: linear-gradient(90deg, #fff 0%, var(--accent) 60%, #69ff9e 100%);
+  /* Logo gradient: green → lightning → orange */
+  background: linear-gradient(100deg, var(--accent) 0%, var(--lightning) 45%, var(--fire) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
