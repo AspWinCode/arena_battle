@@ -18,7 +18,13 @@
       "Bash(git commit -m 'feat: VPS deployment scripts *)",
       "Bash(git commit -m 'fix: docker-compose build context — use repo root for monorepo COPY paths *)",
       "Bash(git commit -m 'fix: copy tsup.config.ts into Docker build context *)",
-      "Bash(git commit -m 'fix: commit all local changes including critical port 80 conflict fix *)"
+      "Bash(git commit -m 'fix: commit all local changes including critical port 80 conflict fix *)",
+      "Bash(node -e ' *)",
+      "Bash(python3 -c \"import sys,json; lines=sys.stdin.read\\(\\).strip\\(\\).split\\('\\\\n'\\); [print\\(json.loads\\(l\\).get\\('message',{}\\).get\\('content',''\\)[:500] if isinstance\\(json.loads\\(l\\).get\\('message',{}\\).get\\('content',''\\),str\\) else ''\\) for l in lines[-20:] if l]\")",
+      "Bash(git commit -m 'fix: reduce gladiator SH to 90 *)",
+      "Bash(git commit -m 'fix: gladiator SH=30 *)",
+      "Bash(git commit *)",
+      "Bash(unzip -p tz.docx word/document.xml)"
     ]
   }
 }

@@ -161,16 +161,34 @@ export class SessionRoom {
     }).catch(() => {})
 
     try {
-      // Compile both players (fresh — strategy reset on handleReady)
+      const FALLBACK: Strategy = { primary: 'attack', lowHp: 'repair', onHit: 'dodge', style: 'Fallback', position: 'mid' }
+
+      // Compile both players independently — on error notify that player and use fallback
+      const compileWithFallback = async (player: PlayerConn, isP1: boolean): Promise<Strategy> => {
+        try {
+          const s = await this.compilePlayer(player)
+          this.send(player.slot, {
+            type: 'compile_status',
+            payload: { status: 'compiling', p1Done: isP1, p2Done: !isP1 },
+          })
+          return s
+        } catch (err) {
+          const msg = String(err).replace(/^Error:\s*/, '')
+          console.error(`[room] P${player.slot} compile error:`, msg)
+          // Notify the specific player about the error
+          this.send(player.slot, {
+            type: 'compile_status',
+            payload: { status: 'error', message: msg },
+          })
+          // Delay slightly so the client receives the error before battle starts
+          await sleep(100)
+          return FALLBACK
+        }
+      }
+
       const [s1, s2] = await Promise.all([
-        this.compilePlayer(p1).then(s => {
-          this.broadcastAll({ type: 'compile_status', payload: { status: 'compiling', p1Done: true, p2Done: false } })
-          return s
-        }),
-        this.compilePlayer(p2).then(s => {
-          this.broadcastAll({ type: 'compile_status', payload: { status: 'compiling', p1Done: true, p2Done: true } })
-          return s
-        }),
+        compileWithFallback(p1, true),
+        compileWithFallback(p2, false),
       ])
 
       this.broadcastAll({ type: 'compile_status', payload: { status: 'done', p1Done: true, p2Done: true } })
@@ -264,19 +282,15 @@ export class SessionRoom {
     const code = player.code ?? ''
     const lang = player.lang ?? 'js'
 
-    try {
-      const strategy = await runInSandbox(code, lang)
+    const strategy = await runInSandbox(code, lang)
 
-      await prisma.player.updateMany({
-        where: { sessionId: this.sessionId, slot: player.slot },
-        data: { code, lang, strategy: strategy as never },
-      })
+    await prisma.player.updateMany({
+      where: { sessionId: this.sessionId, slot: player.slot },
+      data: { code, lang, strategy: strategy as never },
+    })
 
-      player.strategy = strategy
-      return strategy
-    } catch {
-      return { primary: 'attack', lowHp: 'attack', onHit: 'dodge', style: 'Standard', position: 'mid' }
-    }
+    player.strategy = strategy
+    return strategy
   }
 
   private broadcastLobbyUpdate() {

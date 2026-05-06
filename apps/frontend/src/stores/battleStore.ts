@@ -26,6 +26,7 @@ interface BattleState {
   // Code
   code: string
   lang: Lang
+  compileError: string | null
 
   // Inter-round context
   interRoundScore: [number, number] | null
@@ -69,6 +70,7 @@ const initialState = {
   timeLeft: 0,
   code: '',
   lang: 'js' as Lang,
+  compileError: null,
   interRoundScore: null,
   nextRound: null,
   currentRound: 1,
@@ -117,6 +119,7 @@ export const useBattleStore = create<BattleState>((set) => ({
           timeLeft: msg.payload.timeLimit,
           interRoundScore: msg.payload.score ?? null,
           nextRound: msg.payload.round ?? null,
+          compileError: null,
         })
         break
       }
@@ -126,8 +129,12 @@ export const useBattleStore = create<BattleState>((set) => ({
         break
 
       case 'compile_status':
-        if (msg.payload.status === 'compiling') set({ phase: 'compiling' })
-        else if (msg.payload.status === 'done') set({ phase: 'battle' })
+        if (msg.payload.status === 'compiling') set({ phase: 'compiling', compileError: null })
+        else if (msg.payload.status === 'done') set({ phase: 'battle', compileError: null })
+        else if (msg.payload.status === 'error') {
+          // Compile error for THIS player — go back to coding so they can fix it
+          set({ phase: 'coding', compileError: msg.payload.message ?? 'Ошибка компиляции' })
+        }
         break
 
       case 'battle_start':

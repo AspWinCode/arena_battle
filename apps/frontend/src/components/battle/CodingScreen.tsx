@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import type { Lang } from '@robocode/shared'
 import { useBattleStore } from '../../stores/battleStore'
 import CodeEditor from '../CodeEditor/CodeEditor'
@@ -87,10 +87,16 @@ export default function CodingScreen({
   const slot = useBattleStore(s => s.slot)
   const p1 = useBattleStore(s => s.p1)
   const p2 = useBattleStore(s => s.p2)
+  const compileError = useBattleStore(s => s.compileError)
   const myInfo = slot === 1 ? p1 : p2
   const opponentInfo = slot === 1 ? p2 : p1
 
   const [submitted, setSubmitted] = useState(false)
+
+  // If a compile error arrives, reset submitted so user can fix code
+  useEffect(() => {
+    if (compileError) setSubmitted(false)
+  }, [compileError])
 
   const minutes = Math.floor(timeLeft / 60)
   const seconds = timeLeft % 60
@@ -134,6 +140,8 @@ export default function CodingScreen({
             </button>
           </div>
         </div>
+        {/* Compile error banner */}
+        {compileError && <CompileErrorBanner message={compileError} />}
         {/* Block Editor fills remaining space */}
         <div style={{ flex: 1, minHeight: 0 }}>
           <BlockEditor
@@ -192,6 +200,9 @@ export default function CodingScreen({
         </div>
       </div>
 
+      {/* Compile error banner */}
+      {compileError && <CompileErrorBanner message={compileError} />}
+
       {/* Editor */}
       <div className={styles.editorWrap}>
         <CodeEditor
@@ -243,6 +254,31 @@ function InterRoundBanner({ score, nextRound }: { score: [number, number]; nextR
       <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>
         → Обнови стратегию и нажми <strong style={{ color: '#e2e8f0' }}>«Готов к бою»</strong>
       </span>
+    </div>
+  )
+}
+
+function CompileErrorBanner({ message }: { message: string }) {
+  return (
+    <div style={{
+      background: 'rgba(239,68,68,.15)',
+      borderBottom: '1px solid rgba(239,68,68,.4)',
+      padding: '10px 24px',
+      display: 'flex',
+      alignItems: 'flex-start',
+      gap: 12,
+    }}>
+      <span style={{ fontSize: 18, flexShrink: 0 }}>❌</span>
+      <div>
+        <div style={{ fontWeight: 700, color: '#f87171', marginBottom: 4 }}>
+          Ошибка компиляции — исправь код и нажми «Готов к бою» снова
+        </div>
+        <pre style={{
+          margin: 0, fontSize: 12, color: '#fca5a5',
+          whiteSpace: 'pre-wrap', wordBreak: 'break-all',
+          fontFamily: 'monospace',
+        }}>{message}</pre>
+      </div>
     </div>
   )
 }
