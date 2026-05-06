@@ -773,7 +773,8 @@
 .footer {
   background: var(--bg-mid);
   border-top: 1px solid var(--border);
-  padding: 28px 0;
+  padding: 20px 0;
+  height: 130px;
 }
 .footerInner {
   display: flex;
@@ -781,9 +782,10 @@
   justify-content: space-between;
   flex-wrap: wrap;
   gap: 16px;
+  min-height: 90px;
 }
 .footerLogo   { display: flex; align-items: center; }
-.footerLogoImg { height: 72px; width: auto; object-fit: contain; mix-blend-mode: lighten; opacity: .85; }
+.footerLogoImg { height: 110px; width: auto; object-fit: contain; mix-blend-mode: lighten; opacity: .85; }
 .footerLinks  { display: flex; gap: 24px; }
 .footerLinks a { font-size: 13px; color: var(--text-muted); text-decoration: none; }
 .footerLinks a:hover { color: var(--text); }

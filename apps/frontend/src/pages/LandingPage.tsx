@@ -288,7 +288,7 @@ export default function LandingPage() {
               <Link to="/learn">Обучение</Link>
               <Link to="/join">В бой</Link>
             </div>
-            <div className={styles.footerCopy}>© 2025 CodeFighters</div>
+            <div className={styles.footerCopy}>© 2026 CodeFighters</div>
           </div>
         </div>
       </footer>
