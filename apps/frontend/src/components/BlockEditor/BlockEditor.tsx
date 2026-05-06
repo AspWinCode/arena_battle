@@ -113,7 +113,6 @@ export default function BlockEditor({ onChange, skin = 'robot', onSkinChange }: 
   const handlePaletteMouseDown = (defId: string, e: React.MouseEvent) => {
     e.preventDefault()
     const inst = makeInstance(defId, e.clientX, e.clientY)
-    // Pre-fill varname slots with first available variable
     if (variables.length > 0) {
       inst.slots = inst.slots.map(s => {
         const slotDef = BLOCK_DEF_MAP.get(defId)?.slots?.find(sd => sd.id === s.slotId)
@@ -123,6 +122,20 @@ export default function BlockEditor({ onChange, skin = 'robot', onSkinChange }: 
     }
     setDrag({ inst, fromPalette: true, offsetX: 0, offsetY: 0, currentX: e.clientX, currentY: e.clientY })
   }
+
+  // ── Drag from canvas (pick up existing block) ───────────────────────────────
+
+  const handleCanvasBlockMouseDown = useCallback((e: React.MouseEvent, inst: BlockInstance, scriptId: string) => {
+    if (e.button !== 0) return
+    e.preventDefault()
+    e.stopPropagation()
+    // Cut block (and its chain) out of the script tree
+    setScripts(prev => {
+      const [next] = pickUpBlock(prev, scriptId, inst.instanceId)
+      return next
+    })
+    setDrag({ inst, fromPalette: false, offsetX: 0, offsetY: 0, currentX: e.clientX, currentY: e.clientY })
+  }, [])
 
   // ── Mouse move / up ────────────────────────────────────────────────────────
 
@@ -155,7 +168,7 @@ export default function BlockEditor({ onChange, skin = 'robot', onSkinChange }: 
       return
     }
 
-    const snapTarget = findSnapTarget(scripts, { ...drag.inst, x, y }, 20)
+    const snapTarget = findSnapTarget(scripts, { ...drag.inst, x, y }, 55)
 
     if (snapTarget) {
       setScripts(prev => attachBlock(prev, drag.inst, snapTarget))
@@ -317,7 +330,7 @@ export default function BlockEditor({ onChange, skin = 'robot', onSkinChange }: 
                 className={styles.scriptStack}
                 style={{ left: script.root.x, top: script.root.y }}
               >
-                {renderStack(script.root, script.id, handleSlotChange, handleBlockRightClick, variables)}
+                {renderStack(script.root, script.id, handleSlotChange, handleBlockRightClick, variables, handleCanvasBlockMouseDown)}
               </div>
             ))}
           </div>
@@ -394,6 +407,7 @@ function renderStack(
   onSlotChange: (id: string, slotId: string, v: string | number) => void,
   onRightClick: (e: React.MouseEvent, scriptId: string, instId: string) => void,
   variables: string[],
+  onBlockMouseDown: (e: React.MouseEvent, inst: BlockInstance, scriptId: string) => void,
 ): React.ReactNode {
   const def = BLOCK_DEF_MAP.get(inst.defId)
   if (!def) return null
@@ -402,9 +416,10 @@ function renderStack(
       key={inst.instanceId}
       className={styles.stackItem}
       onContextMenu={e => onRightClick(e, scriptId, inst.instanceId)}
+      onMouseDown={e => onBlockMouseDown(e, inst, scriptId)}
     >
       <BlockShape inst={inst} def={def} onSlotChange={onSlotChange} variables={variables} />
-      {inst.next && renderStack(inst.next, scriptId, onSlotChange, onRightClick, variables)}
+      {inst.next && renderStack(inst.next, scriptId, onSlotChange, onRightClick, variables, onBlockMouseDown)}
     </div>
   )
 }
@@ -472,6 +487,20 @@ interface SnapTarget {
   type: 'next' | 'body'
 }
 
+// Approximate block height used for snap offset (good enough without measuring DOM)
+const BLOCK_H = 36
+
+/** Return estimated Y of the bottom connector of a block chain starting at inst */
+function chainBottomY(inst: BlockInstance): number {
+  let cur: BlockInstance = inst
+  let depth = 0
+  // Walk the chain to its end
+  while (cur.next) { cur = cur.next; depth++ }
+  // Body height adds extra rows
+  const bodyRows = cur.body?.length ?? 0
+  return cur.y + BLOCK_H + bodyRows * BLOCK_H
+}
+
 function findSnapTarget(scripts: Script[], inst: BlockInstance, radius: number): SnapTarget | null {
   for (const script of scripts) {
     const target = findSnap(script.id, script.root, inst, radius)
@@ -481,35 +510,130 @@ function findSnapTarget(scripts: Script[], inst: BlockInstance, radius: number):
 }
 
 function findSnap(scriptId: string, root: BlockInstance, inst: BlockInstance, radius: number): SnapTarget | null {
-  const dx = inst.x - root.x
-  const dy = inst.y - (root.y + 32)
-  if (Math.abs(dx) < radius && Math.abs(dy) < radius) {
-    const def = BLOCK_DEF_MAP.get(root.defId)
-    if (def?.type !== 'cap') {
-      return { scriptId, afterInstanceId: root.instanceId, type: 'next' }
+  const def = BLOCK_DEF_MAP.get(root.defId)
+
+  // ── Try BODY snap (drop into c-block: if / ifElse / repeat / forever) ──
+  if (def?.canHaveBody) {
+    const bodyX = root.x + 16          // indented
+    const bodyY = root.y + BLOCK_H     // first slot inside body
+    const dx = inst.x - bodyX
+    const dy = inst.y - bodyY
+    if (Math.abs(dx) < radius * 1.5 && Math.abs(dy) < radius * 1.5) {
+      return { scriptId, afterInstanceId: root.instanceId, type: 'body' }
     }
   }
+
+  // ── Try NEXT snap (attach below this block or its chain end) ──
+  if (def?.type !== 'cap') {
+    const bottomY = chainBottomY(root)
+    const dx = inst.x - root.x
+    const dy = inst.y - bottomY
+    // Accept if horizontally aligned and vertically near the bottom connector
+    if (Math.abs(dx) < radius && Math.abs(dy) < radius) {
+      // Find the last block in the chain to attach after
+      let last: BlockInstance = root
+      while (last.next) last = last.next
+      return { scriptId, afterInstanceId: last.instanceId, type: 'next' }
+    }
+  }
+
+  // ── Recurse into next ──
   if (root.next) {
     const found = findSnap(scriptId, root.next, inst, radius)
     if (found) return found
   }
+
+  // ── Recurse into body ──
+  for (const child of root.body ?? []) {
+    const found = findSnap(scriptId, child, inst, radius)
+    if (found) return found
+  }
+
   return null
 }
 
 function attachBlock(scripts: Script[], newInst: BlockInstance, target: SnapTarget): Script[] {
   return scripts.map(s => {
     if (s.id !== target.scriptId) return s
-    return { ...s, root: attachToInstance(s.root, target.afterInstanceId, newInst) }
+    return { ...s, root: attachToInstance(s.root, target.afterInstanceId, newInst, target.type) }
   })
 }
 
-function attachToInstance(inst: BlockInstance, targetId: string, newInst: BlockInstance): BlockInstance {
+/** Remove a block (and its entire chain/body) from the script tree.
+ *  Returns [updatedScripts, pickedBlock]. */
+function pickUpBlock(scripts: Script[], scriptId: string, instId: string): [Script[], BlockInstance | null] {
+  let picked: BlockInstance | null = null
+  const newScripts = scripts.flatMap(s => {
+    if (s.id !== scriptId) return [s]
+    // Picking up the root → whole script removed
+    if (s.root.instanceId === instId) {
+      picked = s.root
+      // Keep the remainder after it as a new script
+      if (s.root.next) {
+        return [{ ...s, root: s.root.next }]
+      }
+      return []
+    }
+    const [newRoot, pickedBlock] = cutAtBlock(s.root, instId)
+    picked = pickedBlock
+    return newRoot ? [{ ...s, root: newRoot }] : []
+  })
+  return [newScripts, picked]
+}
+
+function cutAtBlock(inst: BlockInstance, targetId: string): [BlockInstance | null, BlockInstance | null] {
+  // Target is the direct next of this node
+  if (inst.next?.instanceId === targetId) {
+    const cut = inst.next
+    return [{ ...inst, next: undefined }, cut]
+  }
+  // Recurse into next chain
+  if (inst.next) {
+    const [newNext, picked] = cutAtBlock(inst.next, targetId)
+    if (picked !== null) return [{ ...inst, next: newNext ?? undefined }, picked]
+  }
+  // Recurse into body children
+  for (let i = 0; i < (inst.body ?? []).length; i++) {
+    const child = inst.body![i]
+    if (child.instanceId === targetId) {
+      return [{ ...inst, body: inst.body!.filter((_, j) => j !== i) }, child]
+    }
+    const [newChild, picked] = cutAtBlock(child, targetId)
+    if (picked !== null) {
+      return [
+        { ...inst, body: inst.body!.map((b, j) => j === i ? newChild! : b) },
+        picked,
+      ]
+    }
+  }
+  return [inst, null]
+}
+
+function attachToInstance(inst: BlockInstance, targetId: string, newInst: BlockInstance, type: 'next' | 'body'): BlockInstance {
   if (inst.instanceId === targetId) {
-    return { ...inst, next: inst.next ? { ...newInst, next: inst.next } : { ...newInst, next: undefined } }
+    if (type === 'body') {
+      // Append to the end of body list
+      const existingBody = inst.body ?? []
+      const lastBodyBlock = existingBody[existingBody.length - 1]
+      if (lastBodyBlock) {
+        // Attach as next of last body block
+        return {
+          ...inst,
+          body: existingBody.map((b, i) =>
+            i === existingBody.length - 1
+              ? attachToInstance(b, lastBodyBlock.instanceId, newInst, 'next')
+              : b
+          ),
+        }
+      }
+      return { ...inst, body: [{ ...newInst, next: undefined }] }
+    }
+    // type === 'next': insert newInst, push existing next after it
+    return { ...inst, next: { ...newInst, next: inst.next ?? undefined } }
   }
   return {
     ...inst,
-    next: inst.next ? attachToInstance(inst.next, targetId, newInst) : undefined,
-    body: inst.body?.map(b => attachToInstance(b, targetId, newInst)),
+    next: inst.next ? attachToInstance(inst.next, targetId, newInst, type) : undefined,
+    body: inst.body?.map(b => attachToInstance(b, targetId, newInst, type)),
   }
 }
