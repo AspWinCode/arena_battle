@@ -46,16 +46,18 @@ export interface CharacterStats {
   staminaCostOverrides: Partial<Record<ActionName, number>>
 
   // ── Display ──────────────────────────────────────────────────────────────────
-  name:    string
-  icon:    string
-  color:   string
-  tagline: string
-  passive: string
+  name:      string
+  icon:      string
+  color:     string
+  tagline:   string
+  passive:   string
+  strengths: string[]
+  weaknesses: string[]
 }
 
 // ─── Default stat block (no passives) ─────────────────────────────────────────
 
-const DEFAULTS: Omit<CharacterStats, 'maxHp' | 'dmgMult' | 'rageMult' | 'name' | 'icon' | 'color' | 'tagline' | 'passive'> = {
+const DEFAULTS: Omit<CharacterStats, 'maxHp' | 'dmgMult' | 'rageMult' | 'name' | 'icon' | 'color' | 'tagline' | 'passive' | 'strengths' | 'weaknesses'> = {
   repairBonus:         0,
   shieldBonus:         0,
   hasCounter:          false,
@@ -88,6 +90,8 @@ export const CHARACTER_STATS: Record<SkinId, CharacterStats> = {
     color:   '#00e5ff',
     tagline: 'Идеален для начинающих',
     passive: 'Сбалансированный боец без особых способностей. Отличный выбор для изучения механик.',
+    strengths:  ['Универсален, подходит любому стилю', 'Нет критических слабостей'],
+    weaknesses: ['Нет уникальных преимуществ', 'Предсказуем для опытных игроков'],
   },
 
   gladiator: {
@@ -98,6 +102,8 @@ export const CHARACTER_STATS: Record<SkinId, CharacterStats> = {
     color:   '#d97706',
     tagline: 'Высокий урон, мало HP',
     passive: '⚡ Берсерк: ярость накапливается в 1.5× быстрее — чаще используй спецудар.',
+    strengths:  ['Очень высокий урон', 'Спецудар срабатывает очень часто'],
+    weaknesses: ['Мало HP, уязвим к burst', 'Быстро умирает без лечения'],
   },
 
   boxer: {
@@ -109,6 +115,8 @@ export const CHARACTER_STATS: Record<SkinId, CharacterStats> = {
     color:   '#e6261f',
     tagline: 'Мастер контратак',
     passive: '🥊 Контрудар: уклонился от атаки — следующий attack наносит ×2 урон.',
+    strengths:  ['Контратака удваивает урон', 'Отличен против агрессивных стратегий'],
+    weaknesses: ['Требует точного timing dodge', 'Слаб если противник не атакует вблизи'],
   },
 
   cosmonaut: {
@@ -121,9 +129,9 @@ export const CHARACTER_STATS: Record<SkinId, CharacterStats> = {
     color:   '#7c3aed',
     tagline: 'Танк с мощной защитой',
     passive: '🛡 Ремонтник: repair восстанавливает 35 HP вместо 20, щит блокирует 70% урона.',
+    strengths:  ['Лучшее лечение в игре (+35 HP)', 'Самый крепкий щит (70% блок)'],
+    weaknesses: ['Ниже среднего урон', 'Медленно убивает противника'],
   },
-
-  // ── 10 новых персонажей ─────────────────────────────────────────────────────
 
   ninja: {
     ...DEFAULTS,
@@ -134,6 +142,8 @@ export const CHARACTER_STATS: Record<SkinId, CharacterStats> = {
     color:   '#8b5cf6',
     tagline: 'Уклонение от всего',
     passive: '🌑 Тень: dodge уклоняется от laser на 100% и поглощает 80% от special (вместо 50%).',
+    strengths:  ['Почти неуязвим к лазеру и спецудару', 'Высочайшая уклончивость'],
+    weaknesses: ['Мало HP', 'Беспомощен без активного dodge'],
   },
 
   mage: {
@@ -145,6 +155,8 @@ export const CHARACTER_STATS: Record<SkinId, CharacterStats> = {
     color:   '#3b82f6',
     tagline: 'Бесконечные лазеры',
     passive: '🔵 Арканный: laser не тратит выносливость. Можно стрелять даже без стамины.',
+    strengths:  ['Неограниченный спам лазером', 'Отличный дальний бой'],
+    weaknesses: ['Мало HP', 'Стратегия легко читается противником'],
   },
 
   paladin: {
@@ -156,6 +168,8 @@ export const CHARACTER_STATS: Record<SkinId, CharacterStats> = {
     color:   '#f59e0b',
     tagline: 'Щит восстанавливает HP',
     passive: '✨ Святой щит: каждое использование shield восстанавливает +10 HP.',
+    strengths:  ['Восстанавливает HP через щит', 'Очень высокая живучесть'],
+    weaknesses: ['Самый низкий урон в игре', 'Долго убивает противника'],
   },
 
   sniper: {
@@ -168,6 +182,8 @@ export const CHARACTER_STATS: Record<SkinId, CharacterStats> = {
     color:   '#10b981',
     tagline: 'Laser CD=1, слабый удар',
     passive: '🎯 Точный выстрел: кулдаун laser снижен до 1 хода. Но attack наносит ×0.5 урона.',
+    strengths:  ['Лазер доступен почти каждый ход', 'Доминирует на дальней дистанции'],
+    weaknesses: ['Слабый ближний бой (attack ×0.5)', 'Уязвим при сближении'],
   },
 
   tank: {
@@ -179,6 +195,8 @@ export const CHARACTER_STATS: Record<SkinId, CharacterStats> = {
     color:   '#78716c',
     tagline: 'Непробиваемый носорог',
     passive: '🦏 Броня носорога: каждый входящий удар снижается на 5 HP (минимум 1). Очень живуч.',
+    strengths:  ['Огромный запас HP (130)', 'Снижает абсолютно весь входящий урон'],
+    weaknesses: ['Очень низкий урон (×0.65)', 'Выигрывает только измором'],
   },
 
   vampire: {
@@ -190,6 +208,8 @@ export const CHARACTER_STATS: Record<SkinId, CharacterStats> = {
     color:   '#dc2626',
     tagline: 'Пьёт кровь в ближнем бою',
     passive: '🩸 Жизнекрадство: attack и heavy восстанавливают 25% от нанесённого урона как HP.',
+    strengths:  ['Постоянно восстанавливает HP в ближнем бою', 'Долго держится при агрессии'],
+    weaknesses: ['Лайфстил только от attack/heavy', 'Слаб против дальних стратегий'],
   },
 
   samurai: {
@@ -202,6 +222,8 @@ export const CHARACTER_STATS: Record<SkinId, CharacterStats> = {
     color:   '#f43f5e',
     tagline: 'Опасен при низком HP',
     passive: '⚔️ Бусидо: когда HP ≤ 25% от максимума — весь наносимый урон удваивается.',
+    strengths:  ['Способен переломить бой при ≤25% HP', 'Урон ×2 в момент опасности'],
+    weaknesses: ['Мало HP', 'Усиление только «на краю смерти»'],
   },
 
   phantom: {
@@ -213,6 +235,8 @@ export const CHARACTER_STATS: Record<SkinId, CharacterStats> = {
     color:   '#a78bfa',
     tagline: 'Уклоняется каждый ход',
     passive: '👻 Фаза: кулдаун dodge = 0. Можно уклоняться каждый ход подряд.',
+    strengths:  ['Бесконечное уклонение без кулдауна', 'Абсолютный контроль позиции'],
+    weaknesses: ['Средний урон', 'Бесполезен против Скорпиона'],
   },
 
   engineer: {
@@ -224,6 +248,8 @@ export const CHARACTER_STATS: Record<SkinId, CharacterStats> = {
     color:   '#f97316',
     tagline: 'Спецудар от 60 ярости',
     passive: '⚙️ Перегрузка: спецудар требует всего 60 ярости вместо 100. Активируется значительно чаще.',
+    strengths:  ['Спецудар в 1.6× чаще обычного', 'Сбалансированный HP'],
+    weaknesses: ['Ниже среднего базовый урон', 'Без ярости — обычный боец'],
   },
 
   berserker: {
@@ -235,9 +261,9 @@ export const CHARACTER_STATS: Record<SkinId, CharacterStats> = {
     color:   '#b91c1c',
     tagline: 'Ярость от атак в обе стороны',
     passive: '🔥 Кровожажда: ярость накапливается от получаемого И от наносимого урона. Спецудар очень часто.',
+    strengths:  ['Экстремальный урон ×1.5', 'Спецудар срабатывает очень часто'],
+    weaknesses: ['Критически мало HP (65)', 'Умирает от 4-5 тяжёлых ударов'],
   },
-
-  // ── New characters ──────────────────────────────────────────────────────────
 
   scorpion: {
     ...DEFAULTS,
@@ -248,6 +274,8 @@ export const CHARACTER_STATS: Record<SkinId, CharacterStats> = {
     color:   '#d97706',
     tagline: 'Уклонение бесполезно',
     passive: '🦂 Захват: уклонение противника не спасает от attack и heavy. GET OVER HERE!',
+    strengths:  ['Атаки пробивают dodge', 'Жёсткий контрпик Призрака и Ниндзи'],
+    weaknesses: ['Нет защитных механик', 'Слаб против щита и дальних атак'],
   },
 
   plague: {
@@ -259,6 +287,8 @@ export const CHARACTER_STATS: Record<SkinId, CharacterStats> = {
     color:   '#065f46',
     tagline: 'Каждый удар отравляет',
     passive: '☠️ Чума: attack и heavy накладывают яд — 4 HP урона каждый ход до конца раунда.',
+    strengths:  ['Пассивный яд давит в затяжных боях', 'Эффективен против высокого HP'],
+    weaknesses: ['Слабые прямые атаки (×0.9)', 'Почти бесполезен в быстрых боях'],
   },
 }
 

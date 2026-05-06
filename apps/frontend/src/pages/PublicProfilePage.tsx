@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { api } from '../api/client'
 import { SKIN_ICON } from '@robocode/shared'
+import CharacterCard from '../components/CharacterCard/CharacterCard'
 import styles from './ProfilePage.module.css'
 
 interface Stats {
@@ -110,6 +111,12 @@ export default function PublicProfilePage() {
             <Link to="/join" className="btn btn-ghost" style={{ fontSize: 13 }}>← Главная</Link>
           </div>
         </div>
+      </div>
+
+      {/* Character card */}
+      <div className={styles.content} style={{ paddingTop: 24, paddingBottom: 0 }}>
+        <div className={styles.sectionTitle}>🎭 Персонаж</div>
+        <CharacterCard skinId={u.preferredSkin} />
       </div>
 
       {/* Quick stats */}

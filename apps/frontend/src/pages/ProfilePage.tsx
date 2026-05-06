@@ -6,6 +6,7 @@ import { useDailyStore } from '../stores/dailyStore'
 import { useAchievementsStore, ACHIEVEMENTS } from '../stores/achievementsStore'
 import { SKIN_ICON, CHARACTER_STATS } from '@robocode/shared'
 import type { SkinId } from '@robocode/shared'
+import CharacterCard from '../components/CharacterCard/CharacterCard'
 import styles from './ProfilePage.module.css'
 
 // ── Types ──────────────────────────────────────────────────────────────────
@@ -195,6 +196,12 @@ export default function ProfilePage() {
             <button className="btn btn-ghost" style={{ fontSize: 13, color: '#f87171', borderColor: 'rgba(248,113,113,.3)' }} onClick={handleLogout}>Выйти</button>
           </div>
         </div>
+      </div>
+
+      {/* Character card */}
+      <div className={styles.content} style={{ paddingTop: 24, paddingBottom: 0 }}>
+        <div className={styles.sectionTitle}>🎭 Мой персонаж</div>
+        <CharacterCard skinId={u.preferredSkin} />
       </div>
 
       {/* Quick stats */}
