@@ -161,6 +161,7 @@ export default function ResultScreen({ onPlayAgain }: { onPlayAgain: () => void 
   const p2             = useBattleStore(s => s.p2)
   const matchWinner    = useBattleStore(s => s.matchWinner)
   const score          = useBattleStore(s => s.score)
+  const eloDelta       = useBattleStore(s => s.eloDelta)
   const completedRounds = useBattleStore(s => s.completedRounds)
   const slot           = useBattleStore(s => s.slot)
 
@@ -217,6 +218,30 @@ export default function ResultScreen({ onPlayAgain }: { onPlayAgain: () => void 
             <span>{SKIN_ICONS[p2?.skin ?? 'robot']}</span>
           </div>
         </div>
+
+        {/* ELO delta (only when data available — both players were registered) */}
+        {eloDelta && (eloDelta.p1 !== 0 || eloDelta.p2 !== 0) && (
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            padding: '8px 20px',
+            background: 'rgba(255,229,102,.06)',
+            border: '1px solid rgba(255,229,102,.15)',
+            borderRadius: 8,
+            fontSize: 13,
+          }}>
+            <span style={{ fontWeight: 700, color: eloDelta.p1 > 0 ? '#4ade80' : '#f87171' }}>
+              {eloDelta.p1 > 0 ? `+${eloDelta.p1}` : eloDelta.p1} ELO
+            </span>
+            <span style={{ color: 'var(--text-muted)', fontSize: 11, fontWeight: 700 }}>
+              ⚡ РЕЙТИНГ
+            </span>
+            <span style={{ fontWeight: 700, color: eloDelta.p2 > 0 ? '#4ade80' : '#f87171' }}>
+              {eloDelta.p2 > 0 ? `+${eloDelta.p2}` : eloDelta.p2} ELO
+            </span>
+          </div>
+        )}
 
         {/* Tabs */}
         <div className={styles.tabs}>

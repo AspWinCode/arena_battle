@@ -163,9 +163,9 @@ export const sessionRoutes: FastifyPluginAsync = async (fastify) => {
       },
     })
 
-    // Generate WS token for this player
+    // Generate WS token for this player (include userId so SessionRoom can track ELO)
     const wsToken = fastify.jwt.sign(
-      { sessionId: session.id, slot, name, skin },
+      { sessionId: session.id, slot, name, skin, ...(userId ? { userId } : {}) },
       { expiresIn: '2h' }
     )
 

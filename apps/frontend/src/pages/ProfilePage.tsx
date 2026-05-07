@@ -7,6 +7,7 @@ import { useAchievementsStore, ACHIEVEMENTS } from '../stores/achievementsStore'
 import { SKIN_ICON, CHARACTER_STATS } from '@robocode/shared'
 import type { SkinId } from '@robocode/shared'
 import CharacterCard from '../components/CharacterCard/CharacterCard'
+import RankBadge from '../components/RankBadge'
 import styles from './ProfilePage.module.css'
 
 // ── Types ──────────────────────────────────────────────────────────────────
@@ -37,7 +38,7 @@ interface Application {
 }
 
 interface FullProfile {
-  user: { id: string; email: string; username: string; displayName: string; avatar: string; bio: string | null; preferredLang: string; preferredSkin: string; experienceLevel: string; programmingYears: number; createdAt: string }
+  user: { id: string; email: string; username: string; displayName: string; avatar: string; bio: string | null; preferredLang: string; preferredSkin: string; experienceLevel: string; programmingYears: number; createdAt: string; elo?: number; totalXp?: number; totalBattles?: number; totalWins?: number; currentStreak?: number }
   stats: Stats
   achievements: Achievement[]
   recentSessions: RecentSession[]
@@ -200,6 +201,13 @@ export default function ProfilePage() {
             <p className={styles.username}>@{u.username}</p>
             {u.bio && <p className={styles.bio}>{u.bio}</p>}
 
+            {/* ELO rank badge */}
+            {u.elo != null && (
+              <div style={{ marginBottom: 8 }}>
+                <RankBadge elo={u.elo} size="md" />
+              </div>
+            )}
+
             {/* Fix #9: colour-coded badges */}
             <div className={styles.heroBadges}>
               <span className={`${styles.badge} ${styles.badgeLang}`}>
@@ -238,6 +246,12 @@ export default function ProfilePage() {
       {/* ── Quick stats ───────────────────────────────────────────────────── */}
       {/* Fix #8: semantic colours — wins=green, winrate=gold, rounds=muted, tournaments=fire */}
       <div className={styles.quickStats}>
+        {u.elo != null && (
+          <div className={styles.statBox}>
+            <span className={`${styles.statVal}`} style={{ color: 'var(--lightning)' }}>{u.elo}</span>
+            <span className={styles.statLbl}>ELO</span>
+          </div>
+        )}
         <div className={styles.statBox}>
           <span className={`${styles.statVal} ${styles.statValMuted}`}>{stats.sessionsPlayed}</span>
           <span className={styles.statLbl}>Матчей</span>
@@ -257,10 +271,6 @@ export default function ProfilePage() {
         <div className={styles.statBox}>
           <span className={`${styles.statVal} ${styles.statValFire}`}>{stats.tournamentsEntered}</span>
           <span className={styles.statLbl}>Турниров</span>
-        </div>
-        <div className={styles.statBox}>
-          <span className={`${styles.statVal} ${styles.statValGold}`}>{stats.tournamentsWon}</span>
-          <span className={styles.statLbl}>🏆 Выиграно</span>
         </div>
       </div>
 

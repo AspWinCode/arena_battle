@@ -51,6 +51,7 @@ model User {
   totalWins      Int      @default(0)
   totalBattles   Int      @default(0)
   lastWinDate    String   @default("")
+  elo            Int      @default(1000)
 
   // Password reset
   passwordResetToken  String?
@@ -62,7 +63,7 @@ model User {
 
 model Session {
   id          String   @id @default(cuid())
-  adminId     String
+  adminId     String?
   name        String
   level       Level    @default(CODE)
   lang        String?
@@ -74,7 +75,7 @@ model Session {
   status      Status   @default(WAITING)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-  admin       Admin    @relation(fields: [adminId], references: [id])
+  admin       Admin?   @relation(fields: [adminId], references: [id])
   players     Player[]
   battles     Battle[]
   tournamentMatch TournamentMatch?

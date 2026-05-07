@@ -3,6 +3,7 @@ import { CHARACTER_STATS } from '@robocode/shared'
 import { prisma } from '../db/client.js'
 import { runInSandbox } from '../sandbox/sandbox-service.js'
 import { runRound } from '../engine/battle-engine.js'
+import { calcElo, xpForWin, xpForLoss } from '../services/elo.js'
 
 // Minimal WS interface to avoid @types/ws issues
 interface WsSocket {
@@ -19,6 +20,7 @@ interface PlayerConn {
   code?: string
   strategy?: Strategy
   ready: boolean
+  userId?: string
 }
 
 // How many round wins needed to win the match
@@ -46,8 +48,8 @@ export class SessionRoom {
     private allowedSkins: SkinId[],
   ) {}
 
-  addPlayer(ws: WsSocket, slot: 1 | 2, name: string, skin: SkinId) {
-    this.players.set(slot, { ws, slot, name, skin, ready: false })
+  addPlayer(ws: WsSocket, slot: 1 | 2, name: string, skin: SkinId, userId?: string) {
+    this.players.set(slot, { ws, slot, name, skin, ready: false, userId })
 
     this.send(slot, {
       type: 'connected',
@@ -264,12 +266,27 @@ export class SessionRoom {
           this.score[0] > this.score[1] ? 1 :
           this.score[1] > this.score[0] ? 2 : 0
 
+        // ── Update ELO / XP / stats for registered users ──────────────────────
+        let eloDeltaP1 = 0
+        let eloDeltaP2 = 0
+        if (finalWinner !== 0) {
+          try {
+            await this.updateMatchStats(finalWinner, (d1, d2) => {
+              eloDeltaP1 = d1
+              eloDeltaP2 = d2
+            })
+          } catch (e) {
+            console.error('[room] Failed to update ELO stats:', e)
+          }
+        }
+
         this.broadcastAll({
           type: 'match_end',
           payload: {
             winner: finalWinner,
             score: this.score,
             rounds: this.completedRounds,
+            eloDelta: { p1: eloDeltaP1, p2: eloDeltaP2 },
           },
         })
 
@@ -289,6 +306,80 @@ export class SessionRoom {
         payload: { code: 'BATTLE_ERROR', message: String(err) },
       })
     }
+  }
+
+  private async updateMatchStats(
+    finalWinner: 1 | 2,
+    onDeltas: (deltaP1: number, deltaP2: number) => void,
+  ) {
+    const p1 = this.players.get(1)
+    const p2 = this.players.get(2)
+
+    // Resolve userIds from in-memory (set at addPlayer) or DB Player records
+    const userId1 = p1?.userId ?? (await prisma.player.findFirst({
+      where: { sessionId: this.sessionId, slot: 1 },
+      select: { userId: true },
+    }))?.userId ?? null
+
+    const userId2 = p2?.userId ?? (await prisma.player.findFirst({
+      where: { sessionId: this.sessionId, slot: 2 },
+      select: { userId: true },
+    }))?.userId ?? null
+
+    // Only update stats if both players are registered users
+    if (!userId1 || !userId2) return
+
+    const [user1, user2] = await Promise.all([
+      prisma.user.findUnique({ where: { id: userId1 }, select: { elo: true, totalXp: true, totalWins: true, totalBattles: true, currentStreak: true, bestStreak: true, lastWinDate: true } }),
+      prisma.user.findUnique({ where: { id: userId2 }, select: { elo: true, totalXp: true, totalWins: true, totalBattles: true, currentStreak: true, bestStreak: true, lastWinDate: true } }),
+    ])
+    if (!user1 || !user2) return
+
+    const winnerId = finalWinner === 1 ? userId1 : userId2
+    const loserId  = finalWinner === 1 ? userId2 : userId1
+    const winUser  = finalWinner === 1 ? user1 : user2
+    const loseUser = finalWinner === 1 ? user2 : user1
+
+    const { newA: newWinElo, newB: newLoseElo, deltaA } = calcElo(winUser.elo, loseUser.elo)
+    const winXp  = xpForWin(winUser.elo, loseUser.elo)
+    const lossXp = xpForLoss()
+
+    // Streak calculation for winner
+    const today = new Date().toISOString().slice(0, 10)
+    const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10)
+    const newStreak = winUser.lastWinDate === today
+      ? winUser.currentStreak
+      : winUser.lastWinDate === yesterday
+        ? winUser.currentStreak + 1
+        : 1
+
+    await Promise.all([
+      prisma.user.update({
+        where: { id: winnerId },
+        data: {
+          elo:            newWinElo,
+          totalXp:        { increment: winXp },
+          totalWins:      { increment: 1 },
+          totalBattles:   { increment: 1 },
+          currentStreak:  newStreak,
+          bestStreak:     { set: Math.max(winUser.bestStreak, newStreak) },
+          lastWinDate:    today,
+        },
+      }),
+      prisma.user.update({
+        where: { id: loserId },
+        data: {
+          elo:          newLoseElo,
+          totalXp:      { increment: lossXp },
+          totalBattles: { increment: 1 },
+          currentStreak: 0,
+        },
+      }),
+    ])
+
+    const deltaP1 = finalWinner === 1 ? deltaA : -deltaA
+    const deltaP2 = finalWinner === 2 ? deltaA : -deltaA
+    onDeltas(deltaP1, deltaP2)
   }
 
   private async compilePlayer(player: PlayerConn): Promise<Strategy> {

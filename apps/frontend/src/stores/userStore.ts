@@ -12,6 +12,10 @@ export interface UserProfile {
   preferredSkin: string
   experienceLevel: string
   programmingYears: number
+  elo?: number
+  totalXp?: number
+  totalBattles?: number
+  totalWins?: number
 }
 
 interface UserState {

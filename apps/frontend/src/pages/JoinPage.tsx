@@ -1,10 +1,11 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import type { SkinId, JoinSessionResponse } from '@robocode/shared'
 import { CHARACTER_STATS } from '@robocode/shared'
 import { api } from '../api/client'
 import { useBattleStore } from '../stores/battleStore'
 import { useUserStore } from '../stores/userStore'
+import RankBadge from '../components/RankBadge'
 import UserMenu from '../components/UserMenu'
 import styles from './JoinPage.module.css'
 
@@ -32,6 +33,13 @@ export default function JoinPage() {
   const [loading, setLoading]   = useState(false)
   const [error, setError]       = useState('')
 
+  // Matchmaking state
+  const [inQueue,    setInQueue]    = useState(false)
+  const [queueSecs,  setQueueSecs]  = useState(0)
+  const [queueSize,  setQueueSize]  = useState(0)
+  const [mmError,    setMmError]    = useState('')
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
+
   // Pre-fill from user profile if logged in
   useEffect(() => {
     if (user) {
@@ -40,8 +48,61 @@ export default function JoinPage() {
     }
   }, [user]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Clean up poll on unmount
+  useEffect(() => () => { if (pollRef.current) clearInterval(pollRef.current) }, [])
+
   const handleCodeInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     setCode(e.target.value.toUpperCase().slice(0, 6))
+  }
+
+  const handleJoinQueue = async () => {
+    if (!user || !token) { setMmError('Войдите в аккаунт для матчмейкинга'); return }
+    if (!name.trim()) { setMmError('Введи имя бойца'); return }
+
+    setMmError('')
+    try {
+      await api.post('/matchmaking/queue', { name: name.trim(), skin, lang: user.preferredLang ?? 'auto' }, token)
+      setInQueue(true)
+      setQueueSecs(0)
+
+      pollRef.current = setInterval(async () => {
+        try {
+          const st = await api.get<{
+            inQueue: boolean; matched: boolean
+            sessionId?: string; playerCode?: string; opponentName?: string
+            waitSeconds?: number; queueSize?: number
+          }>('/matchmaking/queue/status', token!)
+
+          if (st.matched && st.sessionId && st.playerCode) {
+            clearInterval(pollRef.current!)
+            setInQueue(false)
+            // Join the session
+            const res = await api.post<JoinSessionResponse>('/session/join', {
+              sessionCode: st.playerCode,
+              name: name.trim(),
+              skin,
+            }, token!)
+            setSession(res.sessionId, res.playerSlot, 'code', ALL_SKIN_IDS, res.wsToken, name.trim(), skin)
+            navigate(`/battle/${res.sessionId}`)
+          } else if (st.inQueue) {
+            setQueueSecs(st.waitSeconds ?? 0)
+            setQueueSize(st.queueSize ?? 0)
+          } else {
+            // Kicked from queue for some reason
+            clearInterval(pollRef.current!)
+            setInQueue(false)
+          }
+        } catch { /* ignore poll errors */ }
+      }, 2000)
+    } catch (e) {
+      setMmError(e instanceof Error ? e.message : 'Ошибка матчмейкинга')
+    }
+  }
+
+  const handleLeaveQueue = async () => {
+    if (pollRef.current) clearInterval(pollRef.current)
+    setInQueue(false)
+    if (token) api.delete('/matchmaking/queue', token).catch(() => {})
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -197,6 +258,53 @@ export default function JoinPage() {
             )}
           </button>
         </form>
+
+        {/* ── Matchmaking card ── */}
+        {user && (
+          <div className={styles.mmCard}>
+            {!inQueue ? (
+              <>
+                <div className={styles.mmTitle}>
+                  <span>⚡ Авто-матчмейкинг</span>
+                  {user.elo != null && <RankBadge elo={user.elo} size="sm" />}
+                </div>
+                <p className={styles.mmDesc}>
+                  Система подберёт соперника по рейтингу автоматически — без кода сессии.
+                </p>
+                {mmError && <div className={styles.error}>{mmError}</div>}
+                <button
+                  type="button"
+                  className={`btn btn-primary ${styles.submitBtn}`}
+                  style={{ background: 'linear-gradient(135deg, #ffe566 0%, #ff8c00 100%)', color: '#050a07' }}
+                  onClick={handleJoinQueue}
+                  disabled={!name.trim()}
+                >
+                  ⚡ НАЙТИ ПРОТИВНИКА
+                </button>
+              </>
+            ) : (
+              <div className={styles.queueWait}>
+                <div className={styles.queueSpinner}>⚡</div>
+                <div className={styles.queueTitle}>Поиск соперника...</div>
+                <div className={styles.queueMeta}>
+                  {Math.floor(queueSecs / 60) > 0
+                    ? `${Math.floor(queueSecs / 60)}м ${queueSecs % 60}с`
+                    : `${queueSecs}с`
+                  }
+                  {queueSize > 1 && <span style={{ color: 'var(--text-muted)', marginLeft: 8 }}>· {queueSize} в очереди</span>}
+                </div>
+                <button
+                  type="button"
+                  className="btn btn-ghost"
+                  style={{ fontSize: 12, marginTop: 8 }}
+                  onClick={handleLeaveQueue}
+                >
+                  Отмена
+                </button>
+              </div>
+            )}
+          </div>
+        )}
 
         <div className={styles.bottomLinks}>
           <div className={styles.publicLinks}>

@@ -67,6 +67,7 @@ export const wsRoutes: FastifyPluginAsync = async (fastify) => {
           }
 
           let slot: 1 | 2 | null = null
+          let resolvedUserId: string | undefined
 
           // Try direct 6-char code first
           if (playerCode === session.code1) slot = 1
@@ -75,9 +76,12 @@ export const wsRoutes: FastifyPluginAsync = async (fastify) => {
             // Try JWT wsToken
             try {
               const payload = fastify.jwt.verify<{
-                sessionId: string; slot: 1 | 2
+                sessionId: string; slot: 1 | 2; userId?: string
               }>(playerCode)
-              if (payload.sessionId === sessionId) slot = payload.slot
+              if (payload.sessionId === sessionId) {
+                slot = payload.slot
+                resolvedUserId = payload.userId
+              }
             } catch { /* not a JWT */ }
           }
 
@@ -112,9 +116,18 @@ export const wsRoutes: FastifyPluginAsync = async (fastify) => {
             pendingObservers.delete(sessionId)
           }
 
+          // Resolve userId from JWT payload or from existing Player DB record
+          if (!resolvedUserId) {
+            const existing = await prisma.player.findFirst({
+              where: { sessionId, slot: playerSlot },
+              select: { userId: true },
+            })
+            if (existing?.userId) resolvedUserId = existing.userId
+          }
+
           const room = rooms.get(sessionId)!
-          room.addPlayer(ws, playerSlot, name, skin as SkinId)
-          fastify.log.info({ sessionId, slot: playerSlot, name }, '[WS] player added to room')
+          room.addPlayer(ws, playerSlot, name, skin as SkinId, resolvedUserId)
+          fastify.log.info({ sessionId, slot: playerSlot, name, userId: resolvedUserId }, '[WS] player added to room')
 
           await prisma.player.upsert({
             where: { sessionId_slot: { sessionId, slot: playerSlot } },

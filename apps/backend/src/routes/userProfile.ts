@@ -193,7 +193,10 @@ export const userProfileRoutes: FastifyPluginAsync = async (fastify) => {
       return reply.status(401).send({ error: 'Unauthorized' })
     }
 
-    const user = await prisma.user.findUnique({ where: { id: payload.userId } })
+    const user = await prisma.user.findUnique({
+      where: { id: payload.userId },
+      // all fields including elo
+    })
     if (!user) return reply.status(404).send({ error: 'Not found' })
 
     const stats = await calcStats(user.id)
@@ -279,49 +282,40 @@ export const userProfileRoutes: FastifyPluginAsync = async (fastify) => {
     return reply.send(user)
   })
 
-  // Global leaderboard — top 20 users by wins
+  // Global leaderboard — top 30 users by ELO
   fastify.get('/leaderboard', async (_req, reply) => {
-    // Find all users who have at least one Player linked
-    const usersWithPlayers = await prisma.user.findMany({
-      where: { players: { some: {} } },
+    const users = await prisma.user.findMany({
+      where: { elo: { gt: 0 }, totalBattles: { gt: 0 } },
       select: {
         id: true,
         username: true,
         displayName: true,
         avatar: true,
+        elo: true,
+        totalXp: true,
+        totalWins: true,
+        totalBattles: true,
         bestStreak: true,
         currentStreak: true,
-        players: {
-          select: {
-            slot: true,
-            session: {
-              select: { battles: { select: { winner: true } } },
-            },
-          },
-        },
       },
+      orderBy: [{ elo: 'desc' }, { totalWins: 'desc' }],
+      take: 30,
     })
 
-    const ranked = usersWithPlayers.map(u => {
-      let wins  = 0
-      let total = 0
-      for (const p of u.players) {
-        total++
-        const myWins  = p.session.battles.filter(b => b.winner === p.slot).length
-        const oppWins = p.session.battles.filter(b => b.winner !== p.slot && b.winner !== 0).length
-        if (myWins > oppWins) wins++
-      }
-      const winRate = total > 0 ? Math.round((wins / total) * 100) : 0
-      return {
-        username: u.username, displayName: u.displayName, avatar: u.avatar,
-        wins, total, winRate,
-        bestStreak: u.bestStreak, currentStreak: u.currentStreak,
-      }
-    })
+    const result = users.map((u, i) => ({
+      rank:          i + 1,
+      username:      u.username,
+      displayName:   u.displayName,
+      avatar:        u.avatar,
+      elo:           u.elo,
+      totalXp:       u.totalXp,
+      wins:          u.totalWins,
+      total:         u.totalBattles,
+      winRate:       u.totalBattles > 0 ? Math.round((u.totalWins / u.totalBattles) * 100) : 0,
+      bestStreak:    u.bestStreak,
+      currentStreak: u.currentStreak,
+    }))
 
-    ranked.sort((a, b) => b.wins - a.wins || b.winRate - a.winRate)
-
-    const top20 = ranked.slice(0, 20).map((entry, i) => ({ rank: i + 1, ...entry }))
-    return reply.send(top20)
+    return reply.send(result)
   })
 }

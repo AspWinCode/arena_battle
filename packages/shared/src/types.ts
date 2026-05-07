@@ -164,7 +164,7 @@ export type ServerMessage =
   | { type: 'battle_start'; payload: { round: number; p1: BattlePlayerInfo; p2: BattlePlayerInfo } }
   | { type: 'turn_result'; payload: TurnResult }
   | { type: 'round_end'; payload: { round: number; winner: 1 | 2 | 0; p1Hp: number; p2Hp: number; reason: 'ko' | 'time' } }
-  | { type: 'match_end'; payload: { winner: 0 | 1 | 2; score: [number, number]; rounds: RoundResult[] } }
+  | { type: 'match_end'; payload: { winner: 0 | 1 | 2; score: [number, number]; rounds: RoundResult[]; eloDelta?: { p1: number; p2: number } } }
   | { type: 'error'; payload: { code: string; message: string } }
   | { type: 'pong'; payload: Record<string, never> }
   | { type: 'compile_status'; payload: { status: 'compiling' | 'done' | 'error'; lang?: Lang; p1Done?: boolean; p2Done?: boolean; message?: string } }

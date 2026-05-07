@@ -12,6 +12,7 @@ import { resultRoutes } from './routes/results.js'
 import { tournamentRoutes } from './routes/tournaments.js'
 import { userAuthRoutes } from './routes/userAuth.js'
 import { userProfileRoutes } from './routes/userProfile.js'
+import { matchmakingRoutes } from './routes/matchmaking.js'
 import { wsRoutes } from './ws/index.js'
 import { checkAndGeneratePendingBrackets } from './tournament/tournament-service.js'
 
@@ -65,9 +66,10 @@ export async function buildServer() {
   await server.register(sessionRoutes,    { prefix: '/api/v1/session' })
   await server.register(resultRoutes,     { prefix: '/api/v1/session' })
   await server.register(tournamentRoutes, { prefix: '/api/v1/tournament' })
-  await server.register(userAuthRoutes,   { prefix: '/api/v1/user/auth' })
-  await server.register(userProfileRoutes,{ prefix: '/api/v1/user/profile' })
-  await server.register(wsRoutes,         { prefix: '/ws' })
+  await server.register(userAuthRoutes,    { prefix: '/api/v1/user/auth' })
+  await server.register(userProfileRoutes, { prefix: '/api/v1/user/profile' })
+  await server.register(matchmakingRoutes, { prefix: '/api/v1/matchmaking' })
+  await server.register(wsRoutes,          { prefix: '/ws' })
 
   server.get('/health', async () => ({ status: 'ok', ts: Date.now() }))
 
