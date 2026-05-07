@@ -375,6 +375,27 @@ export class SessionRoom {
           currentStreak: 0,
         },
       }),
+      // ELO history records
+      prisma.eloHistory.create({
+        data: {
+          userId:     winnerId,
+          elo:        newWinElo,
+          delta:      deltaA,
+          won:        true,
+          sessionId:  this.sessionId,
+          opponentId: loserId,
+        },
+      }),
+      prisma.eloHistory.create({
+        data: {
+          userId:     loserId,
+          elo:        newLoseElo,
+          delta:      -deltaA,
+          won:        false,
+          sessionId:  this.sessionId,
+          opponentId: winnerId,
+        },
+      }),
     ])
 
     const deltaP1 = finalWinner === 1 ? deltaA : -deltaA

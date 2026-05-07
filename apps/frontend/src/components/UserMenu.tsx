@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useUserStore } from '../stores/userStore'
+import NotificationBell from './NotificationBell'
 import styles from './UserMenu.module.css'
 
 function AvatarImg({ src, size = 28 }: { src: string; size?: number }) {
@@ -47,6 +48,8 @@ export default function UserMenu() {
   }
 
   return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+      <NotificationBell />
     <div className={styles.wrap} ref={ref}>
       <button className={styles.trigger} onClick={() => setOpen(o => !o)}>
         <span className={styles.avatar}><AvatarImg src={user.avatar} size={28} /></span>
@@ -67,6 +70,9 @@ export default function UserMenu() {
           <Link to="/profile" className={styles.dropItem} onClick={() => setOpen(false)}>
             👤 Мой профиль
           </Link>
+          <Link to="/notifications" className={styles.dropItem} onClick={() => setOpen(false)}>
+            🔔 Уведомления
+          </Link>
           <Link to="/tournaments" className={styles.dropItem} onClick={() => setOpen(false)}>
             🏆 Турниры
           </Link>
@@ -79,6 +85,7 @@ export default function UserMenu() {
           </button>
         </div>
       )}
+    </div>
     </div>
   )
 }

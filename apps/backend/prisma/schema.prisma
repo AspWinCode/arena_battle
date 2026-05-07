@@ -59,6 +59,13 @@ model User {
 
   players      Player[]
   applications TournamentApplication[]
+
+  // Phase 2 relations
+  eloHistory         EloHistory[]
+  seasonRanks        SeasonRank[]
+  notifications      Notification[]
+  challengesSent     Challenge[]    @relation("ChallengeFrom")
+  challengesReceived Challenge[]    @relation("ChallengeTo")
 }
 
 model Session {
@@ -202,4 +209,78 @@ model TournamentMatch {
   createdAt    DateTime                @default(now())
 
   @@unique([tournamentId, round, position])
+}
+
+// ─── Phase 2: ELO History ─────────────────────────────────────────────────────
+
+model EloHistory {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id])
+  elo        Int      // ELO after this match
+  delta      Int      // change (+/-)
+  won        Boolean
+  sessionId  String?
+  opponentId String?  // opponent userId (for display)
+  createdAt  DateTime @default(now())
+
+  @@index([userId, createdAt])
+}
+
+// ─── Phase 2: Seasons ─────────────────────────────────────────────────────────
+
+model Season {
+  id        String     @id @default(cuid())
+  name      String
+  number    Int        @unique
+  startDate DateTime
+  endDate   DateTime
+  isActive  Boolean    @default(false)
+  createdAt DateTime   @default(now())
+
+  ranks     SeasonRank[]
+}
+
+model SeasonRank {
+  id        String   @id @default(cuid())
+  seasonId  String
+  season    Season   @relation(fields: [seasonId], references: [id])
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  elo       Int
+  rank      Int
+
+  @@unique([seasonId, userId])
+}
+
+// ─── Phase 2: Notifications ───────────────────────────────────────────────────
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  type      String   // challenge_received | challenge_accepted | challenge_declined | match_found | season_end
+  payload   Json     @default("{}")
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([userId, read])
+}
+
+// ─── Phase 2: Challenges ──────────────────────────────────────────────────────
+
+model Challenge {
+  id         String   @id @default(cuid())
+  fromUserId String
+  toUserId   String
+  fromUser   User     @relation("ChallengeFrom", fields: [fromUserId], references: [id])
+  toUser     User     @relation("ChallengeTo",   fields: [toUserId],   references: [id])
+
+  status     String   @default("PENDING")  // PENDING | ACCEPTED | DECLINED | EXPIRED | DONE
+  sessionId  String?  @unique
+  skin       String   @default("robot")
+  lang       String   @default("auto")
+  message    String?
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
 }

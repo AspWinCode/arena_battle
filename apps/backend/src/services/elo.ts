@@ -65,3 +65,8 @@ export function getRankColor(elo: number): string {
   if (elo < 1600) return '#ff8c00'
   return '#ff3d3d'
 }
+
+/** Apply soft ELO decay at season reset: pull toward 1000 by 20% */
+export function seasonDecay(elo: number): number {
+  return Math.round(elo * 0.8 + 1000 * 0.2)
+}

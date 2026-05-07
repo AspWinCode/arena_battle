@@ -1,8 +1,11 @@
 import { useEffect, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import { api } from '../api/client'
 import { SKIN_ICON } from '@robocode/shared'
 import CharacterCard from '../components/CharacterCard/CharacterCard'
+import RankBadge from '../components/RankBadge'
+import EloChart from '../components/EloChart'
+import { useUserStore } from '../stores/userStore'
 import styles from './ProfilePage.module.css'
 
 interface Stats {
@@ -30,12 +33,17 @@ interface PublicProfile {
   user: {
     id: string; username: string; displayName: string; avatar: string; bio: string | null
     preferredLang: string; preferredSkin: string; experienceLevel: string
-    programmingYears: number; createdAt: string
+    programmingYears: number; createdAt: string; elo?: number
     _count: { players: number; applications: number }
   }
   stats: Stats
   achievements: Achievement[]
   recentSessions?: RecentSession[]
+}
+
+interface EloPoint {
+  elo: number; delta: number; won: boolean; createdAt: string
+  opponent?: { displayName: string; username: string } | null
 }
 
 const LANG_LABELS: Record<string, string> = { js: 'JavaScript', py: 'Python', cpp: 'C++', java: 'Java' }
@@ -56,14 +64,20 @@ function AvatarDisplay({ avatar, size = 72 }: { avatar: string; size?: number })
   return <>{avatar || '🤖'}</>
 }
 
-type Tab = 'overview' | 'achievements' | 'history'
+type Tab = 'overview' | 'achievements' | 'history' | 'rating'
 
 export default function PublicProfilePage() {
-  const { username } = useParams<{ username: string }>()
-  const [data,    setData]    = useState<PublicProfile | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error,   setError]   = useState('')
-  const [tab,     setTab]     = useState<Tab>('overview')
+  const { username }                    = useParams<{ username: string }>()
+  const navigate                        = useNavigate()
+  const { user: me, token }             = useUserStore()
+  const [data,    setData]              = useState<PublicProfile | null>(null)
+  const [loading, setLoading]           = useState(true)
+  const [error,   setError]             = useState('')
+  const [tab,     setTab]               = useState<Tab>('overview')
+  const [eloHistory, setEloHistory]     = useState<EloPoint[]>([])
+  const [eloLoading, setEloLoading]     = useState(false)
+  const [challenging, setChallenging]   = useState(false)
+  const [challengeMsg, setChallengeMsg] = useState('')
 
   useEffect(() => {
     if (!username) return
@@ -72,6 +86,31 @@ export default function PublicProfilePage() {
       .catch(e => setError(e.message))
       .finally(() => setLoading(false))
   }, [username])
+
+  useEffect(() => {
+    if (tab !== 'rating' || !data || eloHistory.length > 0) return
+    setEloLoading(true)
+    api.get<EloPoint[]>(`/elo-history/${data.user.id}`)
+      .then(h => setEloHistory(h))
+      .catch(() => {})
+      .finally(() => setEloLoading(false))
+  }, [tab, data])
+
+  const handleChallenge = async () => {
+    if (!token) { navigate('/login'); return }
+    if (!data) return
+    setChallenging(true)
+    setChallengeMsg('')
+    try {
+      const res = await api.post<{ id: string }>('/challenges/send', {
+        toUserId: data.user.id,
+      }, token)
+      navigate(`/challenge/${res.id}`)
+    } catch (e: any) {
+      setChallengeMsg('❌ ' + e.message)
+      setChallenging(false)
+    }
+  }
 
   if (loading) return (
     <div className={styles.loadingWrap}><span className={styles.spinner}>⚙️</span><p>Загружаем профиль...</p></div>
@@ -99,6 +138,11 @@ export default function PublicProfilePage() {
             <h1 className={styles.displayName}>{u.displayName}</h1>
             <p className={styles.username}>@{u.username}</p>
             {u.bio && <p className={styles.bio}>{u.bio}</p>}
+            {u.elo != null && (
+              <div style={{ marginBottom: 8 }}>
+                <RankBadge elo={u.elo} size="md" />
+              </div>
+            )}
             <div className={styles.heroBadges}>
               <span className={styles.badge}>{LANG_LABELS[u.preferredLang] ?? u.preferredLang}</span>
               <span className={styles.badge}>{EXP_LABELS[u.experienceLevel] ?? u.experienceLevel}</span>
@@ -109,6 +153,21 @@ export default function PublicProfilePage() {
           </div>
           <div className={styles.heroActions}>
             <Link to="/join" className="btn btn-ghost" style={{ fontSize: 13 }}>← Главная</Link>
+            {me && me.username !== u.username && (
+              <div>
+                <button
+                  className="btn btn-primary"
+                  style={{ fontSize: 13 }}
+                  onClick={handleChallenge}
+                  disabled={challenging}
+                >
+                  {challenging ? '⏳...' : '⚔️ Бросить вызов'}
+                </button>
+                {challengeMsg && (
+                  <div style={{ fontSize: 12, color: '#f87171', marginTop: 4 }}>{challengeMsg}</div>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -121,6 +180,12 @@ export default function PublicProfilePage() {
 
       {/* Quick stats */}
       <div className={styles.quickStats}>
+        {u.elo != null && (
+          <div className={styles.statBox}>
+            <span className={styles.statVal} style={{ color: 'var(--lightning)' }}>{u.elo}</span>
+            <span className={styles.statLbl}>ELO</span>
+          </div>
+        )}
         <div className={styles.statBox}>
           <span className={styles.statVal} style={{ color: '#a78bfa' }}>{stats.sessionsPlayed}</span>
           <span className={styles.statLbl}>Матчей</span>
@@ -156,6 +221,7 @@ export default function PublicProfilePage() {
             ['overview',      '📊 Обзор'],
             ['achievements',  '🏅 Ачивки'],
             ['history',       '📋 История'],
+            ['rating',        '📈 Рейтинг'],
           ] as [Tab, string][]).map(([t, label]) => (
             <button
               key={t}
@@ -257,6 +323,50 @@ export default function PublicProfilePage() {
                 </div>
               ))}
             </div>
+          </div>
+        )}
+
+        {/* Rating */}
+        {tab === 'rating' && (
+          <div className={styles.tabContent}>
+            {u.elo != null && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+                <RankBadge elo={u.elo} size="lg" />
+                <div style={{ color: 'var(--text-muted)', fontSize: 13 }}>Текущий рейтинг ELO</div>
+              </div>
+            )}
+            {eloLoading ? (
+              <div style={{ textAlign: 'center', color: 'var(--text-muted)', padding: 32 }}>Загружаем...</div>
+            ) : (
+              <EloChart history={eloHistory} height={180} />
+            )}
+            {eloHistory.length > 0 && (
+              <div style={{ marginTop: 16, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                {[...eloHistory].reverse().slice(0, 10).map((h, i) => (
+                  <div key={i} style={{
+                    display: 'flex', alignItems: 'center', gap: 10,
+                    background: 'var(--bg-card)', border: '1px solid var(--border)',
+                    borderRadius: 8, padding: '8px 12px',
+                  }}>
+                    <span style={{ fontSize: 16 }}>{h.won ? '✅' : '❌'}</span>
+                    <div style={{ flex: 1 }}>
+                      <span style={{ fontSize: 13, fontWeight: 600 }}>{h.elo} ELO</span>
+                      {h.opponent && (
+                        <span style={{ fontSize: 12, color: 'var(--text-muted)', marginLeft: 8 }}>
+                          vs {h.opponent.displayName}
+                        </span>
+                      )}
+                    </div>
+                    <span style={{ fontSize: 13, fontWeight: 700, color: h.delta >= 0 ? '#4ade80' : '#f87171' }}>
+                      {h.delta >= 0 ? '+' : ''}{h.delta}
+                    </span>
+                    <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>
+                      {new Date(h.createdAt).toLocaleDateString('ru', { day: 'numeric', month: 'short' })}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 

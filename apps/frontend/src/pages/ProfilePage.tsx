@@ -8,6 +8,7 @@ import { SKIN_ICON, CHARACTER_STATS } from '@robocode/shared'
 import type { SkinId } from '@robocode/shared'
 import CharacterCard from '../components/CharacterCard/CharacterCard'
 import RankBadge from '../components/RankBadge'
+import EloChart from '../components/EloChart'
 import styles from './ProfilePage.module.css'
 
 // ── Types ──────────────────────────────────────────────────────────────────
@@ -52,13 +53,18 @@ const STATUS_LABELS: Record<string, string> = { PENDING: 'На рассмотр�
 const ALL_SKIN_IDS = Object.keys(CHARACTER_STATS) as SkinId[]
 const STATUS_COLORS: Record<string, string> = { PENDING: '#facc15', APPROVED: '#4ade80', REJECTED: '#f87171' }
 
-// ── Fix #7: 5 tabs (removed duplicate "stats" → merged into achievements) ──
-type Tab = 'achievements' | 'progress' | 'history' | 'tournaments' | 'settings'
+interface EloPoint {
+  elo: number; delta: number; won: boolean; createdAt: string
+  opponent?: { displayName: string; username: string } | null
+}
+
+type Tab = 'achievements' | 'progress' | 'history' | 'tournaments' | 'rating' | 'settings'
 const TABS: { id: Tab; label: string }[] = [
   { id: 'achievements', label: '🏅 Достижения' },
   { id: 'progress',     label: '🔥 Прогресс'   },
   { id: 'history',      label: '⚔️ История'     },
   { id: 'tournaments',  label: '🏆 Турниры'     },
+  { id: 'rating',       label: '📈 Рейтинг'     },
   { id: 'settings',     label: '⚙️ Настройки'  },
 ]
 
@@ -68,10 +74,12 @@ export default function ProfilePage() {
   const { user, token, updateUser, logout } = useUserStore()
   const daily = useDailyStore()
   const unlockedAch = useAchievementsStore(s => s.unlocked)
-  const [data, setData]       = useState<FullProfile | null>(null)
-  const [tab,  setTab]        = useState<Tab>('achievements')
-  const [loading, setLoading] = useState(true)
-  const [error, setError]     = useState('')
+  const [data, setData]           = useState<FullProfile | null>(null)
+  const [tab,  setTab]            = useState<Tab>('achievements')
+  const [loading, setLoading]     = useState(true)
+  const [error, setError]         = useState('')
+  const [eloHistory, setEloHistory] = useState<EloPoint[]>([])
+  const [eloLoading, setEloLoading] = useState(false)
 
   // Settings edit state
   const [editBio,    setEditBio]    = useState('')
@@ -138,6 +146,15 @@ export default function ProfilePage() {
       .catch(e => setError(e.message))
       .finally(() => setLoading(false))
   }, [token, navigate])
+
+  useEffect(() => {
+    if (tab !== 'rating' || !token || eloHistory.length > 0) return
+    setEloLoading(true)
+    api.get<EloPoint[]>('/elo-history/~me', token)
+      .then(h => setEloHistory(h))
+      .catch(() => {})
+      .finally(() => setEloLoading(false))
+  }, [tab, token])
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -482,6 +499,60 @@ export default function ProfilePage() {
                 </span>
               </div>
             ))}
+          </div>
+        )}
+
+        {/* ── Rating / ELO History ───────────────────────────────────────── */}
+        {tab === 'rating' && (
+          <div>
+            {u.elo != null && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+                <RankBadge elo={u.elo} size="lg" />
+                <div style={{ color: 'var(--text-muted)', fontSize: 13 }}>
+                  Текущий рейтинг ELO
+                </div>
+              </div>
+            )}
+            {eloLoading ? (
+              <div style={{ textAlign: 'center', color: 'var(--text-muted)', padding: 32 }}>Загружаем...</div>
+            ) : (
+              <EloChart history={eloHistory} height={180} />
+            )}
+            {eloHistory.length > 0 && (
+              <div style={{ marginTop: 16 }}>
+                <div style={{ fontSize: 12, color: 'var(--text-muted)', fontWeight: 700, marginBottom: 8, textTransform: 'uppercase', letterSpacing: '.05em' }}>
+                  Последние изменения ELO
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  {[...eloHistory].reverse().slice(0, 10).map((h, i) => (
+                    <div key={i} style={{
+                      display: 'flex', alignItems: 'center', gap: 10,
+                      background: 'var(--bg-card)', border: '1px solid var(--border)',
+                      borderRadius: 8, padding: '8px 12px',
+                    }}>
+                      <span style={{ fontSize: 16 }}>{h.won ? '✅' : '❌'}</span>
+                      <div style={{ flex: 1 }}>
+                        <span style={{ fontSize: 13, fontWeight: 600 }}>{h.elo} ELO</span>
+                        {h.opponent && (
+                          <span style={{ fontSize: 12, color: 'var(--text-muted)', marginLeft: 8 }}>
+                            vs {h.opponent.displayName}
+                          </span>
+                        )}
+                      </div>
+                      <span style={{
+                        fontSize: 13, fontWeight: 700,
+                        color: h.delta >= 0 ? '#4ade80' : '#f87171',
+                      }}>
+                        {h.delta >= 0 ? '+' : ''}{h.delta}
+                      </span>
+                      <span style={{ fontSize: 11, color: 'var(--text-muted)', minWidth: 60, textAlign: 'right' }}>
+                        {new Date(h.createdAt).toLocaleDateString('ru', { day: 'numeric', month: 'short' })}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
 

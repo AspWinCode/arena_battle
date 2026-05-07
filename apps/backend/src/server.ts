@@ -13,6 +13,10 @@ import { tournamentRoutes } from './routes/tournaments.js'
 import { userAuthRoutes } from './routes/userAuth.js'
 import { userProfileRoutes } from './routes/userProfile.js'
 import { matchmakingRoutes } from './routes/matchmaking.js'
+import { notificationRoutes } from './routes/notifications.js'
+import { eloHistoryRoutes } from './routes/eloHistory.js'
+import { seasonRoutes } from './routes/seasons.js'
+import { challengeRoutes } from './routes/challenges.js'
 import { wsRoutes } from './ws/index.js'
 import { checkAndGeneratePendingBrackets } from './tournament/tournament-service.js'
 
@@ -68,8 +72,12 @@ export async function buildServer() {
   await server.register(tournamentRoutes, { prefix: '/api/v1/tournament' })
   await server.register(userAuthRoutes,    { prefix: '/api/v1/user/auth' })
   await server.register(userProfileRoutes, { prefix: '/api/v1/user/profile' })
-  await server.register(matchmakingRoutes, { prefix: '/api/v1/matchmaking' })
-  await server.register(wsRoutes,          { prefix: '/ws' })
+  await server.register(matchmakingRoutes,  { prefix: '/api/v1/matchmaking' })
+  await server.register(notificationRoutes, { prefix: '/api/v1/notifications' })
+  await server.register(eloHistoryRoutes,   { prefix: '/api/v1/elo-history' })
+  await server.register(seasonRoutes,       { prefix: '/api/v1/seasons' })
+  await server.register(challengeRoutes,    { prefix: '/api/v1/challenges' })
+  await server.register(wsRoutes,           { prefix: '/ws' })
 
   server.get('/health', async () => ({ status: 'ok', ts: Date.now() }))
 

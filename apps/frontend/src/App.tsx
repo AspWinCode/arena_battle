@@ -13,6 +13,8 @@ import RegisterPage from './pages/RegisterPage'
 import LoginPage from './pages/LoginPage'
 import ProfilePage from './pages/ProfilePage'
 import PublicProfilePage from './pages/PublicProfilePage'
+import ChallengePage from './pages/ChallengePage'
+import NotificationsPage from './pages/NotificationsPage'
 import AdminLoginPage from './pages/admin/AdminLoginPage'
 import AdminDashboard from './pages/admin/AdminDashboard'
 import AdminSessionNew from './pages/admin/AdminSessionNew'
@@ -47,6 +49,8 @@ export default function App() {
       <Route path="/forgot-password"  element={<ForgotPasswordPage />} />
       <Route path="/profile"  element={<ProfilePage />} />
       <Route path="/profile/:username" element={<PublicProfilePage />} />
+      <Route path="/challenge/:id" element={<ChallengePage />} />
+      <Route path="/notifications" element={<NotificationsPage />} />
 
       <Route path="/admin/login" element={<AdminLoginPage />} />
       <Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
