@@ -4,6 +4,7 @@ import { prisma } from '../db/client.js'
 import { runInSandbox } from '../sandbox/sandbox-service.js'
 import { runRound } from '../engine/battle-engine.js'
 import { calcElo, xpForWin, xpForLoss } from '../services/elo.js'
+import { advanceWinner } from '../tournament/tournament-service.js'
 
 // Minimal WS interface to avoid @types/ws issues
 interface WsSocket {
@@ -294,6 +295,23 @@ export class SessionRoom {
           where: { id: this.sessionId },
           data: { status: 'DONE' },
         })
+
+        // Auto-advance tournament match if this session is linked to one
+        if (finalWinner !== 0) {
+          try {
+            const tournMatch = await prisma.tournamentMatch.findUnique({
+              where: { sessionId: this.sessionId },
+            })
+            if (tournMatch) {
+              const winnerAppId = finalWinner === 1 ? tournMatch.p1Id : tournMatch.p2Id
+              if (winnerAppId) {
+                await advanceWinner(tournMatch.id, winnerAppId)
+              }
+            }
+          } catch (e) {
+            console.error('[room] Tournament auto-advance failed:', e)
+          }
+        }
       } else {
         // More rounds — go back to coding
         this.startCoding(true)

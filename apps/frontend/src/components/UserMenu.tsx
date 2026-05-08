@@ -76,6 +76,9 @@ export default function UserMenu() {
           <Link to="/tournaments" className={styles.dropItem} onClick={() => setOpen(false)}>
             🏆 Турниры
           </Link>
+          <Link to="/clans" className={styles.dropItem} onClick={() => setOpen(false)}>
+            ⚔️ Кланы
+          </Link>
           <Link to="/learn" className={styles.dropItem} onClick={() => setOpen(false)}>
             🎓 Обучение
           </Link>

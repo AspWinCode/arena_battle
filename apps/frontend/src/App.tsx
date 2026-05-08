@@ -15,6 +15,10 @@ import ProfilePage from './pages/ProfilePage'
 import PublicProfilePage from './pages/PublicProfilePage'
 import ChallengePage from './pages/ChallengePage'
 import NotificationsPage from './pages/NotificationsPage'
+import SpectatorPage from './pages/SpectatorPage'
+import ClansPage from './pages/ClansPage'
+import ClanDetailPage from './pages/ClanDetailPage'
+import CreateClanPage from './pages/CreateClanPage'
 import AdminLoginPage from './pages/admin/AdminLoginPage'
 import AdminDashboard from './pages/admin/AdminDashboard'
 import AdminSessionNew from './pages/admin/AdminSessionNew'
@@ -51,6 +55,10 @@ export default function App() {
       <Route path="/profile/:username" element={<PublicProfilePage />} />
       <Route path="/challenge/:id" element={<ChallengePage />} />
       <Route path="/notifications" element={<NotificationsPage />} />
+      <Route path="/spectate/:sessionId" element={<SpectatorPage />} />
+      <Route path="/clans" element={<ClansPage />} />
+      <Route path="/clans/create" element={<CreateClanPage />} />
+      <Route path="/clans/:id" element={<ClanDetailPage />} />
 
       <Route path="/admin/login" element={<AdminLoginPage />} />
       <Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />

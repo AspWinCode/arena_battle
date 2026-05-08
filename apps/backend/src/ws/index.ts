@@ -194,4 +194,38 @@ export const wsRoutes: FastifyPluginAsync = async (fastify) => {
       })
     }
   )
+
+  // ── Public spectator route (no auth — read-only) ───────────────────────────
+  fastify.get<{ Params: { sessionId: string } }>(
+    '/spectate/:sessionId',
+    { websocket: true },
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    async (socket: any, request: any) => {
+      const { sessionId } = request.params as { sessionId: string }
+      const ws = (socket?.socket ?? socket) as BareSocket
+
+      // Verify session exists and is public-spectatable (CODING or BATTLE status)
+      const session = await prisma.session.findUnique({
+        where: { id: sessionId },
+        select: { id: true, status: true },
+      })
+      if (!session) {
+        ws.send(JSON.stringify({ type: 'error', payload: { code: 'SESSION_NOT_FOUND', message: 'Session not found' } }))
+        ws.close(4004, 'Session not found')
+        return
+      }
+      if (session.status === 'DONE') {
+        ws.send(JSON.stringify({ type: 'error', payload: { code: 'SESSION_DONE', message: 'Match already finished' } }))
+        ws.close(4010, 'Session done')
+        return
+      }
+
+      fastify.log.info({ sessionId }, '[WS] spectator connected')
+      addRoomObserver(sessionId, ws)
+
+      ws.on('error', (err: unknown) => {
+        fastify.log.error({ err }, '[WS] spectator error')
+      })
+    }
+  )
 }

@@ -6,6 +6,9 @@ export type NotificationType =
   | 'challenge_declined'
   | 'match_found'
   | 'season_end'
+  | 'tournament_win'
+  | 'clan_war_started'
+  | 'clan_war_ended'
 
 export async function createNotification(
   userId: string,

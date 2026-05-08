@@ -196,3 +196,13 @@
 }
 
 .watchBtn:hover { color: var(--text); border-color: var(--text-muted); }
+
+/* Section labels for double-elim / round-robin */
+.sectionLabel {
+  font-size: 13px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--text-muted);
+  padding: 0 24px 12px;
+}

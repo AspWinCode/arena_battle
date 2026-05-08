@@ -15,16 +15,21 @@ interface TournamentDetail {
   status: string
   format: string
   level: string
+  bracketType: string
+  prizeXp: number
+  prizeSkin: string | null
+  isRecurring: boolean
+  recurringInterval: string | null
   applications: Array<{
     id: string; playerName: string; preferredLang: string
     seed: number | null; skillScore: number | null; experienceLevel: string
   }>
   matches: Array<{
-    id: string; round: number; position: number; status: string
+    id: string; round: number; position: number; status: string; bracket?: string
     p1: { id: string; playerName: string; seed: number | null } | null
     p2: { id: string; playerName: string; seed: number | null } | null
     winner: { id: string; playerName: string } | null
-    session?: { id: string; code1: string; code2: string } | null
+    session?: { id: string; code1: string; code2: string; status?: string } | null
   }>
 }
 
@@ -131,9 +136,32 @@ export default function TournamentDetailPage() {
                  tournament.status === 'CLOSED'       ? 'Закрыта' : 'Черновик'}
               </span>
               <span className={styles.format}>{tournament.format.toUpperCase()}</span>
+              <span className={styles.format} style={{ background: 'rgba(139,92,246,.15)', color: '#a855f7', borderColor: 'rgba(139,92,246,.3)' }}>
+                {tournament.bracketType === 'DOUBLE_ELIMINATION' ? '2x Сетка' :
+                 tournament.bracketType === 'ROUND_ROBIN'        ? '🔄 Круговая' : '1x Сетка'}
+              </span>
+              {tournament.isRecurring && (
+                <span className={styles.format} style={{ background: 'rgba(250,204,21,.12)', color: '#facc15', borderColor: 'rgba(250,204,21,.3)' }}>
+                  🔁 {tournament.recurringInterval === 'weekly' ? 'Еженедельный' : 'Ежемесячный'}
+                </span>
+              )}
             </div>
             <h1 className={styles.title}>{tournament.name}</h1>
             {tournament.description && <p className={styles.desc}>{tournament.description}</p>}
+            {(tournament.prizeXp > 0 || tournament.prizeSkin) && (
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 8 }}>
+                {tournament.prizeXp > 0 && (
+                  <span style={{ fontSize: 13, background: 'rgba(250,204,21,.12)', border: '1px solid rgba(250,204,21,.3)', color: '#facc15', padding: '3px 10px', borderRadius: 99, fontWeight: 700 }}>
+                    🏆 +{tournament.prizeXp} XP победителю
+                  </span>
+                )}
+                {tournament.prizeSkin && (
+                  <span style={{ fontSize: 13, background: 'rgba(139,92,246,.12)', border: '1px solid rgba(139,92,246,.3)', color: '#a855f7', padding: '3px 10px', borderRadius: 99, fontWeight: 700 }}>
+                    🎭 Скин «{tournament.prizeSkin}» победителю
+                  </span>
+                )}
+              </div>
+            )}
           </div>
           <div className={styles.dateBlock}>
             <div className={styles.dateItem}>
@@ -230,7 +258,7 @@ export default function TournamentDetailPage() {
       <div className={styles.body}>
         {tab === 'bracket' && (
           tournament.matches.length > 0
-            ? <BracketView matches={tournament.matches} totalRounds={totalRounds} />
+            ? <BracketView matches={tournament.matches} totalRounds={totalRounds} bracketType={tournament.bracketType} />
             : <div className={styles.emptyTab}>
                 <div style={{ fontSize: 48 }}>📋</div>
                 <p>{tournament.status === 'REGISTRATION' || tournament.status === 'CLOSED'

@@ -66,6 +66,11 @@ model User {
   notifications      Notification[]
   challengesSent     Challenge[]    @relation("ChallengeFrom")
   challengesReceived Challenge[]    @relation("ChallengeTo")
+
+  // Phase 4 clan relations
+  clanOwned    Clan?       @relation("ClanOwner")
+  clanMember   ClanMember?
+  clanMessages ClanMessage[]
 }
 
 model Session {
@@ -153,6 +158,14 @@ model Tournament {
   level                Level             @default(CODE)
   createdAt            DateTime          @default(now())
 
+  // Phase 4: bracket type + prizes + recurring
+  bracketType          String            @default("SINGLE_ELIMINATION") // SINGLE_ELIMINATION | DOUBLE_ELIMINATION | ROUND_ROBIN
+  prizeXp              Int               @default(0)     // XP for 1st place
+  prizeSkin            String?                           // skin unlocked for winner
+  isRecurring          Boolean           @default(false)
+  recurringInterval    String?                           // "weekly" | "monthly"
+  parentTournamentId   String?                           // if created from recurring template
+
   applications         TournamentApplication[]
   matches              TournamentMatch[]
 }
@@ -206,9 +219,12 @@ model TournamentMatch {
   status       MatchStatus             @default(PENDING)
   scheduledAt  DateTime?
 
+  // Phase 4: double elimination bracket tracking
+  bracket      String                  @default("W") // W = winners, L = losers, GF = grand final
+
   createdAt    DateTime                @default(now())
 
-  @@unique([tournamentId, round, position])
+  @@unique([tournamentId, round, position, bracket])
 }
 
 // ─── Phase 2: ELO History ─────────────────────────────────────────────────────
@@ -283,4 +299,67 @@ model Challenge {
   message    String?
   expiresAt  DateTime
   createdAt  DateTime @default(now())
+}
+
+// ─── Phase 4: Clan system ─────────────────────────────────────────────────────
+
+model Clan {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  tag         String   @unique  // [TAG] 2-5 chars uppercase
+  description String?  @db.Text
+  avatar      String   @default("⚔️")
+  elo         Int      @default(1000)
+  ownerId     String   @unique
+  totalWins   Int      @default(0)
+  totalWars   Int      @default(0)
+  createdAt   DateTime @default(now())
+
+  owner    User         @relation("ClanOwner", fields: [ownerId], references: [id])
+  members  ClanMember[]
+  messages ClanMessage[]
+  wars1    ClanWar[]    @relation("ClanWar1")
+  wars2    ClanWar[]    @relation("ClanWar2")
+}
+
+model ClanMember {
+  id       String   @id @default(cuid())
+  clanId   String
+  userId   String   @unique
+  role     String   @default("MEMBER")  // OWNER | OFFICER | MEMBER
+  joinedAt DateTime @default(now())
+
+  clan Clan @relation(fields: [clanId], references: [id])
+  user User @relation(fields: [userId], references: [id])
+
+  @@unique([clanId, userId])
+}
+
+model ClanMessage {
+  id        String   @id @default(cuid())
+  clanId    String
+  userId    String
+  content   String   @db.Text
+  createdAt DateTime @default(now())
+
+  clan Clan @relation(fields: [clanId], references: [id])
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([clanId, createdAt])
+}
+
+model ClanWar {
+  id         String   @id @default(cuid())
+  clan1Id    String
+  clan2Id    String
+  status     String   @default("PENDING")  // PENDING | ACTIVE | DONE
+  winnerId   String?
+  clan1Score Int      @default(0)
+  clan2Score Int      @default(0)
+  startDate  DateTime
+  endDate    DateTime
+  createdAt  DateTime @default(now())
+
+  clan1 Clan @relation("ClanWar1", fields: [clan1Id], references: [id])
+  clan2 Clan @relation("ClanWar2", fields: [clan2Id], references: [id])
 }

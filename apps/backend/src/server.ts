@@ -17,8 +17,9 @@ import { notificationRoutes } from './routes/notifications.js'
 import { eloHistoryRoutes } from './routes/eloHistory.js'
 import { seasonRoutes } from './routes/seasons.js'
 import { challengeRoutes } from './routes/challenges.js'
+import { clanRoutes } from './routes/clans.js'
 import { wsRoutes } from './ws/index.js'
-import { checkAndGeneratePendingBrackets } from './tournament/tournament-service.js'
+import { checkAndGeneratePendingBrackets, spawnRecurringInstances } from './tournament/tournament-service.js'
 
 export async function buildServer() {
   const server = Fastify({
@@ -77,6 +78,7 @@ export async function buildServer() {
   await server.register(eloHistoryRoutes,   { prefix: '/api/v1/elo-history' })
   await server.register(seasonRoutes,       { prefix: '/api/v1/seasons' })
   await server.register(challengeRoutes,    { prefix: '/api/v1/challenges' })
+  await server.register(clanRoutes,         { prefix: '/api/v1/clans' })
   await server.register(wsRoutes,           { prefix: '/ws' })
 
   server.get('/health', async () => ({ status: 'ok', ts: Date.now() }))
@@ -87,6 +89,13 @@ export async function buildServer() {
       server.log.error({ err: e }, '[cron] bracket-check failed')
     )
   }, 60 * 60 * 1000)
+
+  // Cron: check every 6h if any recurring tournament needs a new instance spawned
+  setInterval(() => {
+    spawnRecurringInstances().catch(e =>
+      server.log.error({ err: e }, '[cron] recurring-spawn failed')
+    )
+  }, 6 * 60 * 60 * 1000)
 
   return server
 }

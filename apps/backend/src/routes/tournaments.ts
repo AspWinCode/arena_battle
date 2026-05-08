@@ -5,6 +5,7 @@ import {
   calcSkillScore,
   generateBracket,
   advanceWinner,
+  spawnRecurringInstances,
 } from '../tournament/tournament-service.js'
 import bcrypt from 'bcryptjs'
 import {
@@ -24,6 +25,12 @@ const createTournamentSchema = z.object({
   maxParticipants:      z.number().int().min(4).max(64).default(16),
   format:               z.enum(['bo1', 'bo3', 'bo5']).default('bo3'),
   level:                z.enum(['BLOCKS', 'CODE', 'PRO']).default('CODE'),
+  // Phase 4 fields
+  bracketType:          z.enum(['SINGLE_ELIMINATION', 'DOUBLE_ELIMINATION', 'ROUND_ROBIN']).default('SINGLE_ELIMINATION'),
+  prizeXp:              z.number().int().min(0).default(0),
+  prizeSkin:            z.string().optional(),
+  isRecurring:          z.boolean().default(false),
+  recurringInterval:    z.enum(['weekly', 'monthly']).optional(),
 })
 
 const applySchema = z.object({
@@ -75,7 +82,7 @@ export const tournamentRoutes: FastifyPluginAsync = async (fastify) => {
             p1:     { select: { id: true, playerName: true, seed: true } },
             p2:     { select: { id: true, playerName: true, seed: true } },
             winner: { select: { id: true, playerName: true, seed: true } },
-            session: { select: { id: true, code1: true, code2: true } },
+            session: { select: { id: true, code1: true, code2: true, status: true } },
           },
         },
       },
@@ -308,7 +315,7 @@ export const tournamentRoutes: FastifyPluginAsync = async (fastify) => {
               include: {
                 p1:     { select: { id: true, playerName: true, seed: true } },
                 p2:     { select: { id: true, playerName: true, seed: true } },
-                winner: { select: { id: true, playerName: true } },
+                winner: { select: { id: true, playerName: true, seed: true } },
               },
             },
           },
@@ -440,6 +447,20 @@ export const tournamentRoutes: FastifyPluginAsync = async (fastify) => {
 
       await advanceWinner(req.params.matchId, winnerId)
       return reply.send({ ok: true })
+    }
+  )
+
+  // Spawn recurring tournament instance (admin)
+  fastify.post(
+    '/spawn-recurring',
+    { onRequest: [fastify.authenticate] },
+    async (_req, reply) => {
+      try {
+        await spawnRecurringInstances()
+        return reply.send({ ok: true })
+      } catch (e) {
+        return reply.status(500).send({ error: e instanceof Error ? e.message : 'Error' })
+      }
     }
   )
 
