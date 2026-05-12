@@ -7,6 +7,8 @@ interface Props {
   def: BlockDef
   onSlotChange: (instanceId: string, slotId: string, value: string | number | BlockInstance | null) => void
   onDropOnSlot?: (instanceId: string, slotId: string, dropped: BlockInstance) => void
+  onBlockMouseDown?: (e: React.MouseEvent, inst: BlockInstance) => void
+  onBlockContextMenu?: (e: React.MouseEvent, inst: BlockInstance) => void
   depth?: number
   isDragging?: boolean
   isSnapTarget?: boolean
@@ -45,7 +47,7 @@ function PuzzleBottom({ color }: { color: string }) {
 }
 
 export default function BlockShape({
-  inst, def, onSlotChange, onDropOnSlot, depth = 0, isDragging, isSnapTarget, activeSlotTargetKey, variables = [],
+  inst, def, onSlotChange, onDropOnSlot, onBlockMouseDown, onBlockContextMenu, depth = 0, isDragging, isSnapTarget, activeSlotTargetKey, variables = [],
 }: Props) {
   const color = def.color ?? '#7c3aed'
   const darkerColor = darken(color, 20)
@@ -54,12 +56,14 @@ export default function BlockShape({
     <div
       className={`${styles.block} ${styles[`type-${def.type}`]} ${isSnapTarget ? styles.snapTarget : ''}`}
       style={{ '--block-color': color, '--block-darker': darkerColor } as React.CSSProperties}
+      onMouseDown={onBlockMouseDown ? e => onBlockMouseDown(e, inst) : undefined}
+      onContextMenu={onBlockContextMenu ? e => onBlockContextMenu(e, inst) : undefined}
     >
       {def.type !== 'hat' && <PuzzleTop color={color} />}
 
       <div className={styles.body}>
         <div className={styles.labelRow}>
-          {renderLabel(def, inst, onSlotChange, onDropOnSlot, variables, activeSlotTargetKey)}
+          {renderLabel(def, inst, onSlotChange, onDropOnSlot, onBlockMouseDown, onBlockContextMenu, variables, activeSlotTargetKey)}
         </div>
 
         {def.canHaveBody && !def.hasTwoBody && (
@@ -76,6 +80,8 @@ export default function BlockShape({
                   inst={child}
                   def={childDef}
                   onSlotChange={onSlotChange}
+                  onBlockMouseDown={onBlockMouseDown}
+                  onBlockContextMenu={onBlockContextMenu}
                   depth={depth + 1}
                   activeSlotTargetKey={activeSlotTargetKey}
                   variables={variables}
@@ -101,6 +107,8 @@ export default function BlockShape({
                     inst={child}
                     def={childDef}
                     onSlotChange={onSlotChange}
+                    onBlockMouseDown={onBlockMouseDown}
+                    onBlockContextMenu={onBlockContextMenu}
                     depth={depth + 1}
                     activeSlotTargetKey={activeSlotTargetKey}
                     variables={variables}
@@ -122,6 +130,8 @@ export default function BlockShape({
                     inst={child}
                     def={childDef}
                     onSlotChange={onSlotChange}
+                    onBlockMouseDown={onBlockMouseDown}
+                    onBlockContextMenu={onBlockContextMenu}
                     depth={depth + 1}
                     activeSlotTargetKey={activeSlotTargetKey}
                     variables={variables}
@@ -143,6 +153,8 @@ function renderLabel(
   inst: BlockInstance,
   onSlotChange: (instanceId: string, slotId: string, value: string | number | BlockInstance | null) => void,
   onDropOnSlot: ((instanceId: string, slotId: string, dropped: BlockInstance) => void) | undefined,
+  onBlockMouseDown: ((e: React.MouseEvent, inst: BlockInstance) => void) | undefined,
+  onBlockContextMenu: ((e: React.MouseEvent, inst: BlockInstance) => void) | undefined,
   variables: string[],
   activeSlotTargetKey: string | null | undefined,
 ) {
@@ -243,6 +255,8 @@ function renderLabel(
                 inst={nested}
                 def={nestedDef}
                 onSlotChange={onSlotChange}
+                onBlockMouseDown={onBlockMouseDown}
+                onBlockContextMenu={onBlockContextMenu}
                 variables={variables}
                 activeSlotTargetKey={activeSlotTargetKey}
               />

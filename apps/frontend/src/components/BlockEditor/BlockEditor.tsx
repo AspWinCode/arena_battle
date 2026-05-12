@@ -19,6 +19,11 @@ function countUniqueActions(scripts: Script[]): Set<string> {
   const found = new Set<string>()
   function walk(inst: BlockInstance) {
     if (ACTION_BLOCK_IDS.has(inst.defId)) found.add(inst.defId)
+    for (const slot of inst.slots) {
+      if (slot.value && typeof slot.value === 'object' && 'instanceId' in slot.value) {
+        walk(slot.value as BlockInstance)
+      }
+    }
     if (inst.next) walk(inst.next)
     for (const b of inst.body ?? []) walk(b)
     for (const b of inst.elseBody ?? []) walk(b)
@@ -71,6 +76,7 @@ interface ContextMenu {
   y: number
   scriptId: string
   instId: string
+  defId: string
 }
 
 interface SlotDropTarget {
@@ -152,15 +158,18 @@ export default function BlockEditor({ onChange, skin = 'robot', onSkinChange, al
   }
 
   // ── Drag from canvas ───────────────────────────────────────────────────────
-  const handleCanvasBlockMouseDown = useCallback((e: React.MouseEvent, inst: BlockInstance, scriptId: string) => {
+  const handleCanvasBlockMouseDown = useCallback((e: React.MouseEvent, inst: BlockInstance) => {
     if (e.button !== 0) return
     e.preventDefault()
     e.stopPropagation()
+    const scriptId = findScriptOf(scriptsRef.current, inst.instanceId)
+    if (!scriptId) return
     setScripts(prev => {
       const [next] = pickUpBlock(prev, scriptId, inst.instanceId)
       return next
     })
     setSnapTargetId(null)
+    setSlotDropTargetKey(null)
     setDrag({ inst, fromPalette: false, offsetX: 0, offsetY: 0, currentX: e.clientX, currentY: e.clientY })
   }, [])
 
@@ -286,10 +295,12 @@ export default function BlockEditor({ onChange, skin = 'robot', onSkinChange, al
   }, [])
 
   // ── Context menu ───────────────────────────────────────────────────────────
-  const handleBlockRightClick = useCallback((e: React.MouseEvent, scriptId: string, instId: string) => {
+  const handleBlockRightClick = useCallback((e: React.MouseEvent, inst: BlockInstance) => {
     e.preventDefault()
     e.stopPropagation()
-    setContextMenu({ x: e.clientX, y: e.clientY, scriptId, instId })
+    const scriptId = findScriptOf(scriptsRef.current, inst.instanceId)
+    if (!scriptId) return
+    setContextMenu({ x: e.clientX, y: e.clientY, scriptId, instId: inst.instanceId, defId: inst.defId })
   }, [])
 
   const handleContextDuplicate = () => {
@@ -298,9 +309,23 @@ export default function BlockEditor({ onChange, skin = 'robot', onSkinChange, al
     const inst = script ? findInstance(script.root, contextMenu.instId) : null
     if (!inst) return
     const copy = deepCopy(inst)
-    copy.x = inst.x + 24
-    copy.y = inst.y + 24
-    setScripts(prev => [...prev, { id: uid(), root: copy }])
+    const def = BLOCK_DEF_MAP.get(inst.defId)
+    if (!def) return
+
+    if (def.type === 'reporter' || def.type === 'predicate') {
+      setDrag({
+        inst: copy,
+        fromPalette: true,
+        offsetX: 0,
+        offsetY: 0,
+        currentX: contextMenu.x,
+        currentY: contextMenu.y,
+      })
+    } else {
+      copy.x = inst.x + 24
+      copy.y = inst.y + 24
+      setScripts(prev => [...prev, { id: uid(), root: copy }])
+    }
     setContextMenu(null)
   }
 
@@ -520,9 +545,9 @@ function renderStack(
   inst: BlockInstance,
   scriptId: string,
   onSlotChange: (id: string, slotId: string, v: string | number | BlockInstance | null) => void,
-  onRightClick: (e: React.MouseEvent, scriptId: string, instId: string) => void,
+  onRightClick: (e: React.MouseEvent, inst: BlockInstance) => void,
   variables: string[],
-  onBlockMouseDown: (e: React.MouseEvent, inst: BlockInstance, scriptId: string) => void,
+  onBlockMouseDown: (e: React.MouseEvent, inst: BlockInstance) => void,
   snapTargetId: string | null,
   slotDropTargetKey: string | null,
 ): React.ReactNode {
@@ -532,13 +557,13 @@ function renderStack(
     <div
       key={inst.instanceId}
       className={styles.stackItem}
-      onContextMenu={e => onRightClick(e, scriptId, inst.instanceId)}
-      onMouseDown={e => onBlockMouseDown(e, inst, scriptId)}
     >
       <BlockShape
         inst={inst}
         def={def}
         onSlotChange={onSlotChange}
+        onBlockMouseDown={onBlockMouseDown}
+        onBlockContextMenu={onRightClick}
         variables={variables}
         isSnapTarget={snapTargetId === inst.instanceId}
         activeSlotTargetKey={slotDropTargetKey}
@@ -552,6 +577,12 @@ function renderStack(
 
 function findInstance(root: BlockInstance, id: string): BlockInstance | null {
   if (root.instanceId === id) return root
+  for (const slot of root.slots) {
+    if (slot.value && typeof slot.value === 'object' && 'instanceId' in slot.value) {
+      const f = findInstance(slot.value as BlockInstance, id)
+      if (f) return f
+    }
+  }
   if (root.next) { const f = findInstance(root.next, id); if (f) return f }
   for (const b of root.body ?? [])     { const f = findInstance(b, id); if (f) return f }
   for (const b of root.elseBody ?? []) { const f = findInstance(b, id); if (f) return f }
@@ -624,6 +655,12 @@ function removeFromInstance(inst: BlockInstance, targetId: string): BlockInstanc
   }
   return {
     ...inst,
+    slots: inst.slots.map(s => {
+      if (!s.value || typeof s.value !== 'object' || !('instanceId' in s.value)) return s
+      const nested = s.value as BlockInstance
+      if (nested.instanceId === targetId) return { ...s, value: null }
+      return { ...s, value: removeFromInstance(nested, targetId) }
+    }),
     next: inst.next ? removeFromInstance(inst.next, targetId) ?? undefined : undefined,
     body: inst.body
       ?.filter(b => b.instanceId !== targetId)
@@ -746,6 +783,25 @@ function pickUpBlock(scripts: Script[], scriptId: string, instId: string): [Scri
 }
 
 function cutAtBlock(inst: BlockInstance, targetId: string): [BlockInstance | null, BlockInstance | null] {
+  for (let i = 0; i < inst.slots.length; i++) {
+    const slot = inst.slots[i]
+    if (!slot.value || typeof slot.value !== 'object' || !('instanceId' in slot.value)) continue
+    const nested = slot.value as BlockInstance
+    if (nested.instanceId === targetId) {
+      return [{
+        ...inst,
+        slots: inst.slots.map((s, j) => j === i ? { ...s, value: null } : s),
+      }, nested]
+    }
+    const [newNested, picked] = cutAtBlock(nested, targetId)
+    if (picked !== null) {
+      return [{
+        ...inst,
+        slots: inst.slots.map((s, j) => j === i ? { ...s, value: newNested } : s),
+      }, picked]
+    }
+  }
+
   // Next chain
   if (inst.next?.instanceId === targetId) {
     const cut = inst.next
