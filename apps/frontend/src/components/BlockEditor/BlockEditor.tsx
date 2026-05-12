@@ -246,6 +246,8 @@ export default function BlockEditor({
       setSnapTargetId(null)
       setSlotDropTargetKey(null)
 
+      const baseScripts = d.fromPalette ? scriptsRef.current : removeBlockEverywhere(scriptsRef.current, d.inst.instanceId)
+
       const canvas = canvasRef.current!
       const rect = canvas.getBoundingClientRect()
       const x = (e.clientX - rect.left - panOffset.x) / zoom
@@ -254,38 +256,36 @@ export default function BlockEditor({
       // Dropped on palette → delete
       const onPalette = e.clientX < rect.left
       if (onPalette && !d.fromPalette) {
-        setScripts(prev => removeBlockEverywhere(prev, d.inst.instanceId))
+        scriptsRef.current = baseScripts
+        setScripts(baseScripts)
         setDrag(null)
         return
       }
 
       const slotTarget = findSlotDropTargetAtPoint(e.clientX, e.clientY, d.inst)
       if (slotTarget) {
-        setScripts(prev => {
-          const base = d.fromPalette ? prev : removeBlockEverywhere(prev, d.inst.instanceId)
-          return base.map(s => ({
-            ...s,
-            root: updateSlot(s.root, slotTarget.instanceId, slotTarget.slotId, deepCopy(d.inst)),
-          }))
-        })
+        const nextScripts = baseScripts.map(s => ({
+          ...s,
+          root: updateSlot(s.root, slotTarget.instanceId, slotTarget.slotId, deepCopy(d.inst)),
+        }))
+        scriptsRef.current = nextScripts
+        setScripts(nextScripts)
         setDrag(null)
         return
       }
 
-      const snapTarget = findSnapTarget(scriptsRef.current, { ...d.inst, x, y }, 55)
+      const snapTarget = findSnapTarget(baseScripts, { ...d.inst, x, y }, 55)
       if (snapTarget) {
-        setScripts(prev => {
-          const base = d.fromPalette ? prev : removeBlockEverywhere(prev, d.inst.instanceId)
-          return attachBlock(base, d.inst, snapTarget)
-        })
+        const nextScripts = attachBlock(baseScripts, d.inst, snapTarget)
+        scriptsRef.current = nextScripts
+        setScripts(nextScripts)
       } else {
         const newInst = { ...d.inst, x, y }
         const def = BLOCK_DEF_MAP.get(newInst.defId)
         if (def && (def.type === 'hat' || def.type === 'command' || def.type === 'c-block' || def.type === 'cap')) {
-          setScripts(prev => {
-            const base = d.fromPalette ? prev : removeBlockEverywhere(prev, d.inst.instanceId)
-            return [...base, { id: uid(), root: newInst }]
-          })
+          const nextScripts = [...baseScripts, { id: uid(), root: newInst }]
+          scriptsRef.current = nextScripts
+          setScripts(nextScripts)
         }
       }
       setDrag(null)
