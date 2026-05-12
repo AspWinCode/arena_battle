@@ -254,29 +254,38 @@ export default function BlockEditor({
       // Dropped on palette → delete
       const onPalette = e.clientX < rect.left
       if (onPalette && !d.fromPalette) {
-        setScripts(prev => removeBlock(prev, findScriptOf(prev, d.inst.instanceId) ?? '', d.inst.instanceId))
+        setScripts(prev => removeBlockEverywhere(prev, d.inst.instanceId))
         setDrag(null)
         return
       }
 
       const slotTarget = findSlotDropTargetAtPoint(e.clientX, e.clientY, d.inst)
       if (slotTarget) {
-        setScripts(prev => prev.map(s => ({
-          ...s,
-          root: updateSlot(s.root, slotTarget.instanceId, slotTarget.slotId, deepCopy(d.inst)),
-        })))
+        setScripts(prev => {
+          const base = d.fromPalette ? prev : removeBlockEverywhere(prev, d.inst.instanceId)
+          return base.map(s => ({
+            ...s,
+            root: updateSlot(s.root, slotTarget.instanceId, slotTarget.slotId, deepCopy(d.inst)),
+          }))
+        })
         setDrag(null)
         return
       }
 
       const snapTarget = findSnapTarget(scriptsRef.current, { ...d.inst, x, y }, 55)
       if (snapTarget) {
-        setScripts(prev => attachBlock(prev, d.inst, snapTarget))
+        setScripts(prev => {
+          const base = d.fromPalette ? prev : removeBlockEverywhere(prev, d.inst.instanceId)
+          return attachBlock(base, d.inst, snapTarget)
+        })
       } else {
         const newInst = { ...d.inst, x, y }
         const def = BLOCK_DEF_MAP.get(newInst.defId)
         if (def && (def.type === 'hat' || def.type === 'command' || def.type === 'c-block' || def.type === 'cap')) {
-          setScripts(prev => [...prev, { id: uid(), root: newInst }])
+          setScripts(prev => {
+            const base = d.fromPalette ? prev : removeBlockEverywhere(prev, d.inst.instanceId)
+            return [...base, { id: uid(), root: newInst }]
+          })
         }
       }
       setDrag(null)
@@ -667,6 +676,20 @@ function removeBlock(scripts: Script[], targetScriptId: string, targetInstId: st
     const newRoot = removeFromInstance(s.root, targetInstId)
     return newRoot ? [{ ...s, root: newRoot }] : []
   })
+}
+
+function removeBlockEverywhere(scripts: Script[], targetInstId: string): Script[] {
+  let changed = false
+  const next = scripts.flatMap(s => {
+    if (s.root.instanceId === targetInstId) {
+      changed = true
+      return s.root.next ? [{ ...s, root: s.root.next }] : []
+    }
+    const newRoot = removeFromInstance(s.root, targetInstId)
+    if (newRoot !== s.root) changed = true
+    return newRoot ? [{ ...s, root: newRoot }] : []
+  })
+  return changed ? next : scripts
 }
 
 function removeFromInstance(inst: BlockInstance, targetId: string): BlockInstance | null {
