@@ -17,7 +17,8 @@ export interface BlockDef {
   label: string
   slots?: SlotDef[]
   color?: string
-  canHaveBody?: boolean  // for c-blocks
+  canHaveBody?: boolean   // single body zone (if, repeat, forever)
+  hasTwoBody?: boolean    // two body zones then/else (ifElse) — implies canHaveBody
 }
 
 export interface SlotValue {
@@ -31,8 +32,9 @@ export interface BlockInstance {
   x: number
   y: number
   slots: SlotValue[]
-  body?: BlockInstance[]   // inner blocks for c-blocks
-  next?: BlockInstance     // next command block in stack
+  body?: BlockInstance[]      // "then" body or single body
+  elseBody?: BlockInstance[]  // "else" body — only for hasTwoBody blocks
+  next?: BlockInstance        // next command block in stack
 }
 
 export interface Script {

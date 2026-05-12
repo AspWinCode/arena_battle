@@ -1,16 +1,18 @@
+import type { SkinId } from '@robocode/shared'
 import type { BlockDef } from './types'
 
 export const BLOCK_DEFS: BlockDef[] = [
-  // ── Combat — each block returns the matching action string ─────────────────
-  { id: 'doAttack',  type: 'command', category: 'combat', label: '👊 атака',        color: '#e6261f' },
-  { id: 'doHeavy',   type: 'command', category: 'combat', label: '💥 тяжёлый удар', color: '#c0392b' },
-  { id: 'doLaser',   type: 'command', category: 'combat', label: '⚡ лазер',        color: '#e74c3c' },
-  { id: 'doShield',  type: 'command', category: 'combat', label: '🛡️ щит',          color: '#2980b9' },
-  { id: 'doDodge',   type: 'command', category: 'combat', label: '💨 уклон',        color: '#8e44ad' },
-  { id: 'doRepair',  type: 'command', category: 'combat', label: '💊 лечение',      color: '#27ae60' },
-  { id: 'doSpecial', type: 'command', category: 'combat', label: '☄️ спешл',        color: '#d35400' },
+  // ── Combat ────────────────────────────────────────────────────────────────────
+  { id: 'doAttack',  type: 'command', category: 'combat', label: '👊 атака',            color: '#e6261f' },
+  { id: 'doHeavy',   type: 'command', category: 'combat', label: '💥 тяжёлый удар',     color: '#c0392b' },
+  { id: 'doLaser',   type: 'command', category: 'combat', label: '⚡ лазер',            color: '#e74c3c' },
+  { id: 'doShield',  type: 'command', category: 'combat', label: '🛡️ щит',             color: '#2980b9' },
+  { id: 'doDodge',   type: 'command', category: 'combat', label: '💨 уклон',            color: '#8e44ad' },
+  { id: 'doRepair',  type: 'command', category: 'combat', label: '💊 лечение',          color: '#27ae60' },
+  { id: 'doSpecial', type: 'command', category: 'combat', label: '☄️ спешл',            color: '#d35400' },
+  { id: 'doRandom',  type: 'command', category: 'combat', label: '🎲 случайный приём',  color: '#7f8c8d' },
 
-  // ── Control ────────────────────────────────────────────────────────────────
+  // ── Control ───────────────────────────────────────────────────────────────────
   { id: 'whenTurn', type: 'hat', category: 'control', label: '⏱ каждый ход стратегии', color: '#e67e22' },
   {
     id: 'if', type: 'c-block', category: 'control', label: 'если',
@@ -19,25 +21,40 @@ export const BLOCK_DEFS: BlockDef[] = [
   },
   {
     id: 'ifElse', type: 'c-block', category: 'control', label: 'если / иначе',
-    color: '#e67e22', canHaveBody: true,
+    color: '#e67e22', canHaveBody: true, hasTwoBody: true,
     slots: [{ id: 'cond', type: 'boolean' }],
+  },
+  {
+    id: 'repeat', type: 'c-block', category: 'control', label: '🔁 повторить',
+    color: '#e67e22', canHaveBody: true,
+    slots: [{ id: 'n', type: 'number', default: 3 }],
+  },
+  {
+    id: 'forever', type: 'c-block', category: 'control', label: '♾ повторять',
+    color: '#e67e22', canHaveBody: true,
   },
   { id: 'stop', type: 'cap', category: 'control', label: '⏹ стоп', color: '#e67e22' },
 
-  // ── Sensing — reporters that map to ctx fields ─────────────────────────────
-  { id: 'ctxMyHp',            type: 'reporter',  category: 'sensing', label: 'мой HP',               color: '#5cb1d6' },
-  { id: 'ctxEnemyHp',         type: 'reporter',  category: 'sensing', label: 'HP врага',              color: '#5cb1d6' },
-  { id: 'ctxMyRage',          type: 'reporter',  category: 'sensing', label: 'моя Rage',              color: '#5cb1d6' },
-  { id: 'ctxMyStamina',       type: 'reporter',  category: 'sensing', label: 'выносливость',          color: '#5cb1d6' },
-  { id: 'ctxMyLastAction',    type: 'reporter',  category: 'sensing', label: 'мой последний ход',     color: '#5cb1d6' },
-  { id: 'ctxEnemyLastAction', type: 'reporter',  category: 'sensing', label: 'ход врага',             color: '#5cb1d6' },
+  // ── Sensing ───────────────────────────────────────────────────────────────────
+  { id: 'ctxMyHp',            type: 'reporter',  category: 'sensing', label: 'мой HP',              color: '#5cb1d6' },
+  { id: 'ctxEnemyHp',         type: 'reporter',  category: 'sensing', label: 'HP врага',             color: '#5cb1d6' },
+  { id: 'ctxMyRage',          type: 'reporter',  category: 'sensing', label: 'моя Rage',             color: '#5cb1d6' },
+  { id: 'ctxMyStamina',       type: 'reporter',  category: 'sensing', label: 'выносливость',         color: '#5cb1d6' },
+  { id: 'ctxMyLastAction',    type: 'reporter',  category: 'sensing', label: 'мой последний ход',    color: '#5cb1d6' },
+  { id: 'ctxEnemyLastAction', type: 'reporter',  category: 'sensing', label: 'ход врага',            color: '#5cb1d6' },
   { id: 'ctxCooldownLaser',   type: 'reporter',  category: 'sensing', label: 'КД лазера',            color: '#5cb1d6' },
   { id: 'ctxCooldownHeavy',   type: 'reporter',  category: 'sensing', label: 'КД heavy',             color: '#5cb1d6' },
-  { id: 'ctxTurn',            type: 'reporter',  category: 'sensing', label: 'ход #',                color: '#5cb1d6' },
+  { id: 'ctxTurn',            type: 'reporter',  category: 'sensing', label: 'ход #',               color: '#5cb1d6' },
   { id: 'ctxRepeatCount',     type: 'reporter',  category: 'sensing', label: 'повторов подряд',      color: '#5cb1d6' },
   { id: 'ctxEnemyHasShield',  type: 'predicate', category: 'sensing', label: 'враг в щите?',         color: '#5cb1d6' },
+  { id: 'ctxMyHasShield',     type: 'predicate', category: 'sensing', label: 'я в щите?',            color: '#5cb1d6' },
+  {
+    id: 'percentChance', type: 'predicate', category: 'sensing', label: '🎲 шанс',
+    color: '#5cb1d6',
+    slots: [{ id: 'pct', type: 'number', default: 50 }],
+  },
 
-  // ── Operators ──────────────────────────────────────────────────────────────
+  // ── Operators ─────────────────────────────────────────────────────────────────
   {
     id: 'greaterThan', type: 'predicate', category: 'operators', label: '>',
     color: '#59c059',
@@ -54,7 +71,17 @@ export const BLOCK_DEFS: BlockDef[] = [
     slots: [{ id: 'a', type: 'reporter' }, { id: 'b', type: 'number', default: 100 }],
   },
   {
+    id: 'leq', type: 'predicate', category: 'operators', label: '≤',
+    color: '#59c059',
+    slots: [{ id: 'a', type: 'reporter' }, { id: 'b', type: 'number', default: 50 }],
+  },
+  {
     id: 'equals', type: 'predicate', category: 'operators', label: '=',
+    color: '#59c059',
+    slots: [{ id: 'a', type: 'reporter' }, { id: 'b', type: 'string', default: 'attack' }],
+  },
+  {
+    id: 'notEquals', type: 'predicate', category: 'operators', label: '≠',
     color: '#59c059',
     slots: [{ id: 'a', type: 'reporter' }, { id: 'b', type: 'string', default: 'attack' }],
   },
@@ -74,7 +101,7 @@ export const BLOCK_DEFS: BlockDef[] = [
     slots: [{ id: 'a', type: 'boolean' }],
   },
 
-  // ── Variables ──────────────────────────────────────────────────────────────
+  // ── Variables ─────────────────────────────────────────────────────────────────
   {
     id: 'setVar', type: 'command', category: 'variables', label: 'установить',
     color: '#ff8c1a',
@@ -95,11 +122,28 @@ export const BLOCK_DEFS: BlockDef[] = [
 export const BLOCK_DEF_MAP = new Map(BLOCK_DEFS.map(b => [b.id, b]))
 
 export const CATEGORY_META: Record<string, { label: string; color: string; icon: string }> = {
-  combat:    { label: 'Бой',        color: '#e6261f', icon: '⚔️'  },
-  control:   { label: 'Управление', color: '#e67e22', icon: '🔁'  },
-  sensing:   { label: 'Сенсоры',    color: '#5cb1d6', icon: '👁'  },
-  operators: { label: 'Операторы',  color: '#59c059', icon: '➕'  },
-  variables: { label: 'Переменные', color: '#ff8c1a', icon: '📦'  },
+  combat:    { label: 'Бой',        color: '#e6261f', icon: '⚔️' },
+  control:   { label: 'Управление', color: '#e67e22', icon: '🔁' },
+  sensing:   { label: 'Сенсоры',    color: '#5cb1d6', icon: '👁' },
+  operators: { label: 'Операторы',  color: '#59c059', icon: '➕' },
+  variables: { label: 'Переменные', color: '#ff8c1a', icon: '📦' },
 }
 
 export const CATEGORIES = Object.keys(CATEGORY_META)
+
+export const ALL_SKINS: { id: SkinId; icon: string; label: string }[] = [
+  { id: 'robot',     icon: '🤖', label: 'Робот' },
+  { id: 'gladiator', icon: '⚔️', label: 'Гладиатор' },
+  { id: 'boxer',     icon: '🥊', label: 'Боксёр' },
+  { id: 'cosmonaut', icon: '🚀', label: 'Космонавт' },
+  { id: 'ninja',     icon: '🥷', label: 'Ниндзя' },
+  { id: 'mage',      icon: '🧙', label: 'Маг' },
+  { id: 'paladin',   icon: '🛡️', label: 'Паладин' },
+  { id: 'sniper',    icon: '🎯', label: 'Снайпер' },
+  { id: 'tank',      icon: '🛡',  label: 'Танк' },
+  { id: 'vampire',   icon: '🧛', label: 'Вампир' },
+  { id: 'samurai',   icon: '🗡️', label: 'Самурай' },
+  { id: 'phantom',   icon: '👻', label: 'Фантом' },
+  { id: 'engineer',  icon: '🔧', label: 'Инженер' },
+  { id: 'berserker', icon: '💢', label: 'Берсерк' },
+]

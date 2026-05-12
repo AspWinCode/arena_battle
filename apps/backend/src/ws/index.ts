@@ -152,6 +152,15 @@ export const wsRoutes: FastifyPluginAsync = async (fastify) => {
         }
 
         // ── PING ───────────────────────────────────────────────────
+        if (msg.type === 'change_skin' && playerSlot) {
+          rooms.get(sessionId)?.updatePlayerSkin(playerSlot, msg.payload.skin)
+          await prisma.player.updateMany({
+            where: { sessionId, slot: playerSlot },
+            data: { skin: msg.payload.skin },
+          }).catch(() => {})
+          return
+        }
+
         if (msg.type === 'ping') {
           ws.send(JSON.stringify({ type: 'pong', payload: {} }))
         }

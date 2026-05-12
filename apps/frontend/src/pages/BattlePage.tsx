@@ -20,6 +20,7 @@ export default function BattlePage() {
   // myName/mySkin saved at join — p1/p2 are null until lobby_update arrives from server
   const myName  = useBattleStore(s => s.myName)
   const mySkin  = useBattleStore(s => s.mySkin)
+  const setMySkin = useBattleStore(s => s.setMySkin)
 
   const { send } = useWebSocket(sessionId ?? null)
   const connected = useRef(false)
@@ -60,6 +61,10 @@ export default function BattlePage() {
       {(phase === 'coding' || phase === 'inter_round') && (
         <CodingScreen
           onReady={(code, lang) => send({ type: 'ready', payload: { code, lang } })}
+          onSkinChange={(skin) => {
+            setMySkin(skin)
+            send({ type: 'change_skin', payload: { skin } })
+          }}
           interRound={phase === 'inter_round' ? { score: interRoundScore!, nextRound: nextRound! } : undefined}
         />
       )}

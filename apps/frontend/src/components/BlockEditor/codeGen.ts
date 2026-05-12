@@ -14,7 +14,7 @@ export function generateCode(root: BlockInstance | null): string {
   }
 
   lines.push(...generateBlock(root.next ?? null, 1))
-  lines.push('  return \'attack\'; // fallback')
+  lines.push("  return 'attack'; // fallback")
   lines.push('}')
   return lines.join('\n')
 }
@@ -38,6 +38,7 @@ function collectVarNames(inst: BlockInstance | null, acc: Set<string> = new Set(
   }
   if (inst.next) collectVarNames(inst.next, acc)
   inst.body?.forEach(b => collectVarNames(b, acc))
+  inst.elseBody?.forEach(b => collectVarNames(b, acc))
   return acc
 }
 
@@ -67,7 +68,9 @@ function generateExpression(inst: BlockInstance): string {
     case 'ctxTurn':            return 'ctx.turn'
     case 'ctxRepeatCount':     return 'ctx.myRepeatCount'
     case 'ctxEnemyHasShield':  return "(ctx.enemyLastAction === 'shield')"
-    // Legacy IDs (backwards compat)
+    case 'ctxMyHasShield':     return "(ctx.myLastAction === 'shield')"
+    case 'percentChance':      return `(Math.random() * 100 < ${s('pct')})`
+    // Legacy IDs
     case 'enemyHp':            return 'ctx.enemyHp'
     case 'myHp':               return 'ctx.myHp'
     case 'enemyLastAction':    return 'ctx.enemyLastAction'
@@ -77,7 +80,9 @@ function generateExpression(inst: BlockInstance): string {
     case 'greaterThan': return `(${s('a')} > ${s('b')})`
     case 'lessThan':    return `(${s('a')} < ${s('b')})`
     case 'geq':         return `(${s('a')} >= ${s('b')})`
+    case 'leq':         return `(${s('a')} <= ${s('b')})`
     case 'equals':      return `(${s('a')} === ${s('b')})`
+    case 'notEquals':   return `(${s('a')} !== ${s('b')})`
     case 'and':         return `(${s('a')} && ${s('b')})`
     case 'or':          return `(${s('a')} || ${s('b')})`
     case 'not':         return `!(${s('a')})`
@@ -100,7 +105,7 @@ function generateBlock(inst: BlockInstance | null, depth: number): string[] {
   const s = (id: string) => slotValue(inst.slots.find(sv => sv.slotId === id))
 
   switch (inst.defId) {
-    // Combat action blocks — return the action string directly
+    // Combat action blocks
     case 'doAttack':  lines.push(`${ind}return 'attack';`);  break
     case 'doHeavy':   lines.push(`${ind}return 'heavy';`);   break
     case 'doLaser':   lines.push(`${ind}return 'laser';`);   break
@@ -108,9 +113,10 @@ function generateBlock(inst: BlockInstance | null, depth: number): string[] {
     case 'doDodge':   lines.push(`${ind}return 'dodge';`);   break
     case 'doRepair':  lines.push(`${ind}return 'repair';`);  break
     case 'doSpecial': lines.push(`${ind}return 'special';`); break
+    case 'doRandom':  lines.push(`${ind}return ['attack','heavy','laser','shield','dodge','repair','special'][Math.floor(Math.random()*7)];`); break
     // Hat / cap
     case 'whenTurn': break
-    case 'stop':     lines.push(`${ind}return 'attack';`); break  // safe fallback
+    case 'stop':     lines.push(`${ind}return 'attack';`); break
     // Legacy combat IDs
     case 'attack':      lines.push(`${ind}return 'attack';`);  break
     case 'laser':       lines.push(`${ind}return 'laser';`);   break
@@ -120,6 +126,7 @@ function generateBlock(inst: BlockInstance | null, depth: number): string[] {
     case 'repair':      lines.push(`${ind}return 'repair';`);  break
     case 'moveForward': break
     case 'moveBackward': break
+    // Variable blocks
     case 'setVar': {
       const name = inst.slots.find(sv => sv.slotId === 'name')?.value
       const varName = name && typeof name === 'string' ? sanitizeVarName(name) : '__var'
@@ -132,6 +139,7 @@ function generateBlock(inst: BlockInstance | null, depth: number): string[] {
       lines.push(`${ind}${varName} += ${s('by')};`)
       break
     }
+    // Control blocks
     case 'if': {
       lines.push(`${ind}if (${s('cond')}) {`)
       lines.push(...generateBlocks(inst.body ?? [], depth + 1))
@@ -139,22 +147,25 @@ function generateBlock(inst: BlockInstance | null, depth: number): string[] {
       break
     }
     case 'ifElse': {
-      const half = Math.floor((inst.body ?? []).length / 2)
+      // Uses separate body (then) and elseBody (else) arrays
       lines.push(`${ind}if (${s('cond')}) {`)
-      lines.push(...generateBlocks((inst.body ?? []).slice(0, half), depth + 1))
+      lines.push(...generateBlocks(inst.body ?? [], depth + 1))
       lines.push(`${ind}} else {`)
-      lines.push(...generateBlocks((inst.body ?? []).slice(half), depth + 1))
+      lines.push(...generateBlocks(inst.elseBody ?? [], depth + 1))
       lines.push(`${ind}}`)
       break
     }
     case 'repeat': {
-      lines.push(`${ind}for (let _i = 0; _i < ${s('n')}; _i++) {`)
+      const n = s('n')
+      lines.push(`${ind}for (let _i = 0; _i < ${n}; _i++) {`)
       lines.push(...generateBlocks(inst.body ?? [], depth + 1))
       lines.push(`${ind}}`)
       break
     }
     case 'forever': {
-      lines.push(`${ind}while (true) {`)
+      // Keep the visual "forever" loop safe for sandbox execution.
+      // In practice this behaves like "repeat until some branch returns".
+      lines.push(`${ind}for (let _loop = 0; _loop < 100; _loop++) {`)
       lines.push(...generateBlocks(inst.body ?? [], depth + 1))
       lines.push(`${ind}}`)
       break

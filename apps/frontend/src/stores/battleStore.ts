@@ -53,6 +53,7 @@ interface BattleState {
   setSession: (sessionId: string, slot: 1 | 2, level: SessionLevel, skins: SkinId[], token: string, name: string, skin: SkinId) => void
   setCode: (code: string) => void
   setLang: (lang: Lang) => void
+  setMySkin: (skin: SkinId) => void
   handleMessage: (msg: ServerMessage) => void
   reset: () => void
 }
@@ -99,6 +100,11 @@ export const useBattleStore = create<BattleState>((set) => ({
 
   setCode: (code) => set({ code }),
   setLang: (lang) => set({ lang }),
+  setMySkin: (mySkin) => set((state) => ({
+    mySkin,
+    p1: state.slot === 1 && state.p1 ? { ...state.p1, skin: mySkin } : state.p1,
+    p2: state.slot === 2 && state.p2 ? { ...state.p2, skin: mySkin } : state.p2,
+  })),
 
   handleMessage: (msg) => {
     switch (msg.type) {

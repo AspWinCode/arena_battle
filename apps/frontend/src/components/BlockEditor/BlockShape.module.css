@@ -1,31 +1,31 @@
 .block {
   display: inline-flex;
   flex-direction: column;
-  min-width: 80px;
+  min-width: 56px;
   user-select: none;
   filter: drop-shadow(0 2px 4px rgba(0,0,0,.4));
 }
 
 .body {
   background: var(--block-color);
-  padding: 6px 10px;
-  min-height: 28px;
+  padding: 4px 8px;
+  min-height: 24px;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 3px;
 }
 
 .labelRow {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
   flex-wrap: wrap;
-  min-height: 24px;
+  min-height: 20px;
 }
 
 .labelText {
   color: #fff;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 700;
   text-shadow: 0 1px 2px rgba(0,0,0,.5);
   white-space: nowrap;
@@ -47,8 +47,8 @@
 }
 .type-reporter .body {
   border-radius: 12px;
-  padding: 4px 10px;
-  min-width: 60px;
+  padding: 3px 8px;
+  min-width: 44px;
 }
 
 /* ── type-predicate ───────────────────────────────────────────── */
@@ -57,17 +57,17 @@
 }
 .type-predicate .body {
   clip-path: polygon(12px 0%, calc(100% - 12px) 0%, 100% 50%, calc(100% - 12px) 100%, 12px 100%, 0% 50%);
-  padding: 4px 20px;
-  min-width: 60px;
+  padding: 3px 14px;
+  min-width: 44px;
 }
 
 /* ── C-block ──────────────────────────────────────────────────── */
 .innerBody {
   background: rgba(0,0,0,.2);
   border-left: 3px solid rgba(255,255,255,.2);
-  margin-left: 14px;
-  min-height: 28px;
-  padding: 4px 4px;
+  margin-left: 12px;
+  min-height: 22px;
+  padding: 3px 3px;
   border-radius: 0 0 4px 4px;
   display: flex;
   flex-direction: column;
@@ -75,21 +75,21 @@
 }
 
 .innerPlaceholder {
-  font-size: 10px;
+  font-size: 9px;
   color: rgba(255,255,255,.4);
   font-style: italic;
-  padding: 4px 8px;
+  padding: 3px 6px;
   text-align: center;
 }
 
 /* ── Slots ────────────────────────────────────────────────────── */
 .slotNumber {
-  width: 44px;
+  width: 38px;
   background: rgba(255,255,255,.15);
   border: 1px solid rgba(255,255,255,.3);
   border-radius: 6px;
   color: #fff;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 700;
   padding: 2px 4px;
   text-align: center;
@@ -97,12 +97,12 @@
 }
 
 .slotString {
-  width: 72px;
+  width: 58px;
   background: rgba(255,255,255,.15);
   border: 1px solid rgba(255,255,255,.3);
   border-radius: 6px;
   color: #fff;
-  font-size: 12px;
+  font-size: 11px;
   padding: 2px 4px;
   outline: none;
 }
@@ -112,18 +112,19 @@
   border: 1px solid rgba(255,255,255,.3);
   border-radius: 6px;
   color: #fff;
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 600;
-  padding: 2px 4px;
+  padding: 2px 3px;
   outline: none;
   cursor: pointer;
+  max-width: 88px;
 }
 
 .slotDropdown option { background: #1a1a35; color: #fff; }
 
 .slotBoolean {
-  width: 32px;
-  height: 16px;
+  min-width: 32px;
+  min-height: 16px;
   clip-path: polygon(6px 0%, calc(100% - 6px) 0%, 100% 50%, calc(100% - 6px) 100%, 6px 100%, 0% 50%);
   background: rgba(255,255,255,.15);
   border-radius: 2px;
@@ -136,16 +137,81 @@
 .slotBooleanEmpty  { display: block; width: 20px; height: 10px; }
 
 .slotReporter {
-  min-width: 40px;
-  height: 18px;
+  min-width: 28px;
+  min-height: 18px;
   background: rgba(255,255,255,.15);
   border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 11px;
+  font-size: 10px;
   color: #fff;
-  padding: 0 6px;
+  padding: 0 4px;
 }
 
-.slotReporterEmpty { display: block; width: 30px; height: 10px; }
+.slotReporterEmpty { display: block; width: 20px; height: 8px; }
+
+.slotNest {
+  position: relative;
+  padding: 1px 3px;
+  border: 1px dashed rgba(255,255,255,.18);
+  transition: border-color .12s ease, box-shadow .12s ease, background-color .12s ease;
+}
+
+.slotNestActive {
+  border-color: rgba(120, 246, 140, .95);
+  box-shadow: 0 0 0 2px rgba(120, 246, 140, .22), 0 0 14px rgba(120, 246, 140, .28);
+  background: rgba(255,255,255,.22);
+}
+
+.slotNestedBlock {
+  display: flex;
+  align-items: center;
+}
+
+.slotClear {
+  position: absolute;
+  top: -7px;
+  right: -7px;
+  width: 16px;
+  height: 16px;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(9, 12, 19, .9);
+  color: rgba(255,255,255,.85);
+  font-size: 11px;
+  line-height: 1;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.slotClear:hover {
+  background: rgba(28, 34, 49, .96);
+  color: #fff;
+}
+
+/* ── Two-body (ifElse) ────────────────────────────────────────── */
+.twoBodyLabel {
+  font-size: 9px;
+  font-weight: 800;
+  color: rgba(255,255,255,.7);
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  padding: 2px 4px 0;
+  margin-left: 12px;
+}
+
+.thenZone {
+  border-left-color: rgba(120,255,120,.35);
+}
+
+.elseZone {
+  border-left-color: rgba(255,120,120,.35);
+}
+
+/* ── Snap highlight ───────────────────────────────────────────── */
+.snapTarget {
+  filter: drop-shadow(0 0 8px rgba(255,255,255,.9)) drop-shadow(0 0 3px #fff);
+}

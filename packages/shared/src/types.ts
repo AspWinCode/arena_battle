@@ -152,6 +152,7 @@ export interface RoundResult {
 
 export type ClientMessage =
   | { type: 'connect'; payload: { playerCode: string; name: string; skin: SkinId } }
+  | { type: 'change_skin'; payload: { skin: SkinId } }
   | { type: 'ready'; payload: { code: string; lang: Lang } }
   | { type: 'chat'; payload: { message: string } }
   | { type: 'ping'; payload: Record<string, never> }

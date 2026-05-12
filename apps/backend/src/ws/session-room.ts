@@ -86,6 +86,19 @@ export class SessionRoom {
     }
   }
 
+  updatePlayerSkin(slot: 1 | 2, skin: SkinId) {
+    const player = this.players.get(slot)
+    if (!player) return
+    if (!this.allowedSkins.includes(skin)) return
+
+    player.skin = skin
+    if (player.strategy) {
+      player.strategy.character = skin
+    }
+
+    this.broadcastLobbyUpdate()
+  }
+
   addObserver(ws: WsSocket) {
     this.observers.add(ws)
     this.sendLobbyUpdateTo(ws)

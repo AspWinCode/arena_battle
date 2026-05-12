@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import type { Lang } from '@robocode/shared'
+import type { Lang, SkinId } from '@robocode/shared'
 import { SKIN_ICON } from '@robocode/shared'
 import { useBattleStore } from '../../stores/battleStore'
 import CodeEditor from '../CodeEditor/CodeEditor'
@@ -74,9 +74,11 @@ interface InterRoundInfo {
 
 export default function CodingScreen({
   onReady,
+  onSkinChange,
   interRound,
 }: {
   onReady: (code: string, lang: Lang) => void
+  onSkinChange: (skin: SkinId) => void
   interRound?: InterRoundInfo
 }) {
   const sessionLevel = useBattleStore(s => s.sessionLevel)
@@ -89,6 +91,8 @@ export default function CodingScreen({
   const p1 = useBattleStore(s => s.p1)
   const p2 = useBattleStore(s => s.p2)
   const compileError = useBattleStore(s => s.compileError)
+  const allowedSkins = useBattleStore(s => s.allowedSkins)
+  const mySkin = useBattleStore(s => s.mySkin)
   const myInfo = slot === 1 ? p1 : p2
   const opponentInfo = slot === 1 ? p2 : p1
 
@@ -147,8 +151,9 @@ export default function CodingScreen({
         <div style={{ flex: 1, minHeight: 0 }}>
           <BlockEditor
             onChange={v => setCode(v)}
-            skin={myInfo?.skin ?? 'robot'}
-            onSkinChange={() => {}}
+            skin={myInfo?.skin ?? mySkin ?? 'robot'}
+            onSkinChange={onSkinChange}
+            allowedSkins={allowedSkins}
           />
         </div>
       </div>
