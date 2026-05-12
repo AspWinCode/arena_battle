@@ -171,14 +171,22 @@ export default function BlockEditor({
     e.stopPropagation()
     const scriptId = findScriptOf(scriptsRef.current, inst.instanceId)
     if (!scriptId) return
-    setScripts(prev => {
-      const [next] = pickUpBlock(prev, scriptId, inst.instanceId)
-      scriptsRef.current = next
-      return next
-    })
+
+    const [nextScripts, pickedInst] = pickUpBlock(scriptsRef.current, scriptId, inst.instanceId)
+    if (!pickedInst) return
+
+    scriptsRef.current = nextScripts
+    setScripts(nextScripts)
     setSnapTargetId(null)
     setSlotDropTargetKey(null)
-    setDrag({ inst, fromPalette: false, offsetX: 0, offsetY: 0, currentX: e.clientX, currentY: e.clientY })
+    setDrag({
+      inst: pickedInst,
+      fromPalette: false,
+      offsetX: 0,
+      offsetY: 0,
+      currentX: e.clientX,
+      currentY: e.clientY,
+    })
   }, [])
 
   // ── Mouse move / up ────────────────────────────────────────────────────────
