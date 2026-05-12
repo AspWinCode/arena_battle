@@ -133,15 +133,6 @@ export const sessionRoutes: FastifyPluginAsync = async (fastify) => {
       return reply.status(400).send({ error: 'Skin not allowed', code: 'SKIN_NOT_ALLOWED' })
     }
 
-    // Determine player slot
-    const slot = session.code1 === sessionCode ? 1 : 2
-
-    // Check if slot is already taken
-    const existingPlayer = session.players.find((p: { slot: number }) => p.slot === slot)
-    if (existingPlayer) {
-      return reply.status(409).send({ error: 'Slot already taken', code: 'SLOT_TAKEN' })
-    }
-
     // Try to extract userId from optional user Bearer token
     let userId: string | undefined
     const authHeader = request.headers.authorization
@@ -150,6 +141,36 @@ export const sessionRoutes: FastifyPluginAsync = async (fastify) => {
         const payload = fastify.jwt.verify<{ userId: string; type: string }>(authHeader.slice(7))
         if (payload.type === 'user' && payload.userId) userId = payload.userId
       } catch { /* not a user token — that's fine */ }
+    }
+
+    // Determine player slot
+    const slot = session.code1 === sessionCode ? 1 : 2
+
+    // Matchmaking pre-creates Player rows for both users. Allow the same
+    // authenticated user to claim their reserved slot instead of failing.
+    const existingPlayer = session.players.find((p: { id: string; slot: number; userId?: string | null }) => p.slot === slot)
+    if (existingPlayer) {
+      if (!userId || existingPlayer.userId !== userId) {
+        return reply.status(409).send({ error: 'Slot already taken', code: 'SLOT_TAKEN' })
+      }
+
+      await prisma.player.update({
+        where: { id: existingPlayer.id },
+        data: { name, skin },
+      })
+
+      const wsToken = fastify.jwt.sign(
+        { sessionId: session.id, slot, name, skin, userId },
+        { expiresIn: '2h' }
+      )
+
+      const response: JoinSessionResponse = {
+        sessionId: session.id,
+        playerSlot: slot as 1 | 2,
+        wsToken,
+      }
+
+      return response
     }
 
     // Create player

@@ -17,6 +17,7 @@ interface QueueEntry {
   sessionId?: string
   playerCode?: string
   opponentName?: string
+  matchedAt?: Date
 }
 
 // userId → QueueEntry
@@ -69,8 +70,6 @@ export function getQueueStatus(userId: string): {
   if (!entry) return { inQueue: false, matched: false }
 
   if (entry.matched) {
-    // Clean up after delivering the match info
-    queue.delete(userId)
     return {
       inQueue: false,
       matched: true,
@@ -148,11 +147,13 @@ async function tryMatch(userId: string): Promise<void> {
     me.sessionId    = session.id
     me.playerCode   = code1
     me.opponentName = candidate.name
+    me.matchedAt    = new Date()
 
     candidate.matched      = true
     candidate.sessionId    = session.id
     candidate.playerCode   = code2
     candidate.opponentName = me.name
+    candidate.matchedAt    = new Date()
 
   } catch (err) {
     console.error('[matchmaking] Failed to create session:', err)

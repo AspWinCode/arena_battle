@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import type { SkinId, JoinSessionResponse } from '@robocode/shared'
 import { CHARACTER_STATS } from '@robocode/shared'
 import { api } from '../api/client'
@@ -145,6 +145,10 @@ export default function JoinPage() {
             <p className={styles.logoSub}>Учись программировать в бою</p>
           </div>
         </div>
+
+        <Link to="/" className={styles.homeLink}>
+          ← На главную
+        </Link>
 
         <form className={styles.card} onSubmit={handleSubmit}>
           <h2 className={styles.formTitle}>Войти в битву</h2>
