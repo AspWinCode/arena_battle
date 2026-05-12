@@ -241,7 +241,7 @@ export default function SparringPage() {
                 readOnly={phase === 'animating'}
               />
             ) : (
-              <BlockEditor onChange={v => setCode(v)} />
+              <BlockEditor onChange={v => setCode(v)} showSkinSelector={false} />
             )}
           </div>
 

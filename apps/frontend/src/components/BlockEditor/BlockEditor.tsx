@@ -90,9 +90,16 @@ interface Props {
   skin?: SkinId
   onSkinChange?: (skin: SkinId) => void
   allowedSkins?: SkinId[]
+  showSkinSelector?: boolean
 }
 
-export default function BlockEditor({ onChange, skin = 'robot', onSkinChange, allowedSkins }: Props) {
+export default function BlockEditor({
+  onChange,
+  skin = 'robot',
+  onSkinChange,
+  allowedSkins,
+  showSkinSelector = true,
+}: Props) {
   const [scripts, setScripts]         = useState<Script[]>([])
   const [variables, setVariables]     = useState<string[]>([])
   const [activeCategory, setActiveCategory] = useState('combat')
@@ -166,6 +173,7 @@ export default function BlockEditor({ onChange, skin = 'robot', onSkinChange, al
     if (!scriptId) return
     setScripts(prev => {
       const [next] = pickUpBlock(prev, scriptId, inst.instanceId)
+      scriptsRef.current = next
       return next
     })
     setSnapTargetId(null)
@@ -501,6 +509,8 @@ export default function BlockEditor({ onChange, skin = 'robot', onSkinChange, al
           </div>
         )}
 
+        {showSkinSelector && (
+          <>
         {/* Skin selector */}
         <div className={styles.spriteBar}>
           <span className={styles.spriteBarLabel}>Персонаж:</span>
@@ -518,6 +528,8 @@ export default function BlockEditor({ onChange, skin = 'robot', onSkinChange, al
             ))}
           </div>
         </div>
+          </>
+        )}
       </div>
 
       {/* Context menu */}
