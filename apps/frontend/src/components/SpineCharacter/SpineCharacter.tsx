@@ -125,10 +125,10 @@ function positionSkeleton(
 
   const bounds = skeleton.getBoundsRect()
   const targetCenterX = canvas.width / 2
-  const targetBottomY = 6 + yOffset
+  const targetBottomY = canvas.height - 6 - yOffset
 
   skeleton.x += targetCenterX - (bounds.x + bounds.width / 2)
-  skeleton.y += targetBottomY - bounds.y
+  skeleton.y += targetBottomY - (bounds.y + bounds.height)
   skeleton.updateWorldTransform(Physics.update)
 }
 
@@ -194,12 +194,6 @@ export default function SpineCharacter({ skinId, action, turnKey, flipX = false,
         const skeleton = new Skeleton(skelData)
         skeleton.setToSetupPose()
 
-        // Spine uses Y-UP coordinates; canvas is Y-DOWN.
-        // We apply ctx.translate(0, canvas.height) + ctx.scale(1, -1) before rendering,
-        // so the skeleton's origin (feet) should be at y=0 in Spine space.
-        // The flip maps: screen_y = canvas.height - spine_y
-        //   → feet (spine_y = 0) at screen bottom ✓
-        //   → head (spine_y > 0) at screen top ✓
         const stateData = new AnimationStateData(skelData)
         stateData.defaultMix = 0.2
         for (const [from, to, mix] of MIX_TIMES) {
@@ -277,13 +271,7 @@ export default function SpineCharacter({ skinId, action, turnKey, flipX = false,
       skeleton.update(delta)
       skeleton.updateWorldTransform(Physics.update)
 
-      // Apply Y-flip so Spine's Y-UP coordinate space maps correctly to canvas Y-DOWN.
-      // Without this, characters render with positive-Y bones off the bottom of canvas.
-      ctx.save()
-      ctx.translate(0, canvas.height)
-      ctx.scale(1, -1)
       renderer.draw(skeleton)
-      ctx.restore()
 
       rafRef.current = requestAnimationFrame(loop)
     }
