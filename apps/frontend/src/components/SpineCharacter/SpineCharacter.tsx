@@ -65,7 +65,7 @@ const MIX_TIMES: Array<[string, string, number]> = [
 export const SPINE_SKIN_CONFIG: Record<string, { dir: string; scale: number; yOffset?: number }> = {
   default:   { dir: 'spineboy', scale: 0.38, yOffset: 0 },
   robot:     { dir: 'spineboy', scale: 0.38, yOffset: 0 },
-  boxer:     { dir: 'spineboy', scale: 0.38, yOffset: 0 },
+  boxer:     { dir: 'boxer',    scale: 1.0,  yOffset: 0 },
   gladiator: { dir: 'gladiator', scale: 1.0,  yOffset: 0 },
   cosmonaut: { dir: 'spineboy', scale: 0.38, yOffset: 0 },
   ninja:     { dir: 'spineboy', scale: 0.38, yOffset: 0 },
