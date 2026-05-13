@@ -63,24 +63,30 @@ const MIX_TIMES: Array<[string, string, number]> = [
 // scale: rendered size relative to canvas.
 //   skelJson.scale is set to 1 (no pre-baking); skeleton.scaleX/Y = cfg.scale.
 // Falls back to 'spineboy' for unknown skins.
-export const SPINE_SKIN_CONFIG: Record<string, { dir: string; scale: number; yOffset?: number; autoFit?: boolean }> = {
-  default:   { dir: 'spineboy', scale: 0.38, yOffset: 0 },
-  robot:     { dir: 'spineboy', scale: 0.38, yOffset: 0 },
-  boxer:     { dir: 'boxer',    scale: 1.0,  yOffset: 0, autoFit: true },
-  gladiator: { dir: 'gladiator', scale: 1.0,  yOffset: 0, autoFit: true },
-  cosmonaut: { dir: 'spineboy', scale: 0.38, yOffset: 0 },
-  ninja:     { dir: 'spineboy', scale: 0.38, yOffset: 0 },
-  mage:      { dir: 'spineboy', scale: 0.38, yOffset: 0 },
-  paladin:   { dir: 'spineboy', scale: 0.38, yOffset: 0 },
-  sniper:    { dir: 'spineboy', scale: 0.38, yOffset: 0 },
-  tank:      { dir: 'spineboy', scale: 0.38, yOffset: 0 },
-  vampire:   { dir: 'spineboy', scale: 0.38, yOffset: 0 },
-  samurai:   { dir: 'spineboy', scale: 0.38, yOffset: 0 },
-  phantom:   { dir: 'spineboy', scale: 0.38, yOffset: 0 },
-  engineer:  { dir: 'spineboy', scale: 0.38, yOffset: 0 },
-  berserker: { dir: 'spineboy', scale: 0.38, yOffset: 0 },
-  scorpion:  { dir: 'spineboy', scale: 0.38, yOffset: 0 },
-  plague:    { dir: 'spineboy', scale: 0.38, yOffset: 0 },
+export const SPINE_SKIN_CONFIG: Record<string, {
+  dir: string
+  scale: number
+  yOffset?: number
+  autoFit?: boolean
+  flipCanvasY?: boolean
+}> = {
+  default:   { dir: 'spineboy',  scale: 0.38, yOffset: 0,  flipCanvasY: true },
+  robot:     { dir: 'spineboy',  scale: 0.38, yOffset: 0,  flipCanvasY: true },
+  boxer:     { dir: 'boxer',     scale: 0.58, yOffset: 6,  autoFit: true, flipCanvasY: true },
+  gladiator: { dir: 'gladiator', scale: 0.45, yOffset: 54, flipCanvasY: true },
+  cosmonaut: { dir: 'spineboy',  scale: 0.38, yOffset: 0,  flipCanvasY: true },
+  ninja:     { dir: 'spineboy',  scale: 0.38, yOffset: 0,  flipCanvasY: true },
+  mage:      { dir: 'spineboy',  scale: 0.38, yOffset: 0,  flipCanvasY: true },
+  paladin:   { dir: 'spineboy',  scale: 0.38, yOffset: 0,  flipCanvasY: true },
+  sniper:    { dir: 'spineboy',  scale: 0.38, yOffset: 0,  flipCanvasY: true },
+  tank:      { dir: 'spineboy',  scale: 0.38, yOffset: 0,  flipCanvasY: true },
+  vampire:   { dir: 'spineboy',  scale: 0.38, yOffset: 0,  flipCanvasY: true },
+  samurai:   { dir: 'spineboy',  scale: 0.38, yOffset: 0,  flipCanvasY: true },
+  phantom:   { dir: 'spineboy',  scale: 0.38, yOffset: 0,  flipCanvasY: true },
+  engineer:  { dir: 'spineboy',  scale: 0.38, yOffset: 0,  flipCanvasY: true },
+  berserker: { dir: 'spineboy',  scale: 0.38, yOffset: 0,  flipCanvasY: true },
+  scorpion:  { dir: 'spineboy',  scale: 0.38, yOffset: 0,  flipCanvasY: true },
+  plague:    { dir: 'spineboy',  scale: 0.38, yOffset: 0,  flipCanvasY: true },
 }
 
 interface SpineRefs {
@@ -90,6 +96,7 @@ interface SpineRefs {
   ctx:      CanvasRenderingContext2D
   scale:    number
   autoFit:  boolean
+  flipCanvasY: boolean
 }
 
 function computeAutoFitScale(skeleton: Skeleton, canvas: HTMLCanvasElement, cfgScale: number) {
@@ -118,6 +125,7 @@ function positionSkeleton(
   scale: number,
   flipX: boolean,
   yOffset = 0,
+  flipCanvasY = false,
 ) {
   skeleton.scaleX = flipX ? -scale : scale
   skeleton.scaleY = scale
@@ -125,10 +133,14 @@ function positionSkeleton(
 
   const bounds = skeleton.getBoundsRect()
   const targetCenterX = canvas.width / 2
-  const targetBottomY = canvas.height - 6 - yOffset
+  const targetBottomY = flipCanvasY
+    ? 6 + yOffset
+    : canvas.height - 6 - yOffset
 
   skeleton.x += targetCenterX - (bounds.x + bounds.width / 2)
-  skeleton.y += targetBottomY - (bounds.y + bounds.height)
+  skeleton.y += flipCanvasY
+    ? targetBottomY - bounds.y
+    : targetBottomY - (bounds.y + bounds.height)
   skeleton.updateWorldTransform(Physics.update)
 }
 
@@ -211,12 +223,13 @@ export default function SpineCharacter({ skinId, action, turnKey, flipX = false,
         skeleton.updateWorldTransform(Physics.update)
 
         const autoFit = Boolean(cfg.autoFit)
+        const flipCanvasY = cfg.flipCanvasY !== false
         const renderScale = autoFit
           ? computeAutoFitScale(skeleton, canvas, cfg.scale)
           : cfg.scale
 
         if (autoFit) {
-          positionSkeleton(skeleton, canvas, renderScale, flipX, cfg.yOffset ?? 0)
+          positionSkeleton(skeleton, canvas, renderScale, flipX, cfg.yOffset ?? 0, flipCanvasY)
         } else {
           skeleton.x = canvas.width / 2
           skeleton.y = cfg.yOffset ?? 0
@@ -225,7 +238,7 @@ export default function SpineCharacter({ skinId, action, turnKey, flipX = false,
           skeleton.updateWorldTransform(Physics.update)
         }
 
-        spineRef.current = { skeleton, state, renderer, ctx, scale: renderScale, autoFit }
+        spineRef.current = { skeleton, state, renderer, ctx, scale: renderScale, autoFit, flipCanvasY }
         setLoaded(true)
         setError(false)
       } catch (e) {
@@ -255,7 +268,7 @@ export default function SpineCharacter({ skinId, action, turnKey, flipX = false,
     if (!loaded || !spineRef.current) return
 
     const canvas = canvasRef.current!
-    const { skeleton, state, renderer, ctx } = spineRef.current
+    const { skeleton, state, renderer, ctx, flipCanvasY } = spineRef.current
 
     let dead = false
 
@@ -271,7 +284,15 @@ export default function SpineCharacter({ skinId, action, turnKey, flipX = false,
       skeleton.update(delta)
       skeleton.updateWorldTransform(Physics.update)
 
-      renderer.draw(skeleton)
+      if (flipCanvasY) {
+        ctx.save()
+        ctx.translate(0, canvas.height)
+        ctx.scale(1, -1)
+        renderer.draw(skeleton)
+        ctx.restore()
+      } else {
+        renderer.draw(skeleton)
+      }
 
       rafRef.current = requestAnimationFrame(loop)
     }
@@ -321,11 +342,11 @@ export default function SpineCharacter({ skinId, action, turnKey, flipX = false,
   useEffect(() => {
     if (!spineRef.current) return
     const canvas = canvasRef.current
-    const { skeleton, scale, autoFit } = spineRef.current
+    const { skeleton, scale, autoFit, flipCanvasY } = spineRef.current
     const yOffset = SPINE_SKIN_CONFIG[skinId]?.yOffset ?? 0
 
     if (autoFit && canvas) {
-      positionSkeleton(skeleton, canvas, scale, flipX, yOffset)
+      positionSkeleton(skeleton, canvas, scale, flipX, yOffset, flipCanvasY)
       return
     }
 
