@@ -180,21 +180,15 @@ export default function SpineCharacter({ skinId, action, turnKey, flipX = false,
     let cancelled = false
 
     const assetManager = new AssetManager(baseUrl)
-    assetManager.loadText(jsonFile)
-    assetManager.loadTextureAtlas(atlasFile)
 
-    const timeoutId = window.setTimeout(() => {
-      if (cancelled) return
-      console.error('[SpineCharacter] Load timeout for', skinId, assetManager.getErrors())
-      setError(true)
-    }, 6000)
-
-    assetManager.loadAll().then(() => {
+    // loadAll() uses requestAnimationFrame internally and hangs in background tabs.
+    // Use the async variants which resolve via Promise callbacks independent of rAF.
+    Promise.all([
+      assetManager.loadTextureAtlasAsync(atlasFile),
+      assetManager.loadJsonAsync(jsonFile),
+    ]).then(([atlas, jsonData]) => {
       if (cancelled) return
       try {
-        const atlas    = assetManager.require(atlasFile)
-        const jsonText = assetManager.require(jsonFile)
-
         const loader   = new AtlasAttachmentLoader(atlas)
         const skelJson = new SkeletonJson(loader)
         // skelJson.scale = 1 intentionally — we apply scale via skeleton.scaleX/Y.
@@ -202,7 +196,7 @@ export default function SpineCharacter({ skinId, action, turnKey, flipX = false,
         // pushing all bone worldY values off-screen (below canvas.height).
         skelJson.scale = 1
 
-        const skelData = skelJson.readSkeletonData(jsonText)
+        const skelData = skelJson.readSkeletonData(jsonData)
         const skeleton = new Skeleton(skelData)
         skeleton.setToSetupPose()
 
@@ -249,13 +243,10 @@ export default function SpineCharacter({ skinId, action, turnKey, flipX = false,
       if (cancelled) return
       console.error('[SpineCharacter] Load error:', e)
       setError(true)
-    }).finally(() => {
-      window.clearTimeout(timeoutId)
     })
 
     return () => {
       cancelled = true
-      window.clearTimeout(timeoutId)
       cancelAnimationFrame(rafRef.current)
       spineRef.current = null
       setLoaded(false)
