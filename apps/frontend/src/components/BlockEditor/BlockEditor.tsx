@@ -3,7 +3,7 @@ import type { SkinId } from '@robocode/shared'
 import type { BlockInstance, Script, SlotType } from './types'
 import { BLOCK_DEFS, BLOCK_DEF_MAP, CATEGORIES, CATEGORY_META, ALL_SKINS } from './blockDefs'
 import BlockShape from './BlockShape'
-import { generateCode } from './codeGen'
+import { generateCodeFromScripts } from './codeGen'
 import styles from './BlockEditor.module.css'
 
 let _nextId = 1
@@ -116,8 +116,7 @@ export default function BlockEditor({
 
   // Emit generated code whenever scripts change
   useEffect(() => {
-    const firstScript = scripts[0]
-    const code = firstScript ? generateCode(firstScript.root) : ''
+    const code = generateCodeFromScripts(scripts)
     onChange?.(code)
   }, [scripts, onChange])
 
@@ -361,7 +360,7 @@ export default function BlockEditor({
   }
 
   // ── Computed code ──────────────────────────────────────────────────────────
-  const generatedCode = scripts[0] ? generateCode(scripts[0].root) : '// нет блоков'
+  const generatedCode = generateCodeFromScripts(scripts) || '// нет блоков'
 
   // ── Palette content ────────────────────────────────────────────────────────
   const blocksInCategory = BLOCK_DEFS.filter(b => b.category === activeCategory)
@@ -473,10 +472,16 @@ export default function BlockEditor({
           {/* Drag ghost */}
           {drag && (
             <div className={styles.dragGhost} style={{ left: drag.currentX, top: drag.currentY }}>
-              {(() => {
-                const def = BLOCK_DEF_MAP.get(drag.inst.defId)
-                return def ? <BlockShape inst={drag.inst} def={def} onSlotChange={() => {}} variables={variables} isDragging /> : null
-              })()}
+              {renderStack(
+                drag.inst,
+                '__drag__',
+                () => {},
+                () => {},
+                variables,
+                () => {},
+                null,
+                null,
+              )}
             </div>
           )}
 
