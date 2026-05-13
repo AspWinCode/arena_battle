@@ -27,6 +27,7 @@ import AdminTournaments from './pages/admin/AdminTournaments'
 import AdminTournamentNew from './pages/admin/AdminTournamentNew'
 import AdminTournamentDetail from './pages/admin/AdminTournamentDetail'
 import AdminUsersPage from './pages/admin/AdminUsersPage'
+import DemoBattlePage from './pages/DemoBattlePage'
 import ForgotPasswordPage from './pages/ForgotPasswordPage'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import AchievementToast from './components/AchievementToast'
@@ -38,6 +39,7 @@ export default function App() {
     <Routes>
       <Route path="/" element={<LandingPage />} />
       <Route path="/join" element={<JoinPage />} />
+      <Route path="/demo"              element={<DemoBattlePage />} />
       <Route path="/battle/:sessionId" element={<BattlePage />} />
       <Route path="/learn" element={<LearnPage />} />
       <Route path="/learn/:missionId" element={<LearningBattlePage />} />

@@ -54,7 +54,7 @@ export default function LandingPage() {
 
               <div className={styles.heroCta}>
                 <Link to="/join"     className={`btn btn-primary ${styles.ctaMain}`}>⚔️ Начать бой</Link>
-                <Link to="/learn"    className={`btn btn-ghost  ${styles.ctaGhost}`}>📚 Как это работает</Link>
+                <Link to="/demo"     className={`btn btn-ghost  ${styles.ctaGhost}`}>🎮 Демо без регистрации</Link>
               </div>
 
               <div className={styles.heroStats}>
@@ -269,7 +269,7 @@ export default function LandingPage() {
             </p>
             <div className={styles.ctaBtns}>
               <Link to="/join"     className={`btn btn-primary ${styles.ctaBig}`}>⚔️ Начать бой</Link>
-              <Link to="/register" className={`btn btn-ghost  ${styles.ctaBig}`}>Создать аккаунт</Link>
+              <Link to="/demo"     className={`btn btn-ghost  ${styles.ctaBig}`}>🎮 Демо без кода</Link>
             </div>
           </div>
         </div>
