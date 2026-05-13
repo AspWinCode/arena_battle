@@ -10,27 +10,23 @@ import {
   SkeletonJson,
   AtlasAttachmentLoader,
   Physics,
-  Vector2,
 } from '@esotericsoftware/spine-canvas'
 import type { ActionName } from '@robocode/shared'
 import styles from './SpineCharacter.module.css'
 
 // ── Animation mapping: game actions → Spine animation names ───────────────────
-// These names must match what the artist used in the Spine Editor.
-// Spineboy demo has: idle, walk, run, jump, shoot, aim, hit, death
 const ACTION_TO_ANIM: Record<string, string> = {
-  idle:    'idle',
-  attack:  'shoot',
-  heavy:   'shoot',
-  laser:   'shoot',
-  shield:  'aim',
-  dodge:   'jump',
-  repair:  'walk',
-  special: 'shoot',
+  idle:            'idle',
+  attack:          'shoot',
+  heavy:           'shoot',
+  laser:           'shoot',
+  shield:          'aim',
+  dodge:           'jump',
+  repair:          'walk',
+  special:         'shoot',
   hurt:            'hit',
   victory:         'run',
   dead:            'death',
-  // New actions
   combo:           'shoot',
   overcharge:      'aim',
   reflect:         'aim',
@@ -62,14 +58,15 @@ const MIX_TIMES: Array<[string, string, number]> = [
   ['idle',  'death', 0.1],
 ]
 
-// ── Config per skin: which spine directory + scale ────────────────────────────
-// Add entries here as you get real assets for each skin.
-// Falls back to 'spineboy' for any unknown skin.
-export const SPINE_SKIN_CONFIG: Record<string, { dir: string; scale: number; yOffset?: number; autoFit?: boolean }> = {
+// ── Config per skin ───────────────────────────────────────────────────────────
+// scale: rendered size relative to canvas.
+//   skelJson.scale is set to 1 (no pre-baking); skeleton.scaleX/Y = cfg.scale.
+// Falls back to 'spineboy' for unknown skins.
+export const SPINE_SKIN_CONFIG: Record<string, { dir: string; scale: number; yOffset?: number }> = {
   default:   { dir: 'spineboy', scale: 0.38, yOffset: 0 },
   robot:     { dir: 'spineboy', scale: 0.38, yOffset: 0 },
   boxer:     { dir: 'spineboy', scale: 0.38, yOffset: 0 },
-  gladiator: { dir: 'gladiator', scale: 1.0,  yOffset: 0, autoFit: true },
+  gladiator: { dir: 'gladiator', scale: 1.0,  yOffset: 0 },
   cosmonaut: { dir: 'spineboy', scale: 0.38, yOffset: 0 },
   ninja:     { dir: 'spineboy', scale: 0.38, yOffset: 0 },
   mage:      { dir: 'spineboy', scale: 0.38, yOffset: 0 },
@@ -90,48 +87,7 @@ interface SpineRefs {
   state:    AnimationState
   renderer: SkeletonRenderer
   ctx:      CanvasRenderingContext2D
-  renderScale: number
-  autoFit: boolean
-}
-
-function computeAutoFitScale(skeleton: Skeleton, canvas: HTMLCanvasElement, cfgScale: number) {
-  skeleton.x = 0
-  skeleton.y = 0
-  skeleton.scaleX = 1
-  skeleton.scaleY = 1
-  skeleton.updateWorldTransform(Physics.update)
-
-  const offset = new Vector2()
-  const size = new Vector2()
-  skeleton.getBounds(offset, size)
-
-  if (!Number.isFinite(size.x) || !Number.isFinite(size.y) || size.x <= 0 || size.y <= 0) {
-    return cfgScale
-  }
-
-  const maxWidth = canvas.width * 0.72
-  const maxHeight = canvas.height * 0.84
-  return Math.min(maxWidth / size.x, maxHeight / size.y) * cfgScale
-}
-
-function positionSkeleton(
-  skeleton: Skeleton,
-  canvas: HTMLCanvasElement,
-  renderScale: number,
-  flipX: boolean,
-  yOffset = 0,
-) {
-  skeleton.scaleX = flipX ? -renderScale : renderScale
-  skeleton.scaleY = renderScale
-  skeleton.updateWorldTransform(Physics.update)
-
-  const bounds = skeleton.getBoundsRect()
-  const targetCenterX = canvas.width / 2
-  const targetBottomY = canvas.height - 6 + yOffset
-
-  skeleton.x += targetCenterX - (bounds.x + bounds.width / 2)
-  skeleton.y += targetBottomY - bounds.y
-  skeleton.updateWorldTransform(Physics.update)
+  scale:    number   // cfg.scale stored for flipX updates
 }
 
 interface Props {
@@ -139,28 +95,26 @@ interface Props {
   action?:   ActionName | null
   flipX?:    boolean
   isDead?:   boolean
-  /** CSS class applied to the wrapper div — used by parent to position it */
   className?: string
   style?:     React.CSSProperties
 }
 
-const GLADIATOR_FALLBACK_HREF = '/skins/gladiator.png?v=6'
-
 export default function SpineCharacter({ skinId, action, flipX = false, isDead = false, className, style }: Props) {
-  const canvasRef  = useRef<HTMLCanvasElement>(null)
-  const spineRef   = useRef<SpineRefs | null>(null)
-  const rafRef     = useRef<number>(0)
+  const canvasRef   = useRef<HTMLCanvasElement>(null)
+  const spineRef    = useRef<SpineRefs | null>(null)
+  const rafRef      = useRef<number>(0)
   const lastTimeRef = useRef<number>(0)
   const [loaded, setLoaded] = useState(false)
   const [error,  setError]  = useState(false)
-  const [errorMessage, setErrorMessage] = useState('')
 
   // ── Load assets & initialize skeleton ──────────────────────────────────────
   useEffect(() => {
-    const cfg = SPINE_SKIN_CONFIG[skinId] ?? SPINE_SKIN_CONFIG['default']
+    const cfg    = SPINE_SKIN_CONFIG[skinId] ?? SPINE_SKIN_CONFIG['default']
     const baseUrl = `/spine/${cfg.dir}/`
-    const jsonPath = 'spineboy.json'
-    const atlasPath = 'spineboy.atlas'
+    // Use RELATIVE filenames — AssetManager prepends baseUrl (pathPrefix) internally.
+    // Absolute paths would be doubled: /spine/dir//spine/dir/file → 404.
+    const jsonFile  = 'spineboy.json'
+    const atlasFile = 'spineboy.atlas'
 
     const canvas = canvasRef.current
     if (!canvas) return
@@ -170,78 +124,67 @@ export default function SpineCharacter({ skinId, action, flipX = false, isDead =
     let cancelled = false
 
     const assetManager = new AssetManager(baseUrl)
-    assetManager.loadText(jsonPath)
-    assetManager.loadTextureAtlas(atlasPath)
+    assetManager.loadText(jsonFile)
+    assetManager.loadTextureAtlas(atlasFile)
 
     const timeoutId = window.setTimeout(() => {
-      if (cancelled || loaded) return
-      const timeoutMessage = `Spine load timeout for ${skinId}. Pending assets: ${assetManager.getToLoad()}`
-      console.error('[SpineCharacter]', timeoutMessage, assetManager.getErrors())
+      if (cancelled) return
+      console.error('[SpineCharacter] Load timeout for', skinId, assetManager.getErrors())
       setError(true)
-      setErrorMessage(timeoutMessage)
-    }, 5000)
+    }, 6000)
 
     assetManager.loadAll().then(() => {
       if (cancelled) return
       try {
-        const atlas    = assetManager.require(atlasPath)
-        const jsonText = assetManager.require(jsonPath)
+        const atlas    = assetManager.require(atlasFile)
+        const jsonText = assetManager.require(jsonFile)
 
         const loader   = new AtlasAttachmentLoader(atlas)
         const skelJson = new SkeletonJson(loader)
-        skelJson.scale = cfg.scale
+        // skelJson.scale = 1 intentionally — we apply scale via skeleton.scaleX/Y.
+        // Using skelJson.scale to pre-bake AND skeleton.scaleX would double-scale,
+        // pushing all bone worldY values off-screen (below canvas.height).
+        skelJson.scale = 1
 
         const skelData = skelJson.readSkeletonData(jsonText)
         const skeleton = new Skeleton(skelData)
         skeleton.setToSetupPose()
 
+        // Spine uses Y-UP coordinates; canvas is Y-DOWN.
+        // We apply ctx.translate(0, canvas.height) + ctx.scale(1, -1) before rendering,
+        // so the skeleton's origin (feet) should be at y=0 in Spine space.
+        // The flip maps: screen_y = canvas.height - spine_y
+        //   → feet (spine_y = 0) at screen bottom ✓
+        //   → head (spine_y > 0) at screen top ✓
+        skeleton.x      = canvas.width / 2
+        skeleton.y      = cfg.yOffset ?? 0
+        skeleton.scaleX = flipX ? -cfg.scale : cfg.scale
+        skeleton.scaleY = cfg.scale
+
         const stateData = new AnimationStateData(skelData)
         stateData.defaultMix = 0.2
         for (const [from, to, mix] of MIX_TIMES) {
-          try { stateData.setMix(from, to, mix) } catch { /* animation not found — skip */ }
+          try { stateData.setMix(from, to, mix) } catch { /* animation not found */ }
         }
 
         const state    = new AnimationState(stateData)
         const renderer = new SkeletonRenderer(ctx)
-        renderer.debugRendering   = false
+        renderer.debugRendering    = false
         renderer.triangleRendering = true
 
-        // Start with idle
         try { state.setAnimation(0, 'idle', true) } catch { /* ignore */ }
 
-        state.apply(skeleton)
-        skeleton.updateWorldTransform(Physics.update)
-
-        const autoFit = Boolean(cfg.autoFit)
-        const renderScale = autoFit
-          ? computeAutoFitScale(skeleton, canvas, cfg.scale)
-          : cfg.scale
-
-        if (autoFit) {
-          positionSkeleton(skeleton, canvas, renderScale, flipX, cfg.yOffset ?? 0)
-        } else {
-          skeleton.x = canvas.width / 2
-          skeleton.y = canvas.height + (cfg.yOffset ?? 0)
-          skeleton.scaleX = flipX ? -renderScale : renderScale
-          skeleton.scaleY = renderScale
-          skeleton.updateWorldTransform(Physics.update)
-        }
-
-        spineRef.current = { skeleton, state, renderer, ctx, renderScale, autoFit }
+        spineRef.current = { skeleton, state, renderer, ctx, scale: cfg.scale }
         setLoaded(true)
         setError(false)
-        setErrorMessage('')
       } catch (e) {
         console.error('[SpineCharacter] Init error:', e)
         setError(true)
-        setErrorMessage(e instanceof Error ? e.message : String(e))
       }
     }).catch((e) => {
       if (cancelled) return
-      const message = e instanceof Error ? e.message : String(e)
-      console.error('[SpineCharacter] Load error:', message)
+      console.error('[SpineCharacter] Load error:', e)
       setError(true)
-      setErrorMessage(message)
     }).finally(() => {
       window.clearTimeout(timeoutId)
     })
@@ -253,9 +196,8 @@ export default function SpineCharacter({ skinId, action, flipX = false, isDead =
       spineRef.current = null
       setLoaded(false)
       setError(false)
-      setErrorMessage('')
     }
-  }, [skinId])  // re-init when skin changes
+  }, [skinId])
 
   // ── Render loop ────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -278,7 +220,13 @@ export default function SpineCharacter({ skinId, action, flipX = false, isDead =
       skeleton.update(delta)
       skeleton.updateWorldTransform(Physics.update)
 
+      // Apply Y-flip so Spine's Y-UP coordinate space maps correctly to canvas Y-DOWN.
+      // Without this, characters render with positive-Y bones off the bottom of canvas.
+      ctx.save()
+      ctx.translate(0, canvas.height)
+      ctx.scale(1, -1)
       renderer.draw(skeleton)
+      ctx.restore()
 
       rafRef.current = requestAnimationFrame(loop)
     }
@@ -297,83 +245,43 @@ export default function SpineCharacter({ skinId, action, flipX = false, isDead =
     const { state, skeleton } = spineRef.current
     const skelData = skeleton.data
 
-    // Death — permanent, no return
     if (isDead) {
-      const deathAnim = 'death'
-      if (skelData.findAnimation(deathAnim)) {
-        try { state.setAnimation(0, deathAnim, false) } catch { /* ignore */ }
+      if (skelData.findAnimation('death')) {
+        try { state.setAnimation(0, 'death', false) } catch { /* ignore */ }
       }
       return
     }
 
     const animName = ACTION_TO_ANIM[action ?? 'idle'] ?? 'idle'
-
-    // Check animation exists in skeleton data
     if (!skelData.findAnimation(animName)) return
 
     try {
       if (ONE_SHOT_ANIMS.has(animName)) {
-        // Play once on track 1, return to idle on track 0
         state.setAnimation(0, 'idle', true)
         const entry = state.setAnimation(1, animName, false)
         entry.listener = {
-          complete: () => {
-            try { state.clearTrack(1) } catch { /* ignore */ }
-          },
+          complete: () => { try { state.clearTrack(1) } catch { /* ignore */ } },
         }
       } else {
         state.clearTrack(1)
         state.setAnimation(0, animName, true)
       }
-    } catch { /* animation not found — ignore */ }
+    } catch { /* animation not found */ }
   }, [action, isDead])
 
   // ── Update flipX reactively ────────────────────────────────────────────────
   useEffect(() => {
     if (!spineRef.current) return
-    const canvas = canvasRef.current
-    const { skeleton, renderScale, autoFit } = spineRef.current
-    const yOffset = SPINE_SKIN_CONFIG[skinId]?.yOffset ?? 0
-
-    if (autoFit && canvas) {
-      positionSkeleton(skeleton, canvas, renderScale, flipX, yOffset)
-      return
-    }
-
-    skeleton.scaleX = flipX ? -renderScale : renderScale
-    skeleton.scaleY = renderScale
+    const { skeleton, scale } = spineRef.current
+    skeleton.scaleX = flipX ? -scale : scale
   }, [flipX, skinId])
 
   // ── Render ─────────────────────────────────────────────────────────────────
-  if (error) {
-    if (skinId === 'gladiator') {
-      return (
-        <div className={`${styles.wrap} ${className ?? ''}`} style={style} title={errorMessage || 'Spine fallback'}>
-          <img
-            src={GLADIATOR_FALLBACK_HREF}
-            alt="Gladiator fallback"
-            className={styles.fallbackSprite}
-            style={{
-              transform: `scaleX(${flipX ? -1 : 1})`,
-              opacity: isDead ? 0.35 : 1,
-            }}
-          />
-        </div>
-      )
-    }
-
-    return (
-      <div className={`${styles.wrap} ${className ?? ''}`} style={style} title={errorMessage || 'Spine error'}>
-        <div className={styles.errorFallback}>SPINE</div>
-      </div>
-    )
-  }
+  if (error) return null
 
   return (
     <div className={`${styles.wrap} ${className ?? ''}`} style={style}>
-      {/* Loading shimmer */}
       {!loaded && <div className={styles.shimmer} />}
-
       <canvas
         ref={canvasRef}
         width={180}
