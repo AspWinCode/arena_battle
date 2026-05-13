@@ -125,7 +125,7 @@ function positionSkeleton(
 
   const bounds = skeleton.getBoundsRect()
   const targetCenterX = canvas.width / 2
-  const targetBottomY = canvas.height - 6 + yOffset
+  const targetBottomY = 6 + yOffset
 
   skeleton.x += targetCenterX - (bounds.x + bounds.width / 2)
   skeleton.y += targetBottomY - bounds.y
