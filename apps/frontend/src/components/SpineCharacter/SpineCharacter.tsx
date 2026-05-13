@@ -144,6 +144,8 @@ interface Props {
   style?:     React.CSSProperties
 }
 
+const GLADIATOR_FALLBACK_HREF = '/skins/gladiator.png?v=6'
+
 export default function SpineCharacter({ skinId, action, flipX = false, isDead = false, className, style }: Props) {
   const canvasRef  = useRef<HTMLCanvasElement>(null)
   const spineRef   = useRef<SpineRefs | null>(null)
@@ -151,6 +153,7 @@ export default function SpineCharacter({ skinId, action, flipX = false, isDead =
   const lastTimeRef = useRef<number>(0)
   const [loaded, setLoaded] = useState(false)
   const [error,  setError]  = useState(false)
+  const [errorMessage, setErrorMessage] = useState('')
 
   // ── Load assets & initialize skeleton ──────────────────────────────────────
   useEffect(() => {
@@ -170,19 +173,16 @@ export default function SpineCharacter({ skinId, action, flipX = false, isDead =
     assetManager.loadText(jsonPath)
     assetManager.loadTextureAtlas(atlasPath)
 
-    // Poll for loading completion
-    let pollId: ReturnType<typeof setInterval>
-    pollId = setInterval(() => {
-      if (cancelled) { clearInterval(pollId); return }
-      if (!assetManager.isLoadingComplete()) return
-      clearInterval(pollId)
+    const timeoutId = window.setTimeout(() => {
+      if (cancelled || loaded) return
+      const timeoutMessage = `Spine load timeout for ${skinId}. Pending assets: ${assetManager.getToLoad()}`
+      console.error('[SpineCharacter]', timeoutMessage, assetManager.getErrors())
+      setError(true)
+      setErrorMessage(timeoutMessage)
+    }, 5000)
 
-      if (assetManager.hasErrors()) {
-        console.warn('[SpineCharacter] Load errors:', assetManager.getErrors())
-        setError(true)
-        return
-      }
-
+    assetManager.loadAll().then(() => {
+      if (cancelled) return
       try {
         const atlas    = assetManager.require(atlasPath)
         const jsonText = assetManager.require(jsonPath)
@@ -229,19 +229,31 @@ export default function SpineCharacter({ skinId, action, flipX = false, isDead =
 
         spineRef.current = { skeleton, state, renderer, ctx, renderScale, autoFit }
         setLoaded(true)
+        setError(false)
+        setErrorMessage('')
       } catch (e) {
         console.error('[SpineCharacter] Init error:', e)
         setError(true)
+        setErrorMessage(e instanceof Error ? e.message : String(e))
       }
-    }, 50)
+    }).catch((e) => {
+      if (cancelled) return
+      const message = e instanceof Error ? e.message : String(e)
+      console.error('[SpineCharacter] Load error:', message)
+      setError(true)
+      setErrorMessage(message)
+    }).finally(() => {
+      window.clearTimeout(timeoutId)
+    })
 
     return () => {
       cancelled = true
-      clearInterval(pollId)
+      window.clearTimeout(timeoutId)
       cancelAnimationFrame(rafRef.current)
       spineRef.current = null
       setLoaded(false)
       setError(false)
+      setErrorMessage('')
     }
   }, [skinId])  // re-init when skin changes
 
@@ -333,7 +345,29 @@ export default function SpineCharacter({ skinId, action, flipX = false, isDead =
   }, [flipX, skinId])
 
   // ── Render ─────────────────────────────────────────────────────────────────
-  if (error) return null
+  if (error) {
+    if (skinId === 'gladiator') {
+      return (
+        <div className={`${styles.wrap} ${className ?? ''}`} style={style} title={errorMessage || 'Spine fallback'}>
+          <img
+            src={GLADIATOR_FALLBACK_HREF}
+            alt="Gladiator fallback"
+            className={styles.fallbackSprite}
+            style={{
+              transform: `scaleX(${flipX ? -1 : 1})`,
+              opacity: isDead ? 0.35 : 1,
+            }}
+          />
+        </div>
+      )
+    }
+
+    return (
+      <div className={`${styles.wrap} ${className ?? ''}`} style={style} title={errorMessage || 'Spine error'}>
+        <div className={styles.errorFallback}>SPINE</div>
+      </div>
+    )
+  }
 
   return (
     <div className={`${styles.wrap} ${className ?? ''}`} style={style}>
