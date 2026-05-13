@@ -280,68 +280,48 @@ export default function DemoBattlePage() {
       {(phase === 'battle' || phase === 'result') && (
         <div className={styles.battleWrap}>
 
-          {/* Score strip */}
-          <div className={styles.scoreStrip}>
-            <span className={styles.scorePlayer}>
-              {SKIN_ICON[p1Skin]} {p1Stats?.name}
-            </span>
-            <span className={styles.scorePill}>
-              {score[0]} — {score[1]}
-            </span>
-            <span className={styles.scorePlayer}>
-              {SKIN_ICON[p2Skin]} {p2Stats?.name}
-            </span>
-          </div>
+          {/* ── Stats header: two HP bars + score in center ── */}
+          <div className={styles.statsHeader}>
 
-          {/* Arena */}
-          <div className={styles.arena}>
-
-            {/* P1 side */}
-            <div className={styles.fighterSide}>
-              <div className={styles.hpBlock}>
-                <div className={styles.hpLabel}>{Math.max(0, p1Hp)} HP</div>
+            {/* P1 */}
+            <div className={styles.statsSide}>
+              <div className={styles.statsName}>
+                <span>{p1Stats?.icon}</span>
+                <span>{p1Stats?.name}</span>
+              </div>
+              <div className={styles.hpRow}>
                 <div className={styles.hpTrack}>
                   <div
-                    className={styles.hpFill}
+                    className={styles.hpFillLeft}
                     style={{
                       width: `${Math.max(0, (p1Hp / p1MaxHp) * 100)}%`,
                       background: p1Hp / p1MaxHp > 0.5 ? '#4ade80' : p1Hp / p1MaxHp > 0.25 ? '#facc15' : '#f87171',
                     }}
                   />
                 </div>
+                <span className={styles.hpNum}>{Math.max(0, p1Hp)}</span>
               </div>
-              <div className={styles.spineWrap}>
-                <SpineCharacter
-                  skinId={p1Skin}
-                  action={action1 as any}
-                  turnKey={curTurn?.turn}
-                  flipX={false}
-                  isDead={p1Hp <= 0}
-                  style={{ width: 160, height: 240 }}
-                />
-              </div>
-              {action1 && (
-                <div className={styles.actionBubble} style={{ background: 'rgba(74,222,128,.12)', borderColor: 'rgba(74,222,128,.3)' }}>
-                  {ACTION_ICON[action1]} {ACTION_LABEL[action1]}
-                </div>
-              )}
             </div>
 
-            {/* Center */}
-            <div className={styles.centerCol}>
-              <div className={styles.turnChip}>
+            {/* Score center */}
+            <div className={styles.statsCenter}>
+              <div className={styles.scoreBig}>{score[0]} — {score[1]}</div>
+              <div className={styles.turnBadge}>
                 {phase === 'battle' ? `Ход ${turn}` : '🏁 Конец'}
               </div>
-              <div className={styles.vsCenter}>VS</div>
             </div>
 
-            {/* P2 side */}
-            <div className={`${styles.fighterSide} ${styles.fighterSideRight}`}>
-              <div className={styles.hpBlock}>
-                <div className={styles.hpLabel}>{Math.max(0, p2Hp)} HP</div>
+            {/* P2 */}
+            <div className={`${styles.statsSide} ${styles.statsSideRight}`}>
+              <div className={`${styles.statsName} ${styles.statsNameRight}`}>
+                <span>{p2Stats?.name}</span>
+                <span>{p2Stats?.icon}</span>
+              </div>
+              <div className={`${styles.hpRow} ${styles.hpRowRight}`}>
+                <span className={styles.hpNum}>{Math.max(0, p2Hp)}</span>
                 <div className={styles.hpTrack}>
                   <div
-                    className={styles.hpFill}
+                    className={styles.hpFillRight}
                     style={{
                       width: `${Math.max(0, (p2Hp / p2MaxHp) * 100)}%`,
                       background: p2Hp / p2MaxHp > 0.5 ? '#f87171' : p2Hp / p2MaxHp > 0.25 ? '#facc15' : '#ef4444',
@@ -349,22 +329,52 @@ export default function DemoBattlePage() {
                   />
                 </div>
               </div>
-              <div className={styles.spineWrap}>
-                <SpineCharacter
-                  skinId={p2Skin}
-                  action={action2 as any}
-                  turnKey={curTurn?.turn}
-                  flipX={true}
-                  isDead={p2Hp <= 0}
-                  style={{ width: 160, height: 240 }}
-                />
-              </div>
+            </div>
+
+          </div>
+
+          {/* ── Arena stage ── */}
+          <div className={styles.arena}>
+
+            {/* P1 fighter */}
+            <div className={styles.fighter}>
+              <SpineCharacter
+                skinId={p1Skin}
+                action={action1 as any}
+                turnKey={curTurn?.turn}
+                flipX={false}
+                isDead={p1Hp <= 0}
+                className={styles.spineChar}
+              />
+              {action1 && (
+                <div className={styles.actionTag} data-side="left">
+                  {ACTION_ICON[action1]} {ACTION_LABEL[action1]}
+                </div>
+              )}
+            </div>
+
+            {/* VS divider */}
+            <div className={styles.vsDiv}>
+              <span className={styles.vsText}>VS</span>
+            </div>
+
+            {/* P2 fighter */}
+            <div className={`${styles.fighter} ${styles.fighterRight}`}>
+              <SpineCharacter
+                skinId={p2Skin}
+                action={action2 as any}
+                turnKey={curTurn?.turn}
+                flipX={true}
+                isDead={p2Hp <= 0}
+                className={styles.spineChar}
+              />
               {action2 && (
-                <div className={styles.actionBubble} style={{ background: 'rgba(248,113,113,.12)', borderColor: 'rgba(248,113,113,.3)' }}>
+                <div className={styles.actionTag} data-side="right">
                   {ACTION_ICON[action2]} {ACTION_LABEL[action2]}
                 </div>
               )}
             </div>
+
           </div>
 
           {/* Turn log */}
