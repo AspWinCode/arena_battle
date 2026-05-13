@@ -9,26 +9,25 @@ export function generateCode(root: BlockInstance | null): string {
 export function generateCodeFromScripts(scripts: Script[]): string {
   if (scripts.length === 0) return ''
 
-  const roots = scripts
+  // Only process scripts that start with a whenTurn hat — floating blocks are ignored
+  const hatRoots = scripts
     .map(script => script.root)
-    .filter(Boolean)
+    .filter(root => root?.defId === 'whenTurn')
     .sort((a, b) => (a.y - b.y) || (a.x - b.x))
-
-  if (roots.length === 0) return ''
 
   const lines: string[] = []
   lines.push('function strategy(ctx) {')
 
   const varNames = new Set<string>()
-  for (const root of roots) {
-    collectVarNames(getEntryBlock(root), varNames)
+  for (const root of hatRoots) {
+    collectVarNames(root.next ?? null, varNames)
   }
   if (varNames.size > 0) {
     lines.push(`  let ${[...varNames].map(v => `${v} = 0`).join(', ')};`)
   }
 
-  for (const root of roots) {
-    lines.push(...generateBlock(getEntryBlock(root), 1))
+  for (const root of hatRoots) {
+    lines.push(...generateBlock(root.next ?? null, 1))
   }
 
   lines.push("  return 'attack'; // fallback")

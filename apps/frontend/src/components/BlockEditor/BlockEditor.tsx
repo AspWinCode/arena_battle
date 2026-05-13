@@ -900,6 +900,12 @@ function cutAtBlock(inst: BlockInstance, targetId: string): [BlockInstance | nul
   return [inst, null]
 }
 
+/** Walk to the tail of a chain and attach `after` there */
+function appendToChainTail(inst: BlockInstance, after: BlockInstance | undefined): BlockInstance {
+  if (!inst.next) return { ...inst, next: after }
+  return { ...inst, next: appendToChainTail(inst.next, after) }
+}
+
 function attachToInstance(
   inst: BlockInstance,
   targetId: string,
@@ -920,7 +926,7 @@ function attachToInstance(
           ),
         }
       }
-      return { ...inst, body: [{ ...newInst, next: undefined }] }
+      return { ...inst, body: [newInst] }
     }
     if (type === 'elseBody') {
       const existing = inst.elseBody ?? []
@@ -935,10 +941,11 @@ function attachToInstance(
           ),
         }
       }
-      return { ...inst, elseBody: [{ ...newInst, next: undefined }] }
+      return { ...inst, elseBody: [newInst] }
     }
     // type === 'next'
-    return { ...inst, next: { ...newInst, next: inst.next ?? undefined } }
+    // Append inst.next to the TAIL of newInst's chain so we don't lose newInst's blocks
+    return { ...inst, next: appendToChainTail(newInst, inst.next) }
   }
   return {
     ...inst,
