@@ -296,6 +296,9 @@
   padding: 14px 24px 12px;
   background: rgba(255,255,255,.025);
   border-bottom: 1px solid rgba(255,255,255,.06);
+  max-width: 760px;
+  width: 100%;
+  margin: 0 auto;
 }
 
 .statsSide {
@@ -399,6 +402,10 @@
   overflow: hidden;
   padding-bottom: 16px;
   gap: 0;
+  /* match stats header width */
+  max-width: 760px;
+  width: 100%;
+  margin: 0 auto;
 }
 
 /* Arena floor glow */
@@ -497,6 +504,9 @@
   border-top: 1px solid rgba(255,255,255,.05);
   max-height: 160px;
   overflow: hidden;
+  max-width: 760px;
+  width: 100%;
+  margin: 0 auto;
 }
 
 .logRow {
