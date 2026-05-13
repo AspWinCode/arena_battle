@@ -9,6 +9,7 @@ import {
   AnimationStateData,
   SkeletonJson,
   AtlasAttachmentLoader,
+  TextureAtlas,
   Physics,
   Vector2,
 } from '@esotericsoftware/spine-canvas'
@@ -184,7 +185,7 @@ export default function SpineCharacter({ skinId, action, turnKey, flipX = false,
     // loadAll() uses requestAnimationFrame internally and hangs in background tabs.
     // Use the async variants which resolve via Promise callbacks independent of rAF.
     Promise.all([
-      assetManager.loadTextureAtlasAsync(atlasFile),
+      assetManager.loadTextureAtlasAsync(atlasFile) as Promise<TextureAtlas>,
       assetManager.loadJsonAsync(jsonFile),
     ]).then(([atlas, jsonData]) => {
       if (cancelled) return
