@@ -10,6 +10,7 @@ import {
   SkeletonJson,
   AtlasAttachmentLoader,
   Physics,
+  Vector2,
 } from '@esotericsoftware/spine-canvas'
 import type { ActionName } from '@robocode/shared'
 import styles from './SpineCharacter.module.css'
@@ -62,11 +63,11 @@ const MIX_TIMES: Array<[string, string, number]> = [
 // scale: rendered size relative to canvas.
 //   skelJson.scale is set to 1 (no pre-baking); skeleton.scaleX/Y = cfg.scale.
 // Falls back to 'spineboy' for unknown skins.
-export const SPINE_SKIN_CONFIG: Record<string, { dir: string; scale: number; yOffset?: number }> = {
+export const SPINE_SKIN_CONFIG: Record<string, { dir: string; scale: number; yOffset?: number; autoFit?: boolean }> = {
   default:   { dir: 'spineboy', scale: 0.38, yOffset: 0 },
   robot:     { dir: 'spineboy', scale: 0.38, yOffset: 0 },
-  boxer:     { dir: 'boxer',    scale: 1.0,  yOffset: 0 },
-  gladiator: { dir: 'gladiator', scale: 1.0,  yOffset: 0 },
+  boxer:     { dir: 'boxer',    scale: 1.0,  yOffset: 0, autoFit: true },
+  gladiator: { dir: 'gladiator', scale: 1.0,  yOffset: 0, autoFit: true },
   cosmonaut: { dir: 'spineboy', scale: 0.38, yOffset: 0 },
   ninja:     { dir: 'spineboy', scale: 0.38, yOffset: 0 },
   mage:      { dir: 'spineboy', scale: 0.38, yOffset: 0 },
@@ -87,7 +88,48 @@ interface SpineRefs {
   state:    AnimationState
   renderer: SkeletonRenderer
   ctx:      CanvasRenderingContext2D
-  scale:    number   // cfg.scale stored for flipX updates
+  scale:    number
+  autoFit:  boolean
+}
+
+function computeAutoFitScale(skeleton: Skeleton, canvas: HTMLCanvasElement, cfgScale: number) {
+  skeleton.x = 0
+  skeleton.y = 0
+  skeleton.scaleX = 1
+  skeleton.scaleY = 1
+  skeleton.updateWorldTransform(Physics.update)
+
+  const offset = new Vector2()
+  const size = new Vector2()
+  skeleton.getBounds(offset, size)
+
+  if (!Number.isFinite(size.x) || !Number.isFinite(size.y) || size.x <= 0 || size.y <= 0) {
+    return cfgScale
+  }
+
+  const maxWidth = canvas.width * 0.72
+  const maxHeight = canvas.height * 0.84
+  return Math.min(maxWidth / size.x, maxHeight / size.y) * cfgScale
+}
+
+function positionSkeleton(
+  skeleton: Skeleton,
+  canvas: HTMLCanvasElement,
+  scale: number,
+  flipX: boolean,
+  yOffset = 0,
+) {
+  skeleton.scaleX = flipX ? -scale : scale
+  skeleton.scaleY = scale
+  skeleton.updateWorldTransform(Physics.update)
+
+  const bounds = skeleton.getBoundsRect()
+  const targetCenterX = canvas.width / 2
+  const targetBottomY = canvas.height - 6 + yOffset
+
+  skeleton.x += targetCenterX - (bounds.x + bounds.width / 2)
+  skeleton.y += targetBottomY - bounds.y
+  skeleton.updateWorldTransform(Physics.update)
 }
 
 interface Props {
@@ -158,11 +200,6 @@ export default function SpineCharacter({ skinId, action, turnKey, flipX = false,
         // The flip maps: screen_y = canvas.height - spine_y
         //   → feet (spine_y = 0) at screen bottom ✓
         //   → head (spine_y > 0) at screen top ✓
-        skeleton.x      = canvas.width / 2
-        skeleton.y      = cfg.yOffset ?? 0
-        skeleton.scaleX = flipX ? -cfg.scale : cfg.scale
-        skeleton.scaleY = cfg.scale
-
         const stateData = new AnimationStateData(skelData)
         stateData.defaultMix = 0.2
         for (const [from, to, mix] of MIX_TIMES) {
@@ -176,7 +213,25 @@ export default function SpineCharacter({ skinId, action, turnKey, flipX = false,
 
         try { state.setAnimation(0, 'idle', true) } catch { /* ignore */ }
 
-        spineRef.current = { skeleton, state, renderer, ctx, scale: cfg.scale }
+        state.apply(skeleton)
+        skeleton.updateWorldTransform(Physics.update)
+
+        const autoFit = Boolean(cfg.autoFit)
+        const renderScale = autoFit
+          ? computeAutoFitScale(skeleton, canvas, cfg.scale)
+          : cfg.scale
+
+        if (autoFit) {
+          positionSkeleton(skeleton, canvas, renderScale, flipX, cfg.yOffset ?? 0)
+        } else {
+          skeleton.x = canvas.width / 2
+          skeleton.y = cfg.yOffset ?? 0
+          skeleton.scaleX = flipX ? -renderScale : renderScale
+          skeleton.scaleY = renderScale
+          skeleton.updateWorldTransform(Physics.update)
+        }
+
+        spineRef.current = { skeleton, state, renderer, ctx, scale: renderScale, autoFit }
         setLoaded(true)
         setError(false)
       } catch (e) {
@@ -277,8 +332,17 @@ export default function SpineCharacter({ skinId, action, turnKey, flipX = false,
   // ── Update flipX reactively ────────────────────────────────────────────────
   useEffect(() => {
     if (!spineRef.current) return
-    const { skeleton, scale } = spineRef.current
+    const canvas = canvasRef.current
+    const { skeleton, scale, autoFit } = spineRef.current
+    const yOffset = SPINE_SKIN_CONFIG[skinId]?.yOffset ?? 0
+
+    if (autoFit && canvas) {
+      positionSkeleton(skeleton, canvas, scale, flipX, yOffset)
+      return
+    }
+
     skeleton.scaleX = flipX ? -scale : scale
+    skeleton.scaleY = scale
   }, [flipX, skinId])
 
   // ── Render ─────────────────────────────────────────────────────────────────
