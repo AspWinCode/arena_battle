@@ -1,0 +1,181 @@
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.empty {
+  color: var(--text-muted, #94a3b8);
+  text-align: center;
+  padding: 24px 0;
+  font-size: 13px;
+}
+
+/* ── Slider ────────────────────────────────────────────────────────────────── */
+
+.sliderRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.sliderLabel {
+  font-size: 12px;
+  color: var(--text-muted, #94a3b8);
+  white-space: nowrap;
+  min-width: 44px;
+}
+
+.range {
+  flex: 1;
+  accent-color: #00e5ff;
+  cursor: pointer;
+}
+
+/* ── Context bar ───────────────────────────────────────────────────────────── */
+
+.context {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  color: var(--text-muted, #94a3b8);
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 8px;
+  padding: 8px 12px;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.hisBadge,
+.myBadge {
+  font-weight: 700;
+}
+
+/* ── Table header ──────────────────────────────────────────────────────────── */
+
+.header {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr 1fr 44px;
+  font-size: 10px;
+  color: var(--text-muted, #94a3b8);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0 8px 2px;
+}
+
+/* ── Rows ──────────────────────────────────────────────────────────────────── */
+
+.rows {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr 1fr 44px;
+  align-items: center;
+  padding: 6px 8px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid transparent;
+  transition: background 0.15s;
+}
+
+.rowOptimal {
+  border-color: rgba(74, 222, 128, 0.25);
+  background: rgba(74, 222, 128, 0.05);
+}
+
+.rowChosen {
+  border-color: rgba(0, 229, 255, 0.25);
+  background: rgba(0, 229, 255, 0.05);
+}
+
+.rowBoth {
+  border-color: rgba(251, 191, 36, 0.35);
+  background: rgba(251, 191, 36, 0.07);
+}
+
+/* ── Action name cell ──────────────────────────────────────────────────────── */
+
+.actionName {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.actionLabel {
+  font-size: 11px;
+}
+
+.starBadge  { color: #fbbf24; font-size: 11px; line-height: 1; }
+.arrowBadge { color: #00e5ff; font-size: 11px; line-height: 1; }
+
+/* ── Bar cells ─────────────────────────────────────────────────────────────── */
+
+.barCell {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.track {
+  flex: 1;
+  height: 5px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.barGreen {
+  height: 100%;
+  background: #4ade80;
+  border-radius: 3px;
+  transition: width 0.25s ease;
+}
+
+.barRed {
+  height: 100%;
+  background: #f87171;
+  border-radius: 3px;
+  transition: width 0.25s ease;
+}
+
+.valGreen {
+  font-size: 11px;
+  font-weight: 700;
+  color: #4ade80;
+  width: 26px;
+  text-align: right;
+}
+
+.valRed {
+  font-size: 11px;
+  font-weight: 700;
+  color: #f87171;
+  width: 26px;
+  text-align: right;
+}
+
+/* ── Net score ─────────────────────────────────────────────────────────────── */
+
+.net {
+  font-size: 13px;
+  font-weight: 800;
+  text-align: right;
+}
+
+/* ── Legend ────────────────────────────────────────────────────────────────── */
+
+.legend {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  font-size: 11px;
+  color: var(--text-muted, #94a3b8);
+  padding-top: 2px;
+}

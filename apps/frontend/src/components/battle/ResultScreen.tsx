@@ -5,6 +5,7 @@ import type { HpPoint, PlayerAnalysis } from '../../engine/matchAnalysis'
 import type { ActionName } from '@robocode/shared'
 import { SKIN_ICON as SKIN_ICONS } from '@robocode/shared'
 import DecisionGraph from './DecisionGraph'
+import StateTreePanel from './StateTreePanel'
 import styles from './ResultScreen.module.css'
 
 // ── HP Timeline SVG ───────────────────────────────────────────────────────────
@@ -165,7 +166,7 @@ export default function ResultScreen({ onPlayAgain }: { onPlayAgain: () => void 
   const completedRounds = useBattleStore(s => s.completedRounds)
   const slot           = useBattleStore(s => s.slot)
 
-  const [tab, setTab] = useState<'result' | 'analysis' | 'graph'>('result')
+  const [tab, setTab] = useState<'result' | 'analysis' | 'graph' | 'tree'>('result')
   const [graphSide, setGraphSide] = useState<1 | 2>(slot ?? 1)
 
   const analysis = useMemo(() => analyzeMatch(completedRounds), [completedRounds])
@@ -262,6 +263,12 @@ export default function ResultScreen({ onPlayAgain }: { onPlayAgain: () => void 
             onClick={() => setTab('graph')}
           >
             🧠 Граф
+          </button>
+          <button
+            className={`${styles.tab} ${tab === 'tree' ? styles.tabActive : ''}`}
+            onClick={() => setTab('tree')}
+          >
+            🌳 Дерево
           </button>
         </div>
 
@@ -450,6 +457,38 @@ export default function ResultScreen({ onPlayAgain }: { onPlayAgain: () => void 
               </div>
             )}
           </>
+        )}
+
+        {/* ── TAB: ДЕРЕВО РЕШЕНИЙ ───────────────────────────────── */}
+        {tab === 'tree' && (
+          <div className={styles.section}>
+            <div className={styles.sectionTitle}>🌳 Дерево решений — оптимальные ходы</div>
+
+            {/* Side switcher */}
+            <div className={styles.graphSidePicker}>
+              <button
+                className={`${styles.sideBtn} ${graphSide === 1 ? styles.sideBtnActive : ''}`}
+                style={{ '--sc': P1_COLOR } as React.CSSProperties}
+                onClick={() => setGraphSide(1)}
+              >
+                {p1?.name ?? 'P1'}
+              </button>
+              <button
+                className={`${styles.sideBtn} ${graphSide === 2 ? styles.sideBtnActive : ''}`}
+                style={{ '--sc': P2_COLOR } as React.CSSProperties}
+                onClick={() => setGraphSide(2)}
+              >
+                {p2?.name ?? 'P2'}
+              </button>
+            </div>
+
+            <StateTreePanel rounds={completedRounds} slot={graphSide} />
+
+            <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 8 }}>
+              Симуляция без пассивных способностей персонажей.
+              Показывает чистый урон каждого действия против хода противника.
+            </div>
+          </div>
         )}
 
         <button className={`btn btn-primary ${styles.btn}`} onClick={onPlayAgain}>

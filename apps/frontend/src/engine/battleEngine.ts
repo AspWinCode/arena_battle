@@ -153,6 +153,8 @@ export class BattleEngine {
       bestAction: () => 'attack',
       actionTable: [],
       markov: {},
+      trainedModel: { predict: () => 'attack' },
+      stateTree: [],
     }
   }
 

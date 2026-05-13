@@ -21,6 +21,8 @@ const MOCK_CTX_EXTRAS = {
   simulate: () => ({ myHpAfter: 80, enemyHpAfter: 60, myStaminaAfter: 100 }),
   predict: () => 'attack', bestAction: () => 'attack',
   actionTable: [] as number[][], markov: {} as Record<string, Record<string, number>>,
+  trainedModel: { predict: () => 'attack' },
+  stateTree: [],
 }
 
 const MOCK_CTX_NORMAL: StrategyContext = {

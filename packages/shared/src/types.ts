@@ -114,6 +114,22 @@ export interface StrategyContext {
   /** transition matrix */
   markov: Record<string, Record<string, number>>
 
+  // ── Sprint 3: ML & visualization ──────────────────────────────────────────
+  /**
+   * N-gram predictor trained on the full enemy history.
+   * More accurate than predict() once 6+ turns of data exist.
+   * Usage: const next = ctx.trainedModel.predict(ctx.enemyHistory.slice(-5))
+   */
+  trainedModel: { predict: (features: string[]) => string }
+
+  /**
+   * Minimax state tree for the current turn (depth 1).
+   * Each entry = one of YOUR available actions simulated against the predicted enemy move.
+   * Sorted best-first; first element has isOptimal=true.
+   * Usage: const best = ctx.stateTree[0].action
+   */
+  stateTree: StateTreeNode[]
+
   // ── Hack / Analyze extras ──────────────────────────────────────────────────
   /**
    * Set when your hack lands this turn — the enemy's actual chosen action.
@@ -130,6 +146,18 @@ export interface StrategyContext {
     comboStreak: number
     rebootUsed: number
   }
+}
+
+export interface StateTreeNode {
+  action: ActionName
+  /** The enemy action this node was simulated against */
+  enemyAction: string
+  myHpAfter: number
+  enemyHpAfter: number
+  /** Net HP advantage: (enemyHpLost) − (yourHpLost). Higher = better for you. */
+  score: number
+  /** True only for the action with the best expected score */
+  isOptimal: boolean
 }
 
 export interface Strategy {

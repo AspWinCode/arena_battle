@@ -19,7 +19,7 @@ import {
   REFLECT_RETURN_RATE,
 } from '@robocode/shared'
 import type {
-  Strategy, StrategyContext, ActionName, SkinId, PlayerState, TurnResult, RoundResult,
+  Strategy, StrategyContext, ActionName, SkinId, PlayerState, TurnResult, RoundResult, StateTreeNode,
 } from '@robocode/shared'
 
 const ALL_ACTIONS: ActionName[] = [
@@ -311,6 +311,45 @@ export class BattleEngine {
       })
     )
 
+    // ── trainedModel: n-gram predictor (3→2→1-gram, falls back to markov) ────
+    const trainedModel = {
+      predict: (features: string[]): string => {
+        if (features.length === 0) return predict(1)
+        // Try longest matching n-gram first
+        for (const n of [3, 2, 1]) {
+          if (features.length < n) continue
+          const key = features.slice(-n).join(',')
+          const counts: Record<string, number> = {}
+          for (let i = n; i < enemy.history.length; i++) {
+            const pat = enemy.history.slice(i - n, i).join(',')
+            if (pat === key) {
+              const next = enemy.history[i]
+              counts[next] = (counts[next] ?? 0) + 1
+            }
+          }
+          if (Object.keys(counts).length > 0) {
+            return Object.keys(counts).reduce((a, b) => counts[a] > counts[b] ? a : b)
+          }
+        }
+        return predict(1)  // fallback to markov single-step
+      },
+    }
+
+    // ── stateTree: depth-1 minimax vs predicted enemy move ────────────────────
+    const predictedForTree = predict(1) as ActionName
+    const rawTree: StateTreeNode[] = TABLE_ACTIONS.map(act => {
+      const { myHpAfter, enemyHpAfter } = simulate(act, predictedForTree)
+      return {
+        action: act,
+        enemyAction: predictedForTree,
+        myHpAfter,
+        enemyHpAfter,
+        score: (enemy.hp - enemyHpAfter) - (self.hp - myHpAfter),
+        isOptimal: false,
+      }
+    }).sort((a, b) => b.score - a.score)
+    if (rawTree.length > 0) rawTree[0].isOptimal = true
+
     // ── Phantom подмена: every 3rd turn show fake lastAction ─────────────────
     let maskedEnemyLastAction = enemy.lastAction
     if (enemy.character === 'phantom' && enemy.phantomMaskCount > 0 && enemy.phantomMaskCount % 3 === 0) {
@@ -353,6 +392,8 @@ export class BattleEngine {
       bestAction,
       actionTable,
       markov,
+      trainedModel,
+      stateTree: rawTree,
       // ── Hack: actual enemy action this turn ──────────────────────────────────
       revealedEnemyAction: revealedEnemyAction ?? null,
       // ── Analyze: enemy hidden state (available turn after analyze) ────────────
