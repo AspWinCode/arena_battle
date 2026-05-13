@@ -196,150 +196,150 @@
           "head_front": {
             "type": "region",
             "path": "head_front",
-            "x": 0,
-            "y": 0,
-            "width": 430,
-            "height": 400
+            "x": -0.1,
+            "y": -0.1,
+            "width": 86.0,
+            "height": 80.0
           }
         },
         "hair_back": {
           "hair_back": {
             "type": "region",
             "path": "hair_back",
-            "x": 0,
-            "y": 0,
-            "width": 400,
-            "height": 180
+            "x": 5.4,
+            "y": 1.0,
+            "width": 69.0,
+            "height": 33.8
           }
         },
         "torso": {
           "torso": {
             "type": "region",
             "path": "torso",
-            "x": 0,
-            "y": 0,
-            "width": 510,
-            "height": 500
+            "x": 2.0,
+            "y": -0.1,
+            "width": 97.8,
+            "height": 100.0
           }
         },
         "shorts": {
           "shorts": {
             "type": "region",
             "path": "shorts",
-            "x": 0,
-            "y": 0,
-            "width": 480,
-            "height": 380
+            "x": 0.6,
+            "y": -0.1,
+            "width": 94.6,
+            "height": 76.0
           }
         },
         "arm_l_upper": {
           "arm_l_upper": {
             "type": "region",
             "path": "arm_l_upper",
-            "x": 0,
-            "y": 0,
-            "width": 250,
-            "height": 320
+            "x": 8.2,
+            "y": 5.2,
+            "width": 33.4,
+            "height": 53.4
           }
         },
         "arm_l_lower": {
           "arm_l_lower": {
             "type": "region",
             "path": "arm_l_lower",
-            "x": 0,
-            "y": 0,
-            "width": 260,
-            "height": 320
+            "x": -0.1,
+            "y": -0.1,
+            "width": 52.0,
+            "height": 64.0
           }
         },
         "glove_l": {
           "glove_l": {
             "type": "region",
             "path": "glove_l",
-            "x": 0,
-            "y": 0,
-            "width": 310,
-            "height": 310
+            "x": -0.1,
+            "y": -0.1,
+            "width": 62.0,
+            "height": 62.0
           }
         },
         "arm_r_upper": {
           "arm_r_upper": {
             "type": "region",
             "path": "arm_r_upper",
-            "x": 0,
-            "y": 0,
-            "width": 310,
-            "height": 320
+            "x": -0.1,
+            "y": -0.1,
+            "width": 62.0,
+            "height": 64.0
           }
         },
         "arm_r_lower": {
           "arm_r_lower": {
             "type": "region",
             "path": "arm_r_lower",
-            "x": 0,
-            "y": 0,
-            "width": 320,
-            "height": 310
+            "x": -0.1,
+            "y": -0.1,
+            "width": 64.0,
+            "height": 62.0
           }
         },
         "glove_r": {
           "glove_r": {
             "type": "region",
             "path": "glove_r",
-            "x": 0,
-            "y": 0,
-            "width": 380,
-            "height": 350
+            "x": -10.5,
+            "y": -0.1,
+            "width": 55.2,
+            "height": 70.0
           }
         },
         "thigh_l": {
           "thigh_l": {
             "type": "region",
             "path": "thigh_l",
-            "x": 0,
-            "y": 0,
-            "width": 250,
-            "height": 350
+            "x": -0.1,
+            "y": -0.1,
+            "width": 50.0,
+            "height": 70.0
           }
         },
         "shin_l": {
           "shin_l": {
             "type": "region",
             "path": "shin_l",
-            "x": 0,
-            "y": 0,
-            "width": 260,
-            "height": 390
+            "x": -0.1,
+            "y": -8.5,
+            "width": 52.0,
+            "height": 61.2
           }
         },
         "foot_l": {
           "foot_l": {
             "type": "region",
             "path": "foot_l",
-            "x": 0,
-            "y": 0,
-            "width": 340,
-            "height": 306
+            "x": 12.5,
+            "y": -29.1,
+            "width": 33.6,
+            "height": 3.2
           }
         },
         "thigh_r": {
           "thigh_r": {
             "type": "region",
             "path": "thigh_r",
-            "x": 0,
-            "y": 0,
-            "width": 260,
-            "height": 340
+            "x": -3.7,
+            "y": -0.1,
+            "width": 44.8,
+            "height": 68.0
           }
         },
         "shin_r": {
           "shin_r": {
             "type": "region",
             "path": "shin_r",
-            "x": 0,
-            "y": 0,
-            "width": 340,
-            "height": 410
+            "x": -0.2,
+            "y": -17.7,
+            "width": 52.2,
+            "height": 46.8
           }
         },
         "foot_r": {
