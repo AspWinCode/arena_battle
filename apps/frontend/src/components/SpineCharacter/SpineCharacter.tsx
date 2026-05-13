@@ -289,10 +289,10 @@ export default function SpineCharacter({ skinId, action, turnKey, flipX = false,
       {!loaded && <div className={styles.shimmer} />}
       <canvas
         ref={canvasRef}
-        width={180}
-        height={280}
+        width={260}
+        height={340}
         className={styles.canvas}
-        style={{ opacity: loaded ? (isDead ? 0.35 : 1) : 0 }}
+        style={{ opacity: loaded ? (isDead ? 0 : 1) : 0 }}
       />
     </div>
   )
