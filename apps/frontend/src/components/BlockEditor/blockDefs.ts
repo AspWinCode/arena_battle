@@ -10,7 +10,19 @@ export const BLOCK_DEFS: BlockDef[] = [
   { id: 'doDodge',   type: 'command', category: 'combat', label: '💨 уклон',            color: '#8e44ad' },
   { id: 'doRepair',  type: 'command', category: 'combat', label: '💊 лечение',          color: '#27ae60' },
   { id: 'doSpecial', type: 'command', category: 'combat', label: '☄️ спешл',            color: '#d35400' },
-  { id: 'doRandom',  type: 'command', category: 'combat', label: '🎲 случайный приём',  color: '#7f8c8d' },
+  { id: 'doRandom',         type: 'command', category: 'combat', label: '🎲 случайный приём',      color: '#7f8c8d' },
+  // ── Новые действия ────────────────────────────────────────────────────────────
+  { id: 'doCombo',          type: 'command', category: 'combat', label: '🥊 комбо-удар',           color: '#e74c3c' },
+  { id: 'doOvercharge',     type: 'command', category: 'combat', label: '⚡ зарядка',              color: '#f39c12' },
+  { id: 'doReflect',        type: 'command', category: 'combat', label: '🪞 отражение',            color: '#3498db' },
+  { id: 'doAdaptiveShield', type: 'command', category: 'combat', label: '🧠 адаптивный щит',      color: '#2980b9' },
+  { id: 'doTrap',           type: 'command', category: 'combat', label: '🪤 ловушка',              color: '#8e44ad' },
+  { id: 'doHack',           type: 'command', category: 'combat', label: '💻 взлом',                color: '#16a085' },
+  { id: 'doSacrifice',      type: 'command', category: 'combat', label: '💀 жертва',               color: '#7f8c8d' },
+  { id: 'doReboot',         type: 'command', category: 'combat', label: '🔄 перезагрузка',         color: '#27ae60' },
+  { id: 'doTransfer',       type: 'command', category: 'combat', label: '🔋 конвертация',          color: '#1abc9c' },
+  { id: 'doAnalyze',        type: 'command', category: 'combat', label: '🔍 анализ',               color: '#2ecc71' },
+  { id: 'doOverclock',      type: 'command', category: 'combat', label: '⚙️ разгон (×2 ход)',     color: '#e67e22' },
 
   // ── Control ───────────────────────────────────────────────────────────────────
   { id: 'whenTurn', type: 'hat', category: 'control', label: '⏱ каждый ход стратегии', color: '#e67e22' },
@@ -53,6 +65,43 @@ export const BLOCK_DEFS: BlockDef[] = [
     color: '#5cb1d6',
     slots: [{ id: 'pct', type: 'number', default: 50 }],
   },
+  // ── Уровень 2: история ────────────────────────────────────────────────────────
+  {
+    id: 'ctxEnemyHistoryCount', type: 'reporter', category: 'sensing',
+    label: 'враг применял (атаку) раз', color: '#5cb1d6',
+    slots: [{ id: 'action', type: 'string', default: 'attack' }],
+  },
+  {
+    id: 'ctxMyHistoryCount', type: 'reporter', category: 'sensing',
+    label: 'я применял (атаку) раз', color: '#5cb1d6',
+    slots: [{ id: 'action', type: 'string', default: 'attack' }],
+  },
+  { id: 'ctxDamageLast',      type: 'reporter', category: 'sensing', label: 'урон нанесён (пр. ход)', color: '#5cb1d6' },
+  { id: 'ctxDamageTakenLast', type: 'reporter', category: 'sensing', label: 'урон получен (пр. ход)',  color: '#5cb1d6' },
+  // ── Уровень 3: паттерны ───────────────────────────────────────────────────────
+  { id: 'ctxEnemyFreqMost',  type: 'reporter',  category: 'sensing', label: 'любимый приём врага',    color: '#5cb1d6' },
+  { id: 'ctxEnemyPhase',     type: 'reporter',  category: 'sensing', label: 'фаза врага',              color: '#5cb1d6' },
+  { id: 'ctxEnemyTrend',     type: 'reporter',  category: 'sensing', label: 'тенденция врага',         color: '#5cb1d6' },
+  {
+    id: 'ctxEnemyFreqCount', type: 'reporter', category: 'sensing', label: 'враг применял (атаку)', color: '#5cb1d6',
+    slots: [{ id: 'action', type: 'string', default: 'attack' }],
+  },
+  {
+    id: 'ctxIsEnemyPhase', type: 'predicate', category: 'sensing', label: 'фаза врага =', color: '#5cb1d6',
+    slots: [{ id: 'phase', type: 'string', default: 'late' }],
+  },
+  {
+    id: 'ctxIsEnemyTrend', type: 'predicate', category: 'sensing', label: 'тенденция врага =', color: '#5cb1d6',
+    slots: [{ id: 'trend', type: 'string', default: 'aggressive' }],
+  },
+  // ── Кулдауны новых действий ───────────────────────────────────────────────────
+  { id: 'ctxCooldownCombo',     type: 'reporter', category: 'sensing', label: 'КД комбо',       color: '#5cb1d6' },
+  { id: 'ctxCooldownTrap',      type: 'reporter', category: 'sensing', label: 'КД ловушки',      color: '#5cb1d6' },
+  { id: 'ctxCooldownReflect',   type: 'reporter', category: 'sensing', label: 'КД отражения',    color: '#5cb1d6' },
+  { id: 'ctxCooldownSacrifice', type: 'reporter', category: 'sensing', label: 'КД жертвы',       color: '#5cb1d6' },
+  { id: 'ctxCooldownReboot',    type: 'reporter', category: 'sensing', label: 'КД перезагр.',    color: '#5cb1d6' },
+  { id: 'ctxCooldownHack',      type: 'reporter', category: 'sensing', label: 'КД взлома',       color: '#5cb1d6' },
+  { id: 'ctxCooldownAnalyze',   type: 'reporter', category: 'sensing', label: 'КД анализа',      color: '#5cb1d6' },
 
   // ── Operators ─────────────────────────────────────────────────────────────────
   {
@@ -141,6 +190,8 @@ export const ALL_SKINS: { id: SkinId; icon: string; label: string }[] = [
   { id: 'paladin',   icon: '🛡️', label: 'Паладин' },
   { id: 'sniper',    icon: '🎯', label: 'Снайпер' },
   { id: 'tank',      icon: '🛡',  label: 'Танк' },
+  { id: 'scorpion', icon: '🦂', label: 'Скорпион' },
+  { id: 'plague',   icon: '☠️',  label: 'Чума' },
   { id: 'vampire',   icon: '🧛', label: 'Вампир' },
   { id: 'samurai',   icon: '🗡️', label: 'Самурай' },
   { id: 'phantom',   icon: '👻', label: 'Фантом' },

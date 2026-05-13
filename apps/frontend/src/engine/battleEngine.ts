@@ -68,8 +68,9 @@ export class BattleEngine {
       rage:     Math.min(MAX_RAGE,    0           + (perks.bonusRage    ?? 0)),
       position: s.position ?? 'mid',
       cooldowns: { attack: 0, heavy: 0, laser: 0, shield: 0, dodge: 0, repair: 0, special: 0 },
-      lastAction:   null,
-      shieldActive: false,
+      lastAction:    null,
+      shieldActive:  false,
+      reflectActive: false,
       strategy: s,
       repeatCount:  0,
       character:    charId,
@@ -125,6 +126,11 @@ export class BattleEngine {
   }
 
   private buildContext(self: ExtState, enemy: ExtState, turn: number): StrategyContext {
+    const enemyFrequency: Record<string, number> = {}
+    for (const act of (self as ExtState & { history?: string[] }).history ?? []) {
+      enemyFrequency[act] = (enemyFrequency[act] ?? 0) + 1
+    }
+    const noop = () => ({ myHpAfter: self.hp, enemyHpAfter: enemy.hp, myStaminaAfter: self.stamina })
     return {
       myHp: self.hp, myMaxHp: self.maxHp, myStamina: self.stamina, myRage: self.rage,
       enemyHp: enemy.hp, enemyMaxHp: enemy.maxHp, enemyStamina: enemy.stamina, enemyRage: enemy.rage,
@@ -134,6 +140,19 @@ export class BattleEngine {
       myPosition: self.position, enemyPosition: enemy.position,
       distanceModifier: getPositionMultiplier(self.strategy.primary, self.position),
       myRepeatCount: self.repeatCount,
+      // Level 2
+      myHistory: [], enemyHistory: [],
+      damageLog: [], damageTakenLog: [], myHpLog: [], enemyHpLog: [],
+      // Level 3
+      enemyFrequency, myEfficiency: {},
+      enemyPhase: enemy.hp / enemy.maxHp > 0.6 ? 'early' : enemy.hp / enemy.maxHp > 0.3 ? 'mid' : 'late',
+      enemyTrend: 'mixed',
+      // Level 4
+      simulate: noop,
+      predict: () => 'attack',
+      bestAction: () => 'attack',
+      actionTable: [],
+      markov: {},
     }
   }
 

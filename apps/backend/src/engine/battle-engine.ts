@@ -89,6 +89,14 @@ interface ExtState extends PlayerState {
   berserkThreshold: number
   berserkMult: number
   bushidoNoDefenseStreak: number
+  // ── Phantom подмена ──────────────────────────────────────────────────────────
+  phantomMaskCount: number    // increments each turn; every 3rd = fake lastAction shown to enemy
+  // ── Plague дебафф ────────────────────────────────────────────────────────────
+  debuffedAction:   ActionName | null  // which of MY actions is debuffed (set by enemy Plague)
+  debuffTurnsLeft:  number             // how many turns the debuff lasts
+  plagueDebuffCount: number            // Plague's own turn counter for triggering debuff
+  // ── Overclock ────────────────────────────────────────────────────────────────
+  overclockBonus:   number             // extra damage this turn from overclock second action
 }
 
 export class BattleEngine {
@@ -163,6 +171,11 @@ export class BattleEngine {
       berserkThreshold:     char.berserkThreshold,
       berserkMult:          char.berserkMult,
       bushidoNoDefenseStreak: char.bushidoNoDefenseStreak,
+      phantomMaskCount:  0,
+      debuffedAction:    null,
+      debuffTurnsLeft:   0,
+      plagueDebuffCount: 0,
+      overclockBonus:    0,
     }
   }
 
@@ -292,6 +305,13 @@ export class BattleEngine {
       })
     )
 
+    // ── Phantom подмена: every 3rd turn show fake lastAction ─────────────────
+    let maskedEnemyLastAction = enemy.lastAction
+    if (enemy.character === 'phantom' && enemy.phantomMaskCount > 0 && enemy.phantomMaskCount % 3 === 0) {
+      const opts = CHARACTER_STATS.phantom.allowedActions
+      maskedEnemyLastAction = opts[Math.floor(Math.random() * opts.length)] as ActionName
+    }
+
     return {
       myHp:         self.hp,
       myMaxHp:      self.maxHp,
@@ -305,7 +325,7 @@ export class BattleEngine {
       enemyStamina: enemy.stamina,
       enemyRage:    enemy.rage,
       enemyPosition: enemy.position,
-      enemyLastAction: enemy.lastAction,
+      enemyLastAction: maskedEnemyLastAction,
       turn,
       cooldowns,
       distanceModifier: getPositionMultiplier(self.strategy.primary, self.position),
@@ -496,6 +516,44 @@ export class BattleEngine {
     // analyze
     if (a1 === 'analyze') this.p1.analyzedTurn = turn
     if (a2 === 'analyze') this.p2.analyzedTurn = turn
+
+    // ── Plague дебафф: every 3 turns debuff enemy's most frequent action ──────
+    if (this.p1.character === 'plague') {
+      this.p1.plagueDebuffCount++
+      if (this.p1.plagueDebuffCount % 3 === 0) {
+        const freq = this.computeFrequency(this.p2.history)
+        const target = this.mostFrequent(freq) ?? a2
+        this.p2.debuffedAction   = target as ActionName
+        this.p2.debuffTurnsLeft  = 2
+      }
+    }
+    if (this.p2.character === 'plague') {
+      this.p2.plagueDebuffCount++
+      if (this.p2.plagueDebuffCount % 3 === 0) {
+        const freq = this.computeFrequency(this.p1.history)
+        const target = this.mostFrequent(freq) ?? a1
+        this.p1.debuffedAction   = target as ActionName
+        this.p1.debuffTurnsLeft  = 2
+      }
+    }
+
+    // ── Overclock: pick second action and add its damage as bonus ────────────
+    this.p1.overclockBonus = 0
+    this.p2.overclockBonus = 0
+    if (a1 === 'overclock' && this.p1.stamina >= 40) {
+      const a1b = this.pickStaticAction(this.p1, this.p2)
+      if (a1b !== 'overclock') {
+        this.p1.overclockBonus = Math.round(this.calcDamage(a1b, this.p1, a2, this.p2))
+        this.applyCooldown(this.p1, a1b)
+      }
+    }
+    if (a2 === 'overclock' && this.p2.stamina >= 40) {
+      const a2b = this.pickStaticAction(this.p2, this.p1)
+      if (a2b !== 'overclock') {
+        this.p2.overclockBonus = Math.round(this.calcDamage(a2b, this.p2, a1, this.p1))
+        this.applyCooldown(this.p2, a2b)
+      }
+    }
     // adaptive_shield: determine what to block based on enemy frequency
     if (a1 === 'adaptive_shield') {
       const freq = this.computeFrequency(this.p2.history)
@@ -580,9 +638,9 @@ export class BattleEngine {
     if (a2 === 'shield' && this.p2.shieldHealAmount > 0) p2Heal += this.p2.shieldHealAmount
     p2Heal += p2Lifesteal
 
-    // Apply all damage (base + reflect + trap)
+    // Apply all damage (base + reflect + trap + overclock)
     const p1TotalDmg = p1DmgDealt + p2ReflectDmg + p1TrapDmg
-    const p2TotalDmg = p2DmgDealt + p1ReflectDmg + p2TrapDmg
+    const p2TotalDmg = p2DmgDealt + p1ReflectDmg + p2TrapDmg + this.p1.overclockBonus
 
     this.p1.hp = Math.min(this.p1.maxHp, Math.max(0, this.p1.hp - p1TotalDmg + p1Heal))
     this.p2.hp = Math.min(this.p2.maxHp, Math.max(0, this.p2.hp - p2TotalDmg + p2Heal))
@@ -663,6 +721,20 @@ export class BattleEngine {
 
     this.p1.lastAction = a1; this.p2.lastAction = a2
     this.updatePosition(this.p1, a1); this.updatePosition(this.p2, a2)
+
+    // ── Phantom maskCount ────────────────────────────────────────────────────
+    if (this.p1.character === 'phantom') this.p1.phantomMaskCount++
+    if (this.p2.character === 'phantom') this.p2.phantomMaskCount++
+
+    // ── Plague debuff tick ───────────────────────────────────────────────────
+    if (this.p1.debuffTurnsLeft > 0) {
+      this.p1.debuffTurnsLeft--
+      if (this.p1.debuffTurnsLeft === 0) this.p1.debuffedAction = null
+    }
+    if (this.p2.debuffTurnsLeft > 0) {
+      this.p2.debuffTurnsLeft--
+      if (this.p2.debuffTurnsLeft === 0) this.p2.debuffedAction = null
+    }
 
     // ── History logging ───────────────────────────────────────────────────────
     this.p1.history.push(a1); this.p2.history.push(a2)
@@ -764,6 +836,11 @@ export class BattleEngine {
       dmg = Math.max(1, dmg - def.flatDmgReduction)
     }
 
+    // ── Plague дебафф: attacker's action is debuffed -50% ────────────────────
+    if (att.debuffedAction === attAction && att.debuffTurnsLeft > 0) {
+      dmg = Math.floor(dmg * 0.5)
+    }
+
     return Math.max(0, dmg)
   }
 
@@ -835,6 +912,10 @@ export class BattleEngine {
     if (p1.character === 'scorpion' && (a1 === 'attack' || a1 === 'heavy') && a2 === 'dodge') parts.push('🦂 Захват!')
     if (p1.berserkThreshold > 0 && p1.hp <= p1.berserkThreshold) parts.push('😤 P1 БЕРСЕРК!')
     if (p2.berserkThreshold > 0 && p2.hp <= p2.berserkThreshold) parts.push('😤 P2 БЕРСЕРК!')
+    if (a1 === 'overclock' && p1.overclockBonus > 0) parts.push(`⚙️ P1 РАЗГОН +${p1.overclockBonus}`)
+    if (a2 === 'overclock' && p2.overclockBonus > 0) parts.push(`⚙️ P2 РАЗГОН +${p2.overclockBonus}`)
+    if (p2.debuffedAction) parts.push(`☢️ P2 ${p2.debuffedAction} дебаффнут!`)
+    if (p1.debuffedAction) parts.push(`☢️ P1 ${p1.debuffedAction} дебаффнут!`)
     if (parts.length === 0) parts.push(`${a1} vs ${a2}`)
     return parts.join(' | ')
   }

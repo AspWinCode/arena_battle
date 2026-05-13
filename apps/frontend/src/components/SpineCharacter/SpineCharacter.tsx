@@ -26,9 +26,21 @@ const ACTION_TO_ANIM: Record<string, string> = {
   dodge:   'jump',
   repair:  'walk',
   special: 'shoot',
-  hurt:    'hit',
-  victory: 'run',
-  dead:    'death',
+  hurt:            'hit',
+  victory:         'run',
+  dead:            'death',
+  // New actions
+  combo:           'shoot',
+  overcharge:      'aim',
+  reflect:         'aim',
+  adaptive_shield: 'aim',
+  trap:            'walk',
+  hack:            'walk',
+  sacrifice:       'hit',
+  reboot:          'walk',
+  transfer:        'walk',
+  analyze:         'walk',
+  overclock:       'run',
 }
 
 // One-shot animations that should return to idle after finishing

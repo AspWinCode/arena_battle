@@ -2,6 +2,8 @@ import { createHash } from 'node:crypto'
 import type { Strategy, Lang } from '@robocode/shared'
 import { runJS } from './js-runner.js'
 import { runPython } from './python-runner.js'
+import { runCpp } from './cpp-runner.js'
+import { runJava } from './java-runner.js'
 import { buildStrategy } from './build-strategy.js'
 
 // ── Strategy cache (keyed by SHA-256 of lang:code) ─────────────────────────
@@ -48,9 +50,27 @@ export async function runInSandbox(code: string, lang: Lang): Promise<Strategy> 
     return cached
   }
 
-  // Python strategies hold a live subprocess — cannot be shared across battles
+  // Python strategies hold a live subprocess — cannot be cached
   if (lang === 'py') {
     return runPython(code)
+  }
+
+  // C++ / Java: try native runner first, fall back to Docker
+  if (lang === 'cpp') {
+    try {
+      return await runCpp(code)  // subprocess; not cached (holds process)
+    } catch (e) {
+      console.warn('[sandbox] native cpp failed, trying docker:', e)
+      return await runDockerSandbox(code, lang)
+    }
+  }
+  if (lang === 'java') {
+    try {
+      return await runJava(code)  // subprocess; not cached
+    } catch (e) {
+      console.warn('[sandbox] native java failed, trying docker:', e)
+      return await runDockerSandbox(code, lang)
+    }
   }
 
   const strategy = lang === 'js' || lang === 'auto'

@@ -2,6 +2,8 @@ import type { Strategy, StrategyContext, ActionName, Position } from '@robocode/
 
 const VALID_ACTIONS = new Set<ActionName>([
   'attack', 'heavy', 'laser', 'shield', 'dodge', 'repair', 'special',
+  'combo', 'overcharge', 'reflect', 'adaptive_shield', 'trap',
+  'hack', 'sacrifice', 'overclock', 'reboot', 'transfer', 'analyze',
 ])
 
 function isValidAction(v: unknown): v is ActionName {
@@ -10,6 +12,17 @@ function isValidAction(v: unknown): v is ActionName {
 
 // ── Test contexts ──────────────────────────────────────────────────────────────
 
+const MOCK_CTX_EXTRAS = {
+  myHistory: [] as ActionName[], enemyHistory: [] as ActionName[],
+  damageLog: [] as number[], damageTakenLog: [] as number[],
+  myHpLog: [] as number[], enemyHpLog: [] as number[],
+  enemyFrequency: {} as Record<string, number>, myEfficiency: {} as Record<string, number>,
+  enemyPhase: 'early' as const, enemyTrend: 'mixed' as const,
+  simulate: () => ({ myHpAfter: 80, enemyHpAfter: 60, myStaminaAfter: 100 }),
+  predict: () => 'attack', bestAction: () => 'attack',
+  actionTable: [] as number[][], markov: {} as Record<string, Record<string, number>>,
+}
+
 const MOCK_CTX_NORMAL: StrategyContext = {
   myHp: 80, myMaxHp: 100, myStamina: 100, myRage: 0,
   enemyHp: 60, enemyMaxHp: 100, enemyStamina: 100, enemyRage: 0,
@@ -17,8 +30,8 @@ const MOCK_CTX_NORMAL: StrategyContext = {
   myLastAction: null, enemyLastAction: null,
   cooldowns: { attack: 0, heavy: 0, laser: 0, shield: 0, dodge: 0, repair: 0, special: 0 },
   myPosition: 'mid', enemyPosition: 'mid',
-  distanceModifier: 1.0,
-  myRepeatCount: 0,
+  distanceModifier: 1.0, myRepeatCount: 0,
+  ...MOCK_CTX_EXTRAS,
 }
 
 const MOCK_CTX_LOW_HP: StrategyContext = {
@@ -28,8 +41,8 @@ const MOCK_CTX_LOW_HP: StrategyContext = {
   myLastAction: 'attack', enemyLastAction: 'heavy',
   cooldowns: { attack: 0, heavy: 0, laser: 0, shield: 0, dodge: 0, repair: 0, special: 0 },
   myPosition: 'close', enemyPosition: 'close',
-  distanceModifier: 1.3,
-  myRepeatCount: 2,
+  distanceModifier: 1.3, myRepeatCount: 2,
+  ...MOCK_CTX_EXTRAS,
 }
 
 // ── Detect API style ──────────────────────────────────────────────────────────

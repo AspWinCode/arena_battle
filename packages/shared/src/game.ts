@@ -35,6 +35,7 @@ export const STAMINA_COSTS: Record<ActionName, number> = {
   reboot:          30,
   transfer:         0,
   analyze:          0,
+  overclock:       30,
 }
 
 /**
@@ -74,6 +75,7 @@ export const BASE_DAMAGE: Record<ActionName, number> = {
   reboot:           0,
   transfer:         0,
   analyze:          0,
+  overclock:        0,   // 2 actions in 1 turn — no direct damage itself
 }
 
 // ─── Counter / mitigation ────────────────────────────────────────────────────
@@ -115,6 +117,7 @@ export const COOLDOWNS: Record<ActionName, number> = {
   reboot:          0,  // limited by rebootUsed counter, not cooldown
   transfer:        2,
   analyze:         4,
+  overclock:       6,
 }
 
 // ─── New action constants ─────────────────────────────────────────────────────

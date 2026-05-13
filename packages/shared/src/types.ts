@@ -28,6 +28,7 @@ export type ActionName =
   | 'reboot'         // reset all cooldowns (limited uses)
   | 'transfer'       // convert stamina to HP
   | 'analyze'        // skip turn, reduce enemy damage next turn
+  | 'overclock'      // 2 actions in 1 turn, CD 6
 
 export type Position = 'close' | 'mid' | 'far'
 

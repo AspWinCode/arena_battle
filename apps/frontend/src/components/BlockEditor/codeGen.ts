@@ -95,6 +95,42 @@ function generateExpression(inst: BlockInstance): string {
     case 'ctxEnemyHasShield':  return "(ctx.enemyLastAction === 'shield')"
     case 'ctxMyHasShield':     return "(ctx.myLastAction === 'shield')"
     case 'percentChance':      return `(Math.random() * 100 < ${s('pct')})`
+    // Level 2 — history
+    case 'ctxEnemyHistoryCount': {
+      const action = inst.slots.find(sv => sv.slotId === 'action')?.value ?? 'attack'
+      return `(ctx.enemyHistory ?? []).filter(a => a === ${JSON.stringify(action)}).length`
+    }
+    case 'ctxMyHistoryCount': {
+      const action = inst.slots.find(sv => sv.slotId === 'action')?.value ?? 'attack'
+      return `(ctx.myHistory ?? []).filter(a => a === ${JSON.stringify(action)}).length`
+    }
+    case 'ctxDamageLast':      return `((ctx.damageLog ?? [])[ctx.damageLog.length - 1] ?? 0)`
+    case 'ctxDamageTakenLast': return `((ctx.damageTakenLog ?? [])[ctx.damageTakenLog.length - 1] ?? 0)`
+    // Level 3 — patterns
+    case 'ctxEnemyFreqMost':
+      return `(Object.keys(ctx.enemyFrequency ?? {}).reduce((a,b) => (ctx.enemyFrequency[a]??0) > (ctx.enemyFrequency[b]??0) ? a : b, 'attack'))`
+    case 'ctxEnemyPhase':      return `ctx.enemyPhase`
+    case 'ctxEnemyTrend':      return `ctx.enemyTrend`
+    case 'ctxEnemyFreqCount': {
+      const action = inst.slots.find(sv => sv.slotId === 'action')?.value ?? 'attack'
+      return `((ctx.enemyFrequency ?? {})[${JSON.stringify(action)}] ?? 0)`
+    }
+    case 'ctxIsEnemyPhase': {
+      const phase = inst.slots.find(sv => sv.slotId === 'phase')?.value ?? 'late'
+      return `(ctx.enemyPhase === ${JSON.stringify(phase)})`
+    }
+    case 'ctxIsEnemyTrend': {
+      const trend = inst.slots.find(sv => sv.slotId === 'trend')?.value ?? 'aggressive'
+      return `(ctx.enemyTrend === ${JSON.stringify(trend)})`
+    }
+    // Cooldowns for new actions
+    case 'ctxCooldownCombo':     return `(ctx.cooldowns?.combo ?? 0)`
+    case 'ctxCooldownTrap':      return `(ctx.cooldowns?.trap ?? 0)`
+    case 'ctxCooldownReflect':   return `(ctx.cooldowns?.reflect ?? 0)`
+    case 'ctxCooldownSacrifice': return `(ctx.cooldowns?.sacrifice ?? 0)`
+    case 'ctxCooldownReboot':    return `(ctx.cooldowns?.reboot ?? 0)`
+    case 'ctxCooldownHack':      return `(ctx.cooldowns?.hack ?? 0)`
+    case 'ctxCooldownAnalyze':   return `(ctx.cooldowns?.analyze ?? 0)`
     case 'enemyHp':            return 'ctx.enemyHp'
     case 'myHp':               return 'ctx.myHp'
     case 'enemyLastAction':    return 'ctx.enemyLastAction'
@@ -128,14 +164,25 @@ function generateBlock(inst: BlockInstance | null, depth: number): string[] {
   const s = (id: string) => slotValue(inst.slots.find(sv => sv.slotId === id))
 
   switch (inst.defId) {
-    case 'doAttack':  lines.push(`${ind}return 'attack';`);  break
-    case 'doHeavy':   lines.push(`${ind}return 'heavy';`);   break
-    case 'doLaser':   lines.push(`${ind}return 'laser';`);   break
-    case 'doShield':  lines.push(`${ind}return 'shield';`);  break
-    case 'doDodge':   lines.push(`${ind}return 'dodge';`);   break
-    case 'doRepair':  lines.push(`${ind}return 'repair';`);  break
-    case 'doSpecial': lines.push(`${ind}return 'special';`); break
+    case 'doAttack':  lines.push(`${ind}return 'attack';`);          break
+    case 'doHeavy':   lines.push(`${ind}return 'heavy';`);           break
+    case 'doLaser':   lines.push(`${ind}return 'laser';`);           break
+    case 'doShield':  lines.push(`${ind}return 'shield';`);          break
+    case 'doDodge':   lines.push(`${ind}return 'dodge';`);           break
+    case 'doRepair':  lines.push(`${ind}return 'repair';`);          break
+    case 'doSpecial': lines.push(`${ind}return 'special';`);         break
     case 'doRandom':  lines.push(`${ind}return ['attack','heavy','laser','shield','dodge','repair','special'][Math.floor(Math.random()*7)];`); break
+    case 'doCombo':          lines.push(`${ind}return 'combo';`);           break
+    case 'doOvercharge':     lines.push(`${ind}return 'overcharge';`);      break
+    case 'doReflect':        lines.push(`${ind}return 'reflect';`);         break
+    case 'doAdaptiveShield': lines.push(`${ind}return 'adaptive_shield';`); break
+    case 'doTrap':           lines.push(`${ind}return 'trap';`);            break
+    case 'doHack':           lines.push(`${ind}return 'hack';`);            break
+    case 'doSacrifice':      lines.push(`${ind}return 'sacrifice';`);       break
+    case 'doReboot':         lines.push(`${ind}return 'reboot';`);          break
+    case 'doTransfer':       lines.push(`${ind}return 'transfer';`);        break
+    case 'doAnalyze':        lines.push(`${ind}return 'analyze';`);         break
+    case 'doOverclock':      lines.push(`${ind}return 'overclock';`);       break
     case 'whenTurn': break
     case 'stop':     lines.push(`${ind}return 'attack';`); break
     case 'attack':      lines.push(`${ind}return 'attack';`);  break
