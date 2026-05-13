@@ -113,6 +113,23 @@ export interface StrategyContext {
   actionTable: number[][]
   /** transition matrix */
   markov: Record<string, Record<string, number>>
+
+  // ── Hack / Analyze extras ──────────────────────────────────────────────────
+  /**
+   * Set when your hack lands this turn — the enemy's actual chosen action.
+   * null/undefined when hack is not active.
+   */
+  revealedEnemyAction?: ActionName | null
+  /**
+   * Set the turn after you use analyze — exposes normally-hidden enemy state:
+   * their cooldowns, overcharge stack, combo streak, reboot uses.
+   */
+  enemyDetailedState?: {
+    cooldowns: Record<string, number>
+    chargeStack: number
+    comboStreak: number
+    rebootUsed: number
+  }
 }
 
 export interface Strategy {

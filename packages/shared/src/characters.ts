@@ -241,6 +241,7 @@ export const CHARACTER_STATS: Record<SkinId, CharacterStats> = {
     ...DEFAULTS,
     maxHp: 120, dmgMult: 0.65, rageMult: 1.0,
     flatDmgReduction: 5,
+    shieldBonus: 0.2,    // shield absorbs 80% (SHIELD_ABSORB 0.6 + 0.2 = 0.80)
     allowedActions: ['attack', 'shield', 'repair', 'reflect', 'reboot', 'adaptive_shield', 'transfer'],
     name:    'Рино',
     icon:    '🦏',
@@ -254,7 +255,8 @@ export const CHARACTER_STATS: Record<SkinId, CharacterStats> = {
   vampire: {
     ...DEFAULTS,
     maxHp: 75, dmgMult: 1.1, rageMult: 1.0,
-    lifestealRate: 0.25,
+    lifestealRate: 0.30,         // 30% lifesteal as per spec
+    sacrificeRageBonus: 50,      // sacrifice effect ×2 (50 base + 50 bonus = 100 rage)
     allowedActions: ['attack', 'heavy', 'special', 'sacrifice', 'reflect', 'combo'],
     name:    'Вампир',
     icon:    '🧛',
@@ -331,6 +333,7 @@ export const CHARACTER_STATS: Record<SkinId, CharacterStats> = {
     ...DEFAULTS,
     maxHp: 55, dmgMult: 1.1, rageMult: 1.0,
     attackIgnoresDodge: true,
+    poisonOnHit: 3,   // triggers stacking poison: +1 stack/hit (max 3), 3 HP/turn per stack, 5 turns
     allowedActions: ['attack', 'trap', 'analyze', 'special', 'sacrifice', 'hack'],
     name:    'Скорпион',
     icon:    '🦂',

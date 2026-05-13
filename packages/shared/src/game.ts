@@ -35,7 +35,7 @@ export const STAMINA_COSTS: Record<ActionName, number> = {
   reboot:          30,
   transfer:         0,
   analyze:          0,
-  overclock:       30,
+  overclock:       40,
 }
 
 /**

@@ -25,7 +25,7 @@ import type {
 const ALL_ACTIONS: ActionName[] = [
   'attack', 'heavy', 'laser', 'shield', 'dodge', 'repair', 'special',
   'combo', 'overcharge', 'reflect', 'adaptive_shield', 'trap',
-  'hack', 'sacrifice', 'reboot', 'transfer', 'analyze',
+  'hack', 'sacrifice', 'reboot', 'transfer', 'analyze', 'overclock',
 ]
 
 const VALID_ACTIONS = new Set<ActionName>(ALL_ACTIONS)
@@ -97,6 +97,10 @@ interface ExtState extends PlayerState {
   plagueDebuffCount: number            // Plague's own turn counter for triggering debuff
   // ── Overclock ────────────────────────────────────────────────────────────────
   overclockBonus:   number             // extra damage this turn from overclock second action
+  // ── Scorpion poison tracking ─────────────────────────────────────────────────
+  poisonTicksLeft:  number             // turns remaining on Scorpion poison (clears stacks at 0)
+  // ── Plague flat poison (separate from Scorpion stacks) ───────────────────────
+  plaguePoison:     number             // flat HP/turn from Plague Doctor's attack
 }
 
 export class BattleEngine {
@@ -176,6 +180,8 @@ export class BattleEngine {
       debuffTurnsLeft:   0,
       plagueDebuffCount: 0,
       overclockBonus:    0,
+      poisonTicksLeft:   0,
+      plaguePoison:      0,
     }
   }
 
@@ -208,7 +214,7 @@ export class BattleEngine {
 
   // ── Context ─────────────────────────────────────────────────────────────────
 
-  private buildContext(self: ExtState, enemy: ExtState, turn: number): StrategyContext {
+  private buildContext(self: ExtState, enemy: ExtState, turn: number, revealedEnemyAction?: ActionName | null): StrategyContext {
     // Build enemy frequency map
     const enemyFrequency: Record<string, number> = {}
     for (const act of enemy.history) {
@@ -347,6 +353,15 @@ export class BattleEngine {
       bestAction,
       actionTable,
       markov,
+      // ── Hack: actual enemy action this turn ──────────────────────────────────
+      revealedEnemyAction: revealedEnemyAction ?? null,
+      // ── Analyze: enemy hidden state (available turn after analyze) ────────────
+      enemyDetailedState: self.analyzedTurn === turn - 1 ? {
+        cooldowns:   { ...enemy.cooldowns },
+        chargeStack: enemy.chargeStack,
+        comboStreak: enemy.comboStreak,
+        rebootUsed:  enemy.rebootUsed,
+      } : undefined,
     }
   }
 
@@ -358,8 +373,8 @@ export class BattleEngine {
     return char.allowedActions.includes(action)
   }
 
-  private async pickActionAsync(self: ExtState, enemy: ExtState, turn: number): Promise<ActionName> {
-    const ctx = this.buildContext(self, enemy, turn)
+  private async pickActionAsync(self: ExtState, enemy: ExtState, turn: number, revealedEnemyAction?: ActionName | null): Promise<ActionName> {
+    const ctx = this.buildContext(self, enemy, turn, revealedEnemyAction)
 
     if (self.strategy.asyncFn) {
       try {
@@ -422,10 +437,23 @@ export class BattleEngine {
     this.p1.reflectActive = false
     this.p2.reflectActive = false
 
-    const [a1, a2] = await Promise.all([
-      this.pickActionAsync(this.p1, this.p2, turn),
-      this.pickActionAsync(this.p2, this.p1, turn),
-    ])
+    // ── Hack: the hacked player picks AFTER enemy, seeing their real action ────
+    let a1: ActionName
+    let a2: ActionName
+    const p1Hacked = this.p1.hackRevealTurn === turn
+    const p2Hacked = this.p2.hackRevealTurn === turn
+    if (p1Hacked && !p2Hacked) {
+      a2 = await this.pickActionAsync(this.p2, this.p1, turn)
+      a1 = await this.pickActionAsync(this.p1, this.p2, turn, a2)
+    } else if (p2Hacked && !p1Hacked) {
+      a1 = await this.pickActionAsync(this.p1, this.p2, turn)
+      a2 = await this.pickActionAsync(this.p2, this.p1, turn, a1)
+    } else {
+      ;[a1, a2] = await Promise.all([
+        this.pickActionAsync(this.p1, this.p2, turn),
+        this.pickActionAsync(this.p2, this.p1, turn),
+      ])
+    }
 
     this.p1.repeatCount = a1 === this.p1.lastAction ? this.p1.repeatCount + 1 : 1
     this.p2.repeatCount = a2 === this.p2.lastAction ? this.p2.repeatCount + 1 : 1
@@ -481,14 +509,24 @@ export class BattleEngine {
       for (const k of Object.keys(this.p2.cooldowns)) this.p2.cooldowns[k] = 0
       this.p2.rebootUsed++
     }
-    // transfer
-    if (a1 === 'transfer' && this.p1.stamina >= TRANSFER_STAMINA_COST) {
-      this.p1.stamina -= TRANSFER_STAMINA_COST
-      this.p1.hp = Math.min(this.p1.maxHp, this.p1.hp + TRANSFER_HP_GAIN)
+    // transfer (generic: stamina→HP | Mage: rage→bonus damage)
+    if (a1 === 'transfer') {
+      if (this.p1.character === 'mage' && this.p1.rage > 0) {
+        this.p1.overclockBonus += Math.floor(this.p1.rage / 2)  // rage ÷2 → bonus damage
+        this.p1.rage = 0
+      } else if (this.p1.stamina >= TRANSFER_STAMINA_COST) {
+        this.p1.stamina -= TRANSFER_STAMINA_COST
+        this.p1.hp = Math.min(this.p1.maxHp, this.p1.hp + TRANSFER_HP_GAIN)
+      }
     }
-    if (a2 === 'transfer' && this.p2.stamina >= TRANSFER_STAMINA_COST) {
-      this.p2.stamina -= TRANSFER_STAMINA_COST
-      this.p2.hp = Math.min(this.p2.maxHp, this.p2.hp + TRANSFER_HP_GAIN)
+    if (a2 === 'transfer') {
+      if (this.p2.character === 'mage' && this.p2.rage > 0) {
+        this.p2.overclockBonus += Math.floor(this.p2.rage / 2)
+        this.p2.rage = 0
+      } else if (this.p2.stamina >= TRANSFER_STAMINA_COST) {
+        this.p2.stamina -= TRANSFER_STAMINA_COST
+        this.p2.hp = Math.min(this.p2.maxHp, this.p2.hp + TRANSFER_HP_GAIN)
+      }
     }
     // overcharge
     if (a1 === 'overcharge') {
@@ -645,54 +683,43 @@ export class BattleEngine {
     this.p1.hp = Math.min(this.p1.maxHp, Math.max(0, this.p1.hp - p1TotalDmg + p1Heal))
     this.p2.hp = Math.min(this.p2.maxHp, Math.max(0, this.p2.hp - p2TotalDmg + p2Heal))
 
-    // ── Plague Doctor / Scorpion: poison tick ─────────────────────────────────
-    let p1PoisonDmg = 0
-    let p2PoisonDmg = 0
-    if (this.p1.poisonStacks > 0) {
-      p1PoisonDmg = this.p1.poisonStacks * 3
-      this.p1.hp = Math.max(0, this.p1.hp - p1PoisonDmg)
+    // ── Scorpion / Plague: apply new poison ──────────────────────────────────
+    // Scorpion: stacking poison (+1 stack per hit, max 3), expires after 5 ticks
+    if (this.p1.character === 'scorpion' && (a1 === 'attack' || a1 === 'heavy') && p2DmgDealt > 0) {
+      this.p2.poisonStacks  = Math.min(3, this.p2.poisonStacks + 1)
+      this.p2.poisonTicksLeft = Math.max(this.p2.poisonTicksLeft, 5)
     }
-    if (this.p2.poisonStacks > 0) {
-      p2PoisonDmg = this.p2.poisonStacks * 3
-      this.p2.hp = Math.max(0, this.p2.hp - p2PoisonDmg)
+    if (this.p2.character === 'scorpion' && (a2 === 'attack' || a2 === 'heavy') && p1DmgDealt > 0) {
+      this.p1.poisonStacks  = Math.min(3, this.p1.poisonStacks + 1)
+      this.p1.poisonTicksLeft = Math.max(this.p1.poisonTicksLeft, 5)
+    }
+    // Plague Doctor: flat 4 HP/turn poison until end of round
+    if (this.p1.character === 'plague' && (a1 === 'attack' || a1 === 'heavy') && p2DmgDealt > 0) {
+      this.p2.plaguePoison = this.p1.poisonOnHit  // 4 HP/turn
+    }
+    if (this.p2.character === 'plague' && (a2 === 'attack' || a2 === 'heavy') && p1DmgDealt > 0) {
+      this.p1.plaguePoison = this.p2.poisonOnHit
     }
 
-    // Apply new poison stacks
-    // Scorpion (attackIgnoresDodge): stacking poison, adds +1 stack per hit (max 3)
-    // Plague: flat replace to poisonOnHit (treated as stacks but each = 1 unit of 3)
-    if (this.p1.poisonOnHit > 0 && (a1 === 'attack' || a1 === 'heavy') && p2DmgDealt > 0) {
-      if (this.p1.attackIgnoresDodge) {
-        // Scorpion: add 1 stack per hit, max 3 stacks
-        this.p2.poisonStacks = Math.min(3, this.p2.poisonStacks + 1)
-      } else {
-        // Plague: flat set (each unit = poisonOnHit / 3 stacks, clamped)
-        // poisonOnHit=4 → tick=4 HP = we store as flat by setting stacks to ceil(4/3)=2
-        // Actually Plague has poisonOnHit=4 meaning 4 HP/turn directly
-        // We map it to stacks: 4/3 ≈ 1.33 → use flat HP tick instead
-        // Simplest: just store poisonOnHit directly and multiply by 3 only for Scorpion path
-        // For Plague, we store poisonOnHit value as-is (not ×3)
-        this.p2.poisonStacks = this.p1.poisonOnHit  // will be ticked as stacks * 3... no
-        // Override: Plague uses poisonOnHit as direct HP/turn — store as negative stacks sentinel
-        // Actually let's just handle plague separately: set a plague flag via character check
-        if (this.p1.character === 'plague') {
-          // For plague, poisonStacks stores direct HP/turn value (divided by 3 for tick calc)
-          // The tick is poisonStacks * 3, so to get 4 HP/turn: stacks = 4/3 is fractional
-          // Use simpler approach: just store the raw value and adjust tick formula
-          this.p2.poisonStacks = this.p1.poisonOnHit  // will fix in tick
-        } else {
-          this.p2.poisonStacks = this.p1.poisonOnHit
-        }
+    // ── Poison tick (after all damage is applied) ────────────────────────────
+    let p1PoisonDmg = 0
+    let p2PoisonDmg = 0
+    // Tank is immune to all poison
+    if (this.p1.character !== 'tank') {
+      p1PoisonDmg = this.p1.poisonStacks * 3 + this.p1.plaguePoison
+      if (p1PoisonDmg > 0) this.p1.hp = Math.max(0, this.p1.hp - p1PoisonDmg)
+      // Scorpion poison expiry
+      if (this.p1.poisonTicksLeft > 0) {
+        this.p1.poisonTicksLeft--
+        if (this.p1.poisonTicksLeft === 0) this.p1.poisonStacks = 0
       }
     }
-    if (this.p2.poisonOnHit > 0 && (a2 === 'attack' || a2 === 'heavy') && p1DmgDealt > 0) {
-      if (this.p2.attackIgnoresDodge) {
-        this.p1.poisonStacks = Math.min(3, this.p1.poisonStacks + 1)
-      } else {
-        if (this.p2.character === 'plague') {
-          this.p1.poisonStacks = this.p2.poisonOnHit
-        } else {
-          this.p1.poisonStacks = this.p2.poisonOnHit
-        }
+    if (this.p2.character !== 'tank') {
+      p2PoisonDmg = this.p2.poisonStacks * 3 + this.p2.plaguePoison
+      if (p2PoisonDmg > 0) this.p2.hp = Math.max(0, this.p2.hp - p2PoisonDmg)
+      if (this.p2.poisonTicksLeft > 0) {
+        this.p2.poisonTicksLeft--
+        if (this.p2.poisonTicksLeft === 0) this.p2.poisonStacks = 0
       }
     }
 
@@ -776,8 +803,10 @@ export class BattleEngine {
     }
 
     // Overcharge bonus: consume stacks on offensive action
+    // Sniper has enhanced overcharge: 18 dmg/stack instead of default 15
     if (att.chargeStack > 0 && (attAction === 'attack' || attAction === 'heavy' || attAction === 'laser' || attAction === 'combo')) {
-      dmg += att.chargeStack * OVERCHARGE_DAMAGE_PER_STACK
+      const stackDmg = att.character === 'sniper' ? 18 : OVERCHARGE_DAMAGE_PER_STACK
+      dmg += att.chargeStack * stackDmg
       att.chargeStack = 0
     }
 
@@ -881,7 +910,13 @@ export class BattleEngine {
     if (action === 'attack' || action === 'heavy' || action === 'combo') state.position = 'close'
     else if (action === 'laser') state.position = 'far'
     else if (action === 'dodge') {
-      state.position = state.position === 'close' ? 'mid' : state.position === 'mid' ? 'far' : 'mid'
+      if (state.character === 'cosmonaut') {
+        // Cosmonaut: dodge doesn't move position backward — only retreats from close
+        if (state.position === 'close') state.position = 'mid'
+        // mid/far stays as-is (stays at range)
+      } else {
+        state.position = state.position === 'close' ? 'mid' : state.position === 'mid' ? 'far' : 'mid'
+      }
     }
   }
 
