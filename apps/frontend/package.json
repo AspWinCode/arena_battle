@@ -9,6 +9,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@esotericsoftware/spine-canvas": "4.2",
     "@monaco-editor/react": "^4.6.0",
     "@robocode/shared": "*",
     "clsx": "^2.1.1",
