@@ -156,8 +156,8 @@ export default function SpineCharacter({ skinId, action, flipX = false, isDead =
   useEffect(() => {
     const cfg = SPINE_SKIN_CONFIG[skinId] ?? SPINE_SKIN_CONFIG['default']
     const baseUrl = `/spine/${cfg.dir}/`
-    const jsonPath  = `${baseUrl}spineboy.json`
-    const atlasPath = `${baseUrl}spineboy.atlas`
+    const jsonPath = 'spineboy.json'
+    const atlasPath = 'spineboy.atlas'
 
     const canvas = canvasRef.current
     if (!canvas) return
