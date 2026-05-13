@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import type { SkinId, JoinSessionResponse } from '@robocode/shared'
-import { CHARACTER_STATS } from '@robocode/shared'
+import { ALL_SKIN_IDS, CHARACTER_STATS } from '@robocode/shared'
 import { api } from '../api/client'
 import { useBattleStore } from '../stores/battleStore'
 import { useUserStore } from '../stores/userStore'
@@ -9,18 +9,16 @@ import RankBadge from '../components/RankBadge'
 import UserMenu from '../components/UserMenu'
 import styles from './JoinPage.module.css'
 
-const ALL_SKIN_IDS: SkinId[] = [
-  'robot', 'gladiator', 'boxer', 'cosmonaut',
-  'ninja', 'mage', 'paladin', 'sniper',
-  'tank', 'vampire', 'samurai', 'phantom',
-  'engineer', 'berserker',
-]
 const SKINS = ALL_SKIN_IDS.map(id => ({
   id,
   label: CHARACTER_STATS[id].name,
   icon:  CHARACTER_STATS[id].icon,
   color: CHARACTER_STATS[id].color,
 }))
+
+function isSkinId(value: string): value is SkinId {
+  return value in CHARACTER_STATS
+}
 
 export default function JoinPage() {
   const navigate   = useNavigate()
@@ -44,9 +42,13 @@ export default function JoinPage() {
   useEffect(() => {
     if (user) {
       if (!name) setName(user.displayName)
-      setSkin((user.preferredSkin as SkinId) ?? 'robot')
+      setSkin(isSkinId(user.preferredSkin) ? user.preferredSkin : 'robot')
     }
   }, [user]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const safeSkin: SkinId = isSkinId(skin) ? skin : 'robot'
+  const safeSkinMeta = SKINS.find(s => s.id === safeSkin) ?? SKINS[0]
+  const safeCharacter = CHARACTER_STATS[safeSkin]
 
   // Clean up poll on unmount
   useEffect(() => () => { if (pollRef.current) clearInterval(pollRef.current) }, [])
@@ -61,7 +63,7 @@ export default function JoinPage() {
 
     setMmError('')
     try {
-      await api.post('/matchmaking/queue', { name: name.trim(), skin, lang: user.preferredLang ?? 'auto' }, token)
+      await api.post('/matchmaking/queue', { name: name.trim(), skin: safeSkin, lang: user.preferredLang ?? 'auto' }, token)
       setInQueue(true)
       setQueueSecs(0)
 
@@ -80,9 +82,9 @@ export default function JoinPage() {
             const res = await api.post<JoinSessionResponse>('/session/join', {
               sessionCode: st.playerCode,
               name: name.trim(),
-              skin,
+              skin: safeSkin,
             }, token!)
-            setSession(res.sessionId, res.playerSlot, 'code', ALL_SKIN_IDS, res.wsToken, name.trim(), skin)
+            setSession(res.sessionId, res.playerSlot, 'code', ALL_SKIN_IDS, res.wsToken, name.trim(), safeSkin)
             navigate(`/battle/${res.sessionId}`)
           } else if (st.inQueue) {
             setQueueSecs(st.waitSeconds ?? 0)
@@ -116,11 +118,11 @@ export default function JoinPage() {
       const res = await api.post<JoinSessionResponse>('/session/join', {
         sessionCode: code,
         name: name.trim(),
-        skin,
+        skin: safeSkin,
       }, token ?? undefined)
 
-      // 'code' level is a placeholder — real level arrives via WS 'connected' message
-      setSession(res.sessionId, res.playerSlot, 'code', ALL_SKIN_IDS, res.wsToken, name.trim(), skin)
+      // 'code' level is a placeholder – real level arrives via WS 'connected' message
+      setSession(res.sessionId, res.playerSlot, 'code', ALL_SKIN_IDS, res.wsToken, name.trim(), safeSkin)
       navigate(`/battle/${res.sessionId}`)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Ошибка подключения')
@@ -190,7 +192,7 @@ export default function JoinPage() {
                 <button
                   key={s.id}
                   type="button"
-                  className={`${styles.skinCard} ${skin === s.id ? styles.skinSelected : ''}`}
+                  className={`${styles.skinCard} ${safeSkin === s.id ? styles.skinSelected : ''}`}
                   style={{ '--skin-color': s.color } as React.CSSProperties}
                   onClick={() => setSkin(s.id)}
                 >
@@ -202,8 +204,8 @@ export default function JoinPage() {
 
             {/* Character stats panel */}
             {(() => {
-              const ch    = CHARACTER_STATS[skin]
-              const skinMeta = SKINS.find(s => s.id === skin)!
+              const ch = safeCharacter
+              const skinMeta = safeSkinMeta
               // Normalise bars: HP out of 120, dmg out of 1.35, rage out of 1.5
               const hpPct  = Math.round((ch.maxHp / 120) * 100)
               const dmgPct = Math.round((ch.dmgMult / 1.35) * 100)
