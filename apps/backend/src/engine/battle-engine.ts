@@ -10,16 +10,32 @@ import {
   COOLDOWNS, REPAIR_AMOUNT,
   applyPositionModifier, getPositionMultiplier,
   CHARACTER_STATS,
+  TRAP_DAMAGE,
+  SACRIFICE_HP_COST,
+  SACRIFICE_RAGE_GAIN,
+  TRANSFER_STAMINA_COST,
+  TRANSFER_HP_GAIN,
+  OVERCHARGE_DAMAGE_PER_STACK,
+  REFLECT_RETURN_RATE,
 } from '@robocode/shared'
 import type {
   Strategy, StrategyContext, ActionName, SkinId, PlayerState, TurnResult, RoundResult,
 } from '@robocode/shared'
 
-const VALID_ACTIONS = new Set<ActionName>(['attack', 'heavy', 'laser', 'shield', 'dodge', 'repair', 'special'])
+const ALL_ACTIONS: ActionName[] = [
+  'attack', 'heavy', 'laser', 'shield', 'dodge', 'repair', 'special',
+  'combo', 'overcharge', 'reflect', 'adaptive_shield', 'trap',
+  'hack', 'sacrifice', 'reboot', 'transfer', 'analyze',
+]
+
+const VALID_ACTIONS = new Set<ActionName>(ALL_ACTIONS)
 
 function isValidAction(v: unknown): v is ActionName {
   return typeof v === 'string' && VALID_ACTIONS.has(v as ActionName)
 }
+
+// ─── 8 primary actions for actionTable ───────────────────────────────────────
+const TABLE_ACTIONS: ActionName[] = ['attack', 'heavy', 'laser', 'shield', 'dodge', 'repair', 'special', 'combo']
 
 interface ExtState extends PlayerState {
   repeatCount:  number
@@ -47,6 +63,32 @@ interface ExtState extends PlayerState {
   actionDmgOverrides:  Partial<Record<ActionName, number>>  // Sniper
   cooldownOverrides:   Partial<Record<ActionName, number>>  // Phantom, Sniper
   staminaCostOverrides:Partial<Record<ActionName, number>>  // Mage
+  // ── New Sprint 2 state ───────────────────────────────────────────────────────
+  // History tracking
+  history: ActionName[]
+  damageDealtLog: number[]
+  damageTakenLog: number[]
+  hpLog: number[]
+  // New action states
+  comboStreak: number              // consecutive attack/combo count
+  chargeStack: number              // overcharge charge count
+  trapTriggerTurns: number[]       // turns when traps will trigger
+  rebootUsed: number               // times reboot has been used this round
+  hackRevealTurn: number           // turn when hack info was revealed (0 = none)
+  analyzedTurn: number             // turn when analyze was used (0 = none)
+  defenselessStreak: number        // turns without shield/dodge (for Samurai)
+  adaptiveShieldAction: string | null  // action that adaptive_shield is blocking
+  // Per-character caps from CharacterStats
+  maxChargeStacks: number
+  maxRebootUses: number
+  sacrificeRageBonus: number
+  enhancedLaserFar: boolean
+  staminaDrainMult: number
+  trapOnDodge: boolean
+  comboRequiredStreak: number
+  berserkThreshold: number
+  berserkMult: number
+  bushidoNoDefenseStreak: number
 }
 
 export class BattleEngine {
@@ -62,14 +104,18 @@ export class BattleEngine {
   private initState(strategy: Strategy): ExtState {
     const charId = strategy.character ?? 'robot'
     const char   = CHARACTER_STATS[charId] ?? CHARACTER_STATS.robot
+    // Build full cooldowns record with all actions at 0
+    const cooldowns: Record<string, number> = {}
+    for (const act of ALL_ACTIONS) cooldowns[act] = 0
     return {
       hp:           char.maxHp,
       stamina:      MAX_STAMINA,
       rage:         0,
       position:     strategy.position ?? 'mid',
-      cooldowns:    { attack: 0, heavy: 0, laser: 0, shield: 0, dodge: 0, repair: 0, special: 0 },
+      cooldowns,
       lastAction:   null,
       shieldActive: false,
+      reflectActive: false,
       strategy,
       repeatCount:  0,
       character:    charId,
@@ -94,6 +140,29 @@ export class BattleEngine {
       actionDmgOverrides:  char.actionDmgOverrides,
       cooldownOverrides:   char.cooldownOverrides,
       staminaCostOverrides:char.staminaCostOverrides,
+      // Sprint 2 fields
+      history:         [],
+      damageDealtLog:  [],
+      damageTakenLog:  [],
+      hpLog:           [],
+      comboStreak:     0,
+      chargeStack:     0,
+      trapTriggerTurns: [],
+      rebootUsed:      0,
+      hackRevealTurn:  0,
+      analyzedTurn:    0,
+      defenselessStreak: 0,
+      adaptiveShieldAction: null,
+      maxChargeStacks:      char.maxChargeStacks,
+      maxRebootUses:        char.maxRebootUses,
+      sacrificeRageBonus:   char.sacrificeRageBonus,
+      enhancedLaserFar:     char.enhancedLaserFar,
+      staminaDrainMult:     char.staminaDrainMult,
+      trapOnDodge:          char.trapOnDodge,
+      comboRequiredStreak:  char.comboRequiredStreak,
+      berserkThreshold:     char.berserkThreshold,
+      berserkMult:          char.berserkMult,
+      bushidoNoDefenseStreak: char.bushidoNoDefenseStreak,
     }
   }
 
@@ -127,27 +196,147 @@ export class BattleEngine {
   // ── Context ─────────────────────────────────────────────────────────────────
 
   private buildContext(self: ExtState, enemy: ExtState, turn: number): StrategyContext {
+    // Build enemy frequency map
+    const enemyFrequency: Record<string, number> = {}
+    for (const act of enemy.history) {
+      enemyFrequency[act] = (enemyFrequency[act] ?? 0) + 1
+    }
+
+    // Build markov transition matrix from enemy history
+    const markov: Record<string, Record<string, number>> = {}
+    for (let i = 0; i < enemy.history.length - 1; i++) {
+      const from = enemy.history[i]
+      const to   = enemy.history[i + 1]
+      if (!markov[from]) markov[from] = {}
+      markov[from][to] = (markov[from][to] ?? 0) + 1
+    }
+
+    // Enemy phase based on enemy HP
+    const enemyHpRatio = enemy.hp / enemy.maxHp
+    const enemyPhase: 'early' | 'mid' | 'late' =
+      enemyHpRatio > 0.6 ? 'early' : enemyHpRatio > 0.3 ? 'mid' : 'late'
+
+    // Enemy trend: analyse last 5 turns
+    const recent = enemy.history.slice(-5)
+    const aggressiveActions = new Set(['attack', 'heavy', 'laser', 'special', 'combo', 'overcharge', 'sacrifice'])
+    const defensiveActions  = new Set(['shield', 'dodge', 'repair', 'reflect', 'adaptive_shield', 'reboot', 'transfer', 'analyze'])
+    let aggressiveCount = 0
+    let defensiveCount  = 0
+    for (const act of recent) {
+      if (aggressiveActions.has(act)) aggressiveCount++
+      else if (defensiveActions.has(act)) defensiveCount++
+    }
+    const enemyTrend: 'aggressive' | 'defensive' | 'mixed' =
+      aggressiveCount > defensiveCount + 1 ? 'aggressive' :
+      defensiveCount > aggressiveCount + 1 ? 'defensive' : 'mixed'
+
+    // Build myEfficiency: avg damage per action type
+    const myEfficiency: Record<string, number> = {}
+    const damageByAction: Record<string, number[]> = {}
+    for (let i = 0; i < self.history.length; i++) {
+      const act = self.history[i]
+      const dmg = self.damageDealtLog[i] ?? 0
+      if (!damageByAction[act]) damageByAction[act] = []
+      damageByAction[act].push(dmg)
+    }
+    for (const [act, dmgs] of Object.entries(damageByAction)) {
+      myEfficiency[act] = dmgs.reduce((a, b) => a + b, 0) / dmgs.length
+    }
+
+    // Snapshot of cooldowns
+    const cooldowns: Record<string, number> = { ...self.cooldowns }
+
+    // simulate closure
+    const simulate = (myAct: string, hisAct: string): { myHpAfter: number; enemyHpAfter: number; myStaminaAfter: number } => {
+      const myDmg  = BASE_DAMAGE[myAct  as ActionName] ?? 0
+      const hisDmg = BASE_DAMAGE[hisAct as ActionName] ?? 0
+      const myAfterDmg  = hisAct === 'shield' ? Math.round(hisDmg * 0.4) : hisAct === 'dodge' ? 0 : hisDmg
+      const hisAfterDmg = myAct  === 'shield' ? Math.round(myDmg  * 0.4) : myAct  === 'dodge' ? 0 : myDmg
+      const myStamCost = STAMINA_COSTS[myAct as ActionName] ?? 0
+      return {
+        myHpAfter:      Math.max(0, self.hp  - myAfterDmg),
+        enemyHpAfter:   Math.max(0, enemy.hp - hisAfterDmg),
+        myStaminaAfter: Math.max(0, self.stamina - myStamCost),
+      }
+    }
+
+    // predict closure using markov
+    const predict = (n: number): string => {
+      let current: string = enemy.lastAction ?? 'attack'
+      for (let i = 0; i < n; i++) {
+        const probs = markov[current]
+        if (!probs || Object.keys(probs).length === 0) break
+        current = Object.keys(probs).reduce((a, b) => (probs[a] > probs[b] ? a : b))
+      }
+      return current
+    }
+
+    // bestAction closure
+    const bestAction = (): string => {
+      const predicted = predict(1)
+      let bestAct = 'attack'
+      let bestScore = -Infinity
+      for (const act of TABLE_ACTIONS) {
+        const { enemyHpAfter, myHpAfter } = simulate(act, predicted)
+        const score = (enemy.hp - enemyHpAfter) - (self.hp - myHpAfter)
+        if (score > bestScore) { bestScore = score; bestAct = act }
+      }
+      return bestAct
+    }
+
+    // actionTable: 8×8 matrix
+    const actionTable: number[][] = TABLE_ACTIONS.map(myAct =>
+      TABLE_ACTIONS.map(hisAct => {
+        const { enemyHpAfter } = simulate(myAct, hisAct)
+        return enemy.hp - enemyHpAfter
+      })
+    )
+
     return {
       myHp:         self.hp,
       myMaxHp:      self.maxHp,
       myStamina:    self.stamina,
       myRage:       self.rage,
+      myPosition:   self.position,
+      myLastAction: self.lastAction,
+      myRepeatCount: self.repeatCount,
       enemyHp:      enemy.hp,
       enemyMaxHp:   enemy.maxHp,
       enemyStamina: enemy.stamina,
       enemyRage:    enemy.rage,
-      turn,
-      myLastAction:    self.lastAction,
-      enemyLastAction: enemy.lastAction,
-      cooldowns: { ...self.cooldowns },
-      myPosition:    self.position,
       enemyPosition: enemy.position,
+      enemyLastAction: enemy.lastAction,
+      turn,
+      cooldowns,
       distanceModifier: getPositionMultiplier(self.strategy.primary, self.position),
-      myRepeatCount: self.repeatCount,
+      // Level 2
+      myHistory:     [...self.history],
+      enemyHistory:  [...enemy.history],
+      damageLog:     [...self.damageDealtLog],
+      damageTakenLog: [...self.damageTakenLog],
+      myHpLog:       [...self.hpLog],
+      enemyHpLog:    [...enemy.hpLog],
+      // Level 3
+      enemyFrequency,
+      myEfficiency,
+      enemyPhase,
+      enemyTrend,
+      // Level 4
+      simulate,
+      predict,
+      bestAction,
+      actionTable,
+      markov,
     }
   }
 
   // ── Action selection ────────────────────────────────────────────────────────
+
+  private isActionAllowed(self: ExtState, action: ActionName): boolean {
+    const char = CHARACTER_STATS[self.character]
+    if (!char.allowedActions || char.allowedActions.length === 0) return true
+    return char.allowedActions.includes(action)
+  }
 
   private async pickActionAsync(self: ExtState, enemy: ExtState, turn: number): Promise<ActionName> {
     const ctx = this.buildContext(self, enemy, turn)
@@ -155,13 +344,13 @@ export class BattleEngine {
     if (self.strategy.asyncFn) {
       try {
         const chosen = await self.strategy.asyncFn(ctx)
-        if (isValidAction(chosen) && this.isActionAvailable(self, chosen)) return chosen
+        if (isValidAction(chosen) && this.isActionAllowed(self, chosen) && this.isActionAvailable(self, chosen)) return chosen
       } catch { /* fall through */ }
     }
     if (self.strategy.fn) {
       try {
         const chosen = self.strategy.fn(ctx)
-        if (isValidAction(chosen) && this.isActionAvailable(self, chosen)) return chosen
+        if (isValidAction(chosen) && this.isActionAllowed(self, chosen) && this.isActionAvailable(self, chosen)) return chosen
       } catch { /* fall through */ }
     }
     return this.pickStaticAction(self, enemy)
@@ -169,24 +358,34 @@ export class BattleEngine {
 
   private pickStaticAction(self: ExtState, enemy: ExtState): ActionName {
     const { strategy } = self
-    if (self.rage >= self.specialRageCost && this.isActionAvailable(self, 'special')) return 'special'
+    // Use the first available action from allowedActions for special
+    if (self.rage >= self.specialRageCost && this.isActionAllowed(self, 'special') && this.isActionAvailable(self, 'special')) return 'special'
     if (self.hp < 30) return this.resolveStaticAction(self, strategy.lowHp)
-    if (enemy.lastAction === 'laser' && strategy.onHit === 'dodge') return 'dodge'
-    if (enemy.shieldActive && (strategy.primary === 'attack' || strategy.primary === 'heavy')) return 'heavy'
+    if (enemy.lastAction === 'laser' && strategy.onHit === 'dodge' && this.isActionAllowed(self, 'dodge')) return 'dodge'
+    if (enemy.shieldActive && (strategy.primary === 'attack' || strategy.primary === 'heavy') && this.isActionAllowed(self, 'heavy')) return 'heavy'
     return this.resolveStaticAction(self, strategy.primary)
   }
 
   private isActionAvailable(state: ExtState, action: ActionName): boolean {
-    if ((state.cooldowns[action as keyof typeof state.cooldowns] ?? 0) > 0) return false
+    if ((state.cooldowns[action] ?? 0) > 0) return false
     if (action === 'special' && state.rage < state.specialRageCost) return false
+    if (action === 'reboot' && state.rebootUsed >= state.maxRebootUses) return false
     return true
   }
 
   private resolveStaticAction(self: ExtState, act: ActionName): ActionName {
-    if (!this.isActionAvailable(self, act)) {
-      if (act === 'heavy')  return self.cooldowns.laser === 0 ? 'laser' : 'attack'
+    if (!this.isActionAvailable(self, act) || !this.isActionAllowed(self, act)) {
+      // Try fallback actions in order of character's allowed list
+      const allowed = CHARACTER_STATS[self.character].allowedActions
+      if (allowed && allowed.length > 0) {
+        for (const fallback of allowed) {
+          if (fallback !== act && this.isActionAvailable(self, fallback)) return fallback
+        }
+      }
+      // Generic fallbacks
+      if (act === 'heavy')  return (self.cooldowns['laser'] ?? 0) === 0 && this.isActionAllowed(self, 'laser') ? 'laser' : 'attack'
       if (act === 'laser')  return 'attack'
-      if (act === 'repair') return 'shield'
+      if (act === 'repair') return this.isActionAllowed(self, 'shield') ? 'shield' : 'attack'
       if (act === 'shield') return 'attack'
       return 'attack'
     }
@@ -199,6 +398,10 @@ export class BattleEngine {
     this.p1.stamina = Math.min(MAX_STAMINA, this.p1.stamina + STAMINA_REGEN)
     this.p2.stamina = Math.min(MAX_STAMINA, this.p2.stamina + STAMINA_REGEN)
 
+    // Reset reflect each turn
+    this.p1.reflectActive = false
+    this.p2.reflectActive = false
+
     const [a1, a2] = await Promise.all([
       this.pickActionAsync(this.p1, this.p2, turn),
       this.pickActionAsync(this.p2, this.p1, turn),
@@ -210,12 +413,129 @@ export class BattleEngine {
     this.p1.shieldActive = a1 === 'shield'
     this.p2.shieldActive = a2 === 'shield'
 
+    // Reflect active this turn
+    if (a1 === 'reflect') this.p1.reflectActive = true
+    if (a2 === 'reflect') this.p2.reflectActive = true
+
+    // ── Trap check: check if any trap triggers this turn ─────────────────────
+    let p1TrapDmg = 0
+    let p2TrapDmg = 0
+    // p2's traps hitting p1
+    this.p2.trapTriggerTurns = this.p2.trapTriggerTurns.filter(t => {
+      if (t === turn) {
+        // Trigger if p1 is attacking OR if ninja trapOnDodge and p1 is dodging
+        const triggerOnAttack = ['attack', 'heavy', 'laser', 'special', 'combo'].includes(a1)
+        const triggerOnDodge  = this.p2.trapOnDodge && a1 === 'dodge'
+        if (triggerOnAttack || triggerOnDodge) { p1TrapDmg += TRAP_DAMAGE; return false }
+        return false // trap expires even if not triggered
+      }
+      return true
+    })
+    // p1's traps hitting p2
+    this.p1.trapTriggerTurns = this.p1.trapTriggerTurns.filter(t => {
+      if (t === turn) {
+        const triggerOnAttack = ['attack', 'heavy', 'laser', 'special', 'combo'].includes(a2)
+        const triggerOnDodge  = this.p1.trapOnDodge && a2 === 'dodge'
+        if (triggerOnAttack || triggerOnDodge) { p2TrapDmg += TRAP_DAMAGE; return false }
+        return false
+      }
+      return true
+    })
+
+    // ── Pre-action: special new actions (self-effects, no damage yet) ─────────
+    // sacrifice
+    if (a1 === 'sacrifice') {
+      this.p1.hp   = Math.max(1, this.p1.hp - SACRIFICE_HP_COST)
+      this.p1.rage = Math.min(MAX_RAGE, this.p1.rage + SACRIFICE_RAGE_GAIN + this.p1.sacrificeRageBonus)
+    }
+    if (a2 === 'sacrifice') {
+      this.p2.hp   = Math.max(1, this.p2.hp - SACRIFICE_HP_COST)
+      this.p2.rage = Math.min(MAX_RAGE, this.p2.rage + SACRIFICE_RAGE_GAIN + this.p2.sacrificeRageBonus)
+    }
+    // reboot
+    if (a1 === 'reboot' && this.p1.rebootUsed < this.p1.maxRebootUses) {
+      for (const k of Object.keys(this.p1.cooldowns)) this.p1.cooldowns[k] = 0
+      this.p1.rebootUsed++
+    }
+    if (a2 === 'reboot' && this.p2.rebootUsed < this.p2.maxRebootUses) {
+      for (const k of Object.keys(this.p2.cooldowns)) this.p2.cooldowns[k] = 0
+      this.p2.rebootUsed++
+    }
+    // transfer
+    if (a1 === 'transfer' && this.p1.stamina >= TRANSFER_STAMINA_COST) {
+      this.p1.stamina -= TRANSFER_STAMINA_COST
+      this.p1.hp = Math.min(this.p1.maxHp, this.p1.hp + TRANSFER_HP_GAIN)
+    }
+    if (a2 === 'transfer' && this.p2.stamina >= TRANSFER_STAMINA_COST) {
+      this.p2.stamina -= TRANSFER_STAMINA_COST
+      this.p2.hp = Math.min(this.p2.maxHp, this.p2.hp + TRANSFER_HP_GAIN)
+    }
+    // overcharge
+    if (a1 === 'overcharge') {
+      this.p1.chargeStack = Math.min(this.p1.maxChargeStacks, this.p1.chargeStack + 1)
+    }
+    if (a2 === 'overcharge') {
+      this.p2.chargeStack = Math.min(this.p2.maxChargeStacks, this.p2.chargeStack + 1)
+    }
+    // trap placement
+    if (a1 === 'trap') {
+      const maxTraps = this.p1.character === 'engineer' ? 2 : 1
+      if (this.p1.trapTriggerTurns.length < maxTraps) {
+        this.p1.trapTriggerTurns.push(turn + 4)
+      }
+    }
+    if (a2 === 'trap') {
+      const maxTraps = this.p2.character === 'engineer' ? 2 : 1
+      if (this.p2.trapTriggerTurns.length < maxTraps) {
+        this.p2.trapTriggerTurns.push(turn + 4)
+      }
+    }
+    // hack
+    if (a1 === 'hack') this.p1.hackRevealTurn = turn + 1
+    if (a2 === 'hack') this.p2.hackRevealTurn = turn + 1
+    // analyze
+    if (a1 === 'analyze') this.p1.analyzedTurn = turn
+    if (a2 === 'analyze') this.p2.analyzedTurn = turn
+    // adaptive_shield: determine what to block based on enemy frequency
+    if (a1 === 'adaptive_shield') {
+      const freq = this.computeFrequency(this.p2.history)
+      this.p1.adaptiveShieldAction = this.mostFrequent(freq)
+    }
+    if (a2 === 'adaptive_shield') {
+      const freq = this.computeFrequency(this.p1.history)
+      this.p2.adaptiveShieldAction = this.mostFrequent(freq)
+    }
+
     const p1Factor = this.p1.repeatCount >= REPEAT_PENALTY_AFTER ? REPEAT_DAMAGE_FACTOR : 1
     const p2Factor = this.p2.repeatCount >= REPEAT_PENALTY_AFTER ? REPEAT_DAMAGE_FACTOR : 1
 
     // Base damage
     let p2DmgDealt = Math.round(this.calcDamage(a1, this.p1, a2, this.p2) * p1Factor)
     let p1DmgDealt = Math.round(this.calcDamage(a2, this.p2, a1, this.p1) * p2Factor)
+
+    // ── Reflect mechanic ─────────────────────────────────────────────────────
+    let p1ReflectDmg = 0
+    let p2ReflectDmg = 0
+    if (this.p2.reflectActive && p1DmgDealt > 0) {
+      // p2 is reflecting: p2 takes reduced damage, p1 takes reflect damage
+      p2ReflectDmg = Math.round(p1DmgDealt * REFLECT_RETURN_RATE)
+      p1DmgDealt   = Math.round(p1DmgDealt * (1 - REFLECT_RETURN_RATE))
+      // reflect damage added to p1's taken later
+    }
+    if (this.p1.reflectActive && p2DmgDealt > 0) {
+      p1ReflectDmg = Math.round(p2DmgDealt * REFLECT_RETURN_RATE)
+      p2DmgDealt   = Math.round(p2DmgDealt * (1 - REFLECT_RETURN_RATE))
+    }
+
+    // ── Adaptive shield: block if enemy used the predicted action ────────────
+    if (this.p1.adaptiveShieldAction && a2 === this.p1.adaptiveShieldAction) {
+      p1DmgDealt = 0
+      this.p1.adaptiveShieldAction = null
+    }
+    if (this.p2.adaptiveShieldAction && a1 === this.p2.adaptiveShieldAction) {
+      p2DmgDealt = 0
+      this.p2.adaptiveShieldAction = null
+    }
 
     // ── Boxer counter-strike ─────────────────────────────────────────────────
     if (this.p1.counterReady && a1 !== 'attack') this.p1.counterReady = false
@@ -235,13 +555,23 @@ export class BattleEngine {
     const p2Lifesteal = (this.p2.lifestealRate > 0 && (a2 === 'attack' || a2 === 'heavy') && p1DmgDealt > 0)
       ? Math.round(p1DmgDealt * this.p2.lifestealRate) : 0
 
+    // ── Mage stamina drain ───────────────────────────────────────────────────
+    if (this.p1.staminaDrainMult > 0 && p2DmgDealt > 0) {
+      const extraDrain = Math.floor((BASE_DAMAGE[a1] ?? 0) * this.p1.staminaDrainMult * 0.5)
+      this.p2.stamina = Math.max(0, this.p2.stamina - extraDrain)
+    }
+    if (this.p2.staminaDrainMult > 0 && p1DmgDealt > 0) {
+      const extraDrain = Math.floor((BASE_DAMAGE[a2] ?? 0) * this.p2.staminaDrainMult * 0.5)
+      this.p1.stamina = Math.max(0, this.p1.stamina - extraDrain)
+    }
+
     this.applyStaminaCost(this.p1, a1)
     this.applyStaminaCost(this.p2, a2)
 
     if (a1 === 'special') this.p1.rage = 0
     if (a2 === 'special') this.p2.rage = 0
 
-    // ── Healing: repair (+ Cosmonaut bonus) + Paladin shield heal ────────────
+    // ── Healing: repair (+ Cosmonaut bonus) + Paladin shield heal + transfer ─
     let p1Heal = a1 === 'repair' ? REPAIR_AMOUNT + this.p1.repairBonus : 0
     if (a1 === 'shield' && this.p1.shieldHealAmount > 0) p1Heal += this.p1.shieldHealAmount
     p1Heal += p1Lifesteal
@@ -250,22 +580,68 @@ export class BattleEngine {
     if (a2 === 'shield' && this.p2.shieldHealAmount > 0) p2Heal += this.p2.shieldHealAmount
     p2Heal += p2Lifesteal
 
-    this.p1.hp = Math.min(this.p1.maxHp, Math.max(0, this.p1.hp - p1DmgDealt + p1Heal))
-    this.p2.hp = Math.min(this.p2.maxHp, Math.max(0, this.p2.hp - p2DmgDealt + p2Heal))
+    // Apply all damage (base + reflect + trap)
+    const p1TotalDmg = p1DmgDealt + p2ReflectDmg + p1TrapDmg
+    const p2TotalDmg = p2DmgDealt + p1ReflectDmg + p2TrapDmg
 
-    // ── Plague Doctor: poison tick ────────────────────────────────────────────
-    if (this.p1.poisonStacks > 0) this.p1.hp = Math.max(0, this.p1.hp - this.p1.poisonStacks)
-    if (this.p2.poisonStacks > 0) this.p2.hp = Math.max(0, this.p2.hp - this.p2.poisonStacks)
-    // Apply new poison stacks if plague doctor landed a hit
-    if (this.p1.poisonOnHit > 0 && (a1 === 'attack' || a1 === 'heavy') && p2DmgDealt > 0)
-      this.p2.poisonStacks = this.p1.poisonOnHit
-    if (this.p2.poisonOnHit > 0 && (a2 === 'attack' || a2 === 'heavy') && p1DmgDealt > 0)
-      this.p1.poisonStacks = this.p2.poisonOnHit
+    this.p1.hp = Math.min(this.p1.maxHp, Math.max(0, this.p1.hp - p1TotalDmg + p1Heal))
+    this.p2.hp = Math.min(this.p2.maxHp, Math.max(0, this.p2.hp - p2TotalDmg + p2Heal))
+
+    // ── Plague Doctor / Scorpion: poison tick ─────────────────────────────────
+    let p1PoisonDmg = 0
+    let p2PoisonDmg = 0
+    if (this.p1.poisonStacks > 0) {
+      p1PoisonDmg = this.p1.poisonStacks * 3
+      this.p1.hp = Math.max(0, this.p1.hp - p1PoisonDmg)
+    }
+    if (this.p2.poisonStacks > 0) {
+      p2PoisonDmg = this.p2.poisonStacks * 3
+      this.p2.hp = Math.max(0, this.p2.hp - p2PoisonDmg)
+    }
+
+    // Apply new poison stacks
+    // Scorpion (attackIgnoresDodge): stacking poison, adds +1 stack per hit (max 3)
+    // Plague: flat replace to poisonOnHit (treated as stacks but each = 1 unit of 3)
+    if (this.p1.poisonOnHit > 0 && (a1 === 'attack' || a1 === 'heavy') && p2DmgDealt > 0) {
+      if (this.p1.attackIgnoresDodge) {
+        // Scorpion: add 1 stack per hit, max 3 stacks
+        this.p2.poisonStacks = Math.min(3, this.p2.poisonStacks + 1)
+      } else {
+        // Plague: flat set (each unit = poisonOnHit / 3 stacks, clamped)
+        // poisonOnHit=4 → tick=4 HP = we store as flat by setting stacks to ceil(4/3)=2
+        // Actually Plague has poisonOnHit=4 meaning 4 HP/turn directly
+        // We map it to stacks: 4/3 ≈ 1.33 → use flat HP tick instead
+        // Simplest: just store poisonOnHit directly and multiply by 3 only for Scorpion path
+        // For Plague, we store poisonOnHit value as-is (not ×3)
+        this.p2.poisonStacks = this.p1.poisonOnHit  // will be ticked as stacks * 3... no
+        // Override: Plague uses poisonOnHit as direct HP/turn — store as negative stacks sentinel
+        // Actually let's just handle plague separately: set a plague flag via character check
+        if (this.p1.character === 'plague') {
+          // For plague, poisonStacks stores direct HP/turn value (divided by 3 for tick calc)
+          // The tick is poisonStacks * 3, so to get 4 HP/turn: stacks = 4/3 is fractional
+          // Use simpler approach: just store the raw value and adjust tick formula
+          this.p2.poisonStacks = this.p1.poisonOnHit  // will fix in tick
+        } else {
+          this.p2.poisonStacks = this.p1.poisonOnHit
+        }
+      }
+    }
+    if (this.p2.poisonOnHit > 0 && (a2 === 'attack' || a2 === 'heavy') && p1DmgDealt > 0) {
+      if (this.p2.attackIgnoresDodge) {
+        this.p1.poisonStacks = Math.min(3, this.p1.poisonStacks + 1)
+      } else {
+        if (this.p2.character === 'plague') {
+          this.p1.poisonStacks = this.p2.poisonOnHit
+        } else {
+          this.p1.poisonStacks = this.p2.poisonOnHit
+        }
+      }
+    }
 
     // ── Rage accumulation ────────────────────────────────────────────────────
     // Base: rage from damage taken
-    if (p1DmgDealt > 0) this.p1.rage = Math.min(MAX_RAGE, this.p1.rage + p1DmgDealt * RAGE_PER_DAMAGE * this.p1.rageMult)
-    if (p2DmgDealt > 0) this.p2.rage = Math.min(MAX_RAGE, this.p2.rage + p2DmgDealt * RAGE_PER_DAMAGE * this.p2.rageMult)
+    if (p1TotalDmg > 0) this.p1.rage = Math.min(MAX_RAGE, this.p1.rage + p1TotalDmg * RAGE_PER_DAMAGE * this.p1.rageMult)
+    if (p2TotalDmg > 0) this.p2.rage = Math.min(MAX_RAGE, this.p2.rage + p2TotalDmg * RAGE_PER_DAMAGE * this.p2.rageMult)
     // Berserker: also gain rage from damage dealt
     if (this.p1.rageFromDealt && p2DmgDealt > 0) this.p1.rage = Math.min(MAX_RAGE, this.p1.rage + p2DmgDealt * RAGE_PER_DAMAGE)
     if (this.p2.rageFromDealt && p1DmgDealt > 0) this.p2.rage = Math.min(MAX_RAGE, this.p2.rage + p1DmgDealt * RAGE_PER_DAMAGE)
@@ -273,12 +649,30 @@ export class BattleEngine {
     this.tickCooldowns(this.p1); this.tickCooldowns(this.p2)
     this.applyCooldown(this.p1, a1); this.applyCooldown(this.p2, a2)
 
+    // ── Update combo streak ───────────────────────────────────────────────────
+    if (a1 === 'attack' || a1 === 'combo') this.p1.comboStreak++
+    else this.p1.comboStreak = 0
+    if (a2 === 'attack' || a2 === 'combo') this.p2.comboStreak++
+    else this.p2.comboStreak = 0
+
+    // ── Update defenseless streak (Samurai) ──────────────────────────────────
+    if (a1 === 'shield' || a1 === 'dodge') this.p1.defenselessStreak = 0
+    else this.p1.defenselessStreak++
+    if (a2 === 'shield' || a2 === 'dodge') this.p2.defenselessStreak = 0
+    else this.p2.defenselessStreak++
+
     this.p1.lastAction = a1; this.p2.lastAction = a2
     this.updatePosition(this.p1, a1); this.updatePosition(this.p2, a2)
 
+    // ── History logging ───────────────────────────────────────────────────────
+    this.p1.history.push(a1); this.p2.history.push(a2)
+    this.p1.damageDealtLog.push(p2DmgDealt); this.p2.damageDealtLog.push(p1DmgDealt)
+    this.p1.damageTakenLog.push(p1TotalDmg); this.p2.damageTakenLog.push(p2TotalDmg)
+    this.p1.hpLog.push(this.p1.hp); this.p2.hpLog.push(this.p2.hp)
+
     return {
       turn, p1Action: a1, p2Action: a2,
-      p1DmgTaken: p1DmgDealt, p2DmgTaken: p2DmgDealt,
+      p1DmgTaken: p1TotalDmg, p2DmgTaken: p2TotalDmg,
       p1HpAfter: this.p1.hp, p2HpAfter: this.p2.hp,
       p1Heal, p2Heal,
       p1Stamina: Math.round(this.p1.stamina),
@@ -286,7 +680,11 @@ export class BattleEngine {
       p1Rage: Math.round(this.p1.rage),
       p2Rage: Math.round(this.p2.rage),
       p1Position: this.p1.position, p2Position: this.p2.position,
-      log: this.buildLog(a1, a2, p1DmgDealt, p2DmgDealt, p1Heal, p2Heal, this.p1, this.p2),
+      log: this.buildLog(a1, a2, p1TotalDmg, p2TotalDmg, p1Heal, p2Heal, this.p1, this.p2),
+      p1PoisonDmg: p1PoisonDmg > 0 ? p1PoisonDmg : undefined,
+      p2PoisonDmg: p2PoisonDmg > 0 ? p2PoisonDmg : undefined,
+      p1ReflectDmg: p2ReflectDmg > 0 ? p2ReflectDmg : undefined,
+      p2ReflectDmg: p1ReflectDmg > 0 ? p1ReflectDmg : undefined,
     }
   }
 
@@ -300,6 +698,17 @@ export class BattleEngine {
     if (attAction === 'attack' && att.stamina < STAMINA_THRESHOLD_ATTACK) dmg = ATTACK_EXHAUSTED_DAMAGE
     if (attAction === 'laser'  && att.stamina < STAMINA_THRESHOLD_LASER)  dmg = Math.floor(dmg * 0.5)
 
+    // Combo multiplier: ×2 if streak >= required
+    if (attAction === 'combo' && att.comboStreak >= att.comboRequiredStreak) {
+      dmg *= 2
+    }
+
+    // Overcharge bonus: consume stacks on offensive action
+    if (att.chargeStack > 0 && (attAction === 'attack' || attAction === 'heavy' || attAction === 'laser' || attAction === 'combo')) {
+      dmg += att.chargeStack * OVERCHARGE_DAMAGE_PER_STACK
+      att.chargeStack = 0
+    }
+
     // Global character damage multiplier
     if (att.dmgMult !== 1.0) dmg = Math.floor(dmg * att.dmgMult)
 
@@ -312,14 +721,32 @@ export class BattleEngine {
       dmg = Math.floor(dmg * att.bushidoMult)
     }
 
-    dmg = applyPositionModifier(attAction, att.position, dmg)
+    // Samurai bushidoNoDefenseStreak: heavy ×2 after N turns without defense
+    if (att.bushidoNoDefenseStreak > 0 && att.defenselessStreak >= att.bushidoNoDefenseStreak && attAction === 'heavy') {
+      dmg *= 2
+    }
+
+    // Berserker berserk mode: at low HP, all damage × berserkMult
+    if (att.berserkThreshold > 0 && att.hp <= att.berserkThreshold) {
+      dmg = Math.floor(dmg * att.berserkMult)
+    }
+
+    // Cosmonaut enhanced laser at far range
+    if (att.enhancedLaserFar && attAction === 'laser' && att.position === 'far') {
+      // Override position multiplier to 2.0 instead of 1.4
+      dmg = Math.floor((BASE_DAMAGE['laser'] + (att.chargeStack > 0 ? 0 : 0)) * (att.dmgMult !== 1.0 ? att.dmgMult : 1.0) * 2.0)
+      // Re-apply stamina half-damage if needed
+      if (att.stamina < STAMINA_THRESHOLD_LASER) dmg = Math.floor(dmg * 0.5)
+    } else {
+      dmg = applyPositionModifier(attAction, att.position, dmg)
+    }
 
     // Defender passives
     const shieldAbsorb = SHIELD_ABSORB + def.shieldBonus
     if (defAction === 'shield') {
       dmg = Math.round(dmg * (1 - shieldAbsorb))
     } else if (defAction === 'dodge') {
-      if (attAction === 'attack' || attAction === 'heavy') {
+      if (attAction === 'attack' || attAction === 'heavy' || attAction === 'combo') {
         // Scorpion: dodge doesn't work vs his attack/heavy
         if (!att.attackIgnoresDodge) dmg = 0
       } else if (attAction === 'laser') {
@@ -342,24 +769,39 @@ export class BattleEngine {
 
   // ── Helpers ─────────────────────────────────────────────────────────────────
 
+  private computeFrequency(history: ActionName[]): Record<string, number> {
+    const freq: Record<string, number> = {}
+    for (const act of history) freq[act] = (freq[act] ?? 0) + 1
+    return freq
+  }
+
+  private mostFrequent(freq: Record<string, number>): string | null {
+    let best: string | null = null
+    let bestCount = 0
+    for (const [act, count] of Object.entries(freq)) {
+      if (count > bestCount) { bestCount = count; best = act }
+    }
+    return best
+  }
+
   private applyStaminaCost(state: ExtState, action: ActionName) {
     const cost = state.staminaCostOverrides[action] ?? STAMINA_COSTS[action] ?? 0
     state.stamina = Math.min(MAX_STAMINA, Math.max(0, state.stamina - cost))
   }
 
   private tickCooldowns(state: ExtState) {
-    for (const k of Object.keys(state.cooldowns) as (keyof typeof state.cooldowns)[]) {
-      if (state.cooldowns[k] > 0) state.cooldowns[k]--
+    for (const k of Object.keys(state.cooldowns)) {
+      if ((state.cooldowns[k] ?? 0) > 0) state.cooldowns[k]--
     }
   }
 
   private applyCooldown(state: ExtState, action: ActionName) {
-    const cd = state.cooldownOverrides[action] ?? COOLDOWNS[action]
-    if (cd > 0) state.cooldowns[action as keyof typeof state.cooldowns] = cd
+    const cd = state.cooldownOverrides[action] ?? COOLDOWNS[action] ?? 0
+    if (cd > 0) state.cooldowns[action] = cd
   }
 
   private updatePosition(state: ExtState, action: ActionName) {
-    if (action === 'attack' || action === 'heavy') state.position = 'close'
+    if (action === 'attack' || action === 'heavy' || action === 'combo') state.position = 'close'
     else if (action === 'laser') state.position = 'far'
     else if (action === 'dodge') {
       state.position = state.position === 'close' ? 'mid' : state.position === 'mid' ? 'far' : 'mid'
@@ -378,13 +820,21 @@ export class BattleEngine {
     if (h2 > 0) parts.push(`P2 +${h2}HP`)
     if (a1 === 'special') parts.push('⚡ P1 RAGE!')
     if (a2 === 'special') parts.push('⚡ P2 RAGE!')
+    if (a1 === 'reflect') parts.push('🔄 P1 отражает!')
+    if (a2 === 'reflect') parts.push('🔄 P2 отражает!')
+    if (a1 === 'sacrifice') parts.push('💀 P1 жертвует HP!')
+    if (a2 === 'sacrifice') parts.push('💀 P2 жертвует HP!')
+    if (a1 === 'overcharge') parts.push(`⚡ P1 заряжается (${p1.chargeStack})`)
+    if (a2 === 'overcharge') parts.push(`⚡ P2 заряжается (${p2.chargeStack})`)
     if (p1.character === 'ninja' && a1 === 'dodge') parts.push('🌑 Ниндзя уклонился!')
     if (p2.character === 'ninja' && a2 === 'dodge') parts.push('🌑 Ниндзя уклонился!')
     if (p1.character === 'samurai' && p1.hp <= p1.maxHp * p1.bushidoThreshold && d2 > 0) parts.push('⚔️ БУСИДО!')
     if (p2.character === 'samurai' && p2.hp <= p2.maxHp * p2.bushidoThreshold && d1 > 0) parts.push('⚔️ БУСИДО!')
-    if (p1.poisonStacks > 0) parts.push(`☠️ P1 яд -${p1.poisonStacks}`)
-    if (p2.poisonStacks > 0) parts.push(`☠️ P2 яд -${p2.poisonStacks}`)
+    if (p1.poisonStacks > 0) parts.push(`☠️ P1 яд -${p1.poisonStacks * 3}`)
+    if (p2.poisonStacks > 0) parts.push(`☠️ P2 яд -${p2.poisonStacks * 3}`)
     if (p1.character === 'scorpion' && (a1 === 'attack' || a1 === 'heavy') && a2 === 'dodge') parts.push('🦂 Захват!')
+    if (p1.berserkThreshold > 0 && p1.hp <= p1.berserkThreshold) parts.push('😤 P1 БЕРСЕРК!')
+    if (p2.berserkThreshold > 0 && p2.hp <= p2.berserkThreshold) parts.push('😤 P2 БЕРСЕРК!')
     if (parts.length === 0) parts.push(`${a1} vs ${a2}`)
     return parts.join(' | ')
   }

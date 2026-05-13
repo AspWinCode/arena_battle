@@ -18,6 +18,16 @@ export type ActionName =
   | 'dodge'    // evade melee 100% / laser 50%; +10 stamina
   | 'repair'   // heal +20 HP; no stamina cost
   | 'special'  // rage move — 50 dmg; requires rage = 100, resets rage
+  | 'combo'          // melee combo — 12 dmg base, ×2 if combo streak active
+  | 'overcharge'     // charge up — no direct damage, adds charge stack
+  | 'reflect'        // defensive — reflects 40% incoming damage back
+  | 'adaptive_shield'// adapts to enemy most frequent action
+  | 'trap'           // set a delayed damage trap
+  | 'hack'           // reveal enemy next action
+  | 'sacrifice'      // lose HP, gain massive rage
+  | 'reboot'         // reset all cooldowns (limited uses)
+  | 'transfer'       // convert stamina to HP
+  | 'analyze'        // skip turn, reduce enemy damage next turn
 
 export type Position = 'close' | 'mid' | 'far'
 
@@ -27,6 +37,7 @@ export type Position = 'close' | 'mid' | 'far'
  * Context passed to strategy(ctx) every turn.
  */
 export interface StrategyContext {
+  // ── Level 1 — basic state ────────────────────────────────────────────────────
   /** Your HP (0–maxHp) */
   myHp: number
   /** Your max HP — depends on chosen character (100–120) */
@@ -35,6 +46,13 @@ export interface StrategyContext {
   myStamina: number
   /** Your rage (0–100). At 100 you can use 'special' */
   myRage: number
+
+  /** Your current position */
+  myPosition: Position
+  /** Your last action */
+  myLastAction: ActionName | null
+  /** How many consecutive turns you've used the same action */
+  myRepeatCount: number
 
   /** Enemy HP */
   enemyHp: number
@@ -45,26 +63,18 @@ export interface StrategyContext {
   /** Enemy rage — danger when it hits 100 */
   enemyRage: number
 
+  /** Enemy position */
+  enemyPosition: Position
+  /** Enemy last action */
+  enemyLastAction: ActionName | null
+
   /** Current turn (1–20) */
   turn: number
-  myLastAction: ActionName | null
-  enemyLastAction: ActionName | null
 
   /**
    * Remaining cooldown turns for each action. 0 = available.
    */
-  cooldowns: {
-    attack: number
-    heavy: number
-    laser: number
-    shield: number
-    dodge: number
-    repair: number
-    special: number
-  }
-
-  myPosition: Position
-  enemyPosition: Position
+  cooldowns: Record<string, number>
 
   /**
    * Current damage multiplier based on your position and your primary action.
@@ -72,11 +82,36 @@ export interface StrategyContext {
    */
   distanceModifier: number
 
-  /**
-   * How many consecutive turns you've used the same action.
-   * ≥ 3 triggers repeat penalty (outgoing damage ×0.5).
-   */
-  myRepeatCount: number
+  // ── Level 2 — history (arrays) ───────────────────────────────────────────────
+  myHistory: ActionName[]
+  enemyHistory: ActionName[]
+  /** damage I dealt each turn */
+  damageLog: number[]
+  /** damage I took each turn */
+  damageTakenLog: number[]
+  myHpLog: number[]
+  enemyHpLog: number[]
+
+  // ── Level 3 — frequency/patterns ─────────────────────────────────────────────
+  /** {'attack':5,'heavy':2,...} */
+  enemyFrequency: Record<string, number>
+  /** avg damage per action type */
+  myEfficiency: Record<string, number>
+  /** based on enemy HP: >60% early, >30% mid, else late */
+  enemyPhase: 'early' | 'mid' | 'late'
+  /** last 5 turns analysis */
+  enemyTrend: 'aggressive' | 'defensive' | 'mixed'
+
+  // ── Level 4 — simulation/prediction ──────────────────────────────────────────
+  simulate: (myAction: string, hisAction: string) => { myHpAfter: number; enemyHpAfter: number; myStaminaAfter: number }
+  /** predicts enemy action n steps ahead using markov */
+  predict: (n: number) => string
+  /** greedy best action via simulate */
+  bestAction: () => string
+  /** 8x8 matrix [myAction][hisAction] → my damage */
+  actionTable: number[][]
+  /** transition matrix */
+  markov: Record<string, Record<string, number>>
 }
 
 export interface Strategy {
@@ -97,15 +132,7 @@ export interface Strategy {
 
 // ─── Player State ─────────────────────────────────────────────────────────────
 
-export interface Cooldowns {
-  attack: number
-  heavy: number
-  laser: number
-  shield: number
-  dodge: number
-  repair: number
-  special: number
-}
+export type Cooldowns = Record<string, number>
 
 export interface PlayerState {
   hp: number
@@ -115,6 +142,7 @@ export interface PlayerState {
   cooldowns: Cooldowns
   lastAction: ActionName | null
   shieldActive: boolean
+  reflectActive: boolean
   strategy: Strategy
 }
 
@@ -137,6 +165,10 @@ export interface TurnResult {
   p1Position: Position
   p2Position: Position
   log: string
+  p1PoisonDmg?: number
+  p2PoisonDmg?: number
+  p1ReflectDmg?: number
+  p2ReflectDmg?: number
 }
 
 export interface RoundResult {

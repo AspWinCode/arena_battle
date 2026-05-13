@@ -45,6 +45,30 @@ export interface CharacterStats {
   /** Stamina cost overrides for specific actions (Mage laser→0) */
   staminaCostOverrides: Partial<Record<ActionName, number>>
 
+  // ── New Sprint 2 fields ───────────────────────────────────────────────────────
+  /** Actions this character is allowed to use */
+  allowedActions: ActionName[]
+  /** Max overcharge stacks (default 5, Sniper=8) */
+  maxChargeStacks: number
+  /** Max reboot uses per round (default 1, Paladin=2, Engineer=3) */
+  maxRebootUses: number
+  /** Sacrifice rage gain bonus (added on top of SACRIFICE_RAGE_GAIN) */
+  sacrificeRageBonus: number
+  /** Cosmonaut: laser from far = ×2.0 instead of ×1.4 */
+  enhancedLaserFar: boolean
+  /** Mage: attacks drain extra enemy stamina multiplier */
+  staminaDrainMult: number
+  /** Ninja: trap also triggers on enemy dodge */
+  trapOnDodge: boolean
+  /** Combo requires streak of this many attacks (default 3, Boxer=2) */
+  comboRequiredStreak: number
+  /** Berserker: at HP < this value, all damage ×berserkMult */
+  berserkThreshold: number
+  /** Berserker: damage multiplier in berserk mode */
+  berserkMult: number
+  /** Samurai: N consecutive turns without shield/dodge → heavy ×2 */
+  bushidoNoDefenseStreak: number
+
   // ── Display ──────────────────────────────────────────────────────────────────
   name:      string
   icon:      string
@@ -58,25 +82,36 @@ export interface CharacterStats {
 // ─── Default stat block (no passives) ─────────────────────────────────────────
 
 const DEFAULTS: Omit<CharacterStats, 'maxHp' | 'dmgMult' | 'rageMult' | 'name' | 'icon' | 'color' | 'tagline' | 'passive' | 'strengths' | 'weaknesses'> = {
-  repairBonus:         0,
-  shieldBonus:         0,
-  hasCounter:          false,
-  superDodge:          false,
-  shieldHealAmount:    0,
-  lifestealRate:       0,
-  bushidoThreshold:    0,
-  bushidoMult:         1,
-  flatDmgReduction:    0,
-  specialRageCost:     100,
-  rageFromDealt:       false,
-  attackIgnoresDodge:  false,
-  poisonOnHit:         0,
-  actionDmgOverrides:  {},
-  cooldownOverrides:   {},
-  staminaCostOverrides:{},
+  repairBonus:          0,
+  shieldBonus:          0,
+  hasCounter:           false,
+  superDodge:           false,
+  shieldHealAmount:     0,
+  lifestealRate:        0,
+  bushidoThreshold:     0,
+  bushidoMult:          1,
+  flatDmgReduction:     0,
+  specialRageCost:      100,
+  rageFromDealt:        false,
+  attackIgnoresDodge:   false,
+  poisonOnHit:          0,
+  actionDmgOverrides:   {},
+  cooldownOverrides:    {},
+  staminaCostOverrides: {},
+  allowedActions:       [],
+  maxChargeStacks:      5,
+  maxRebootUses:        1,
+  sacrificeRageBonus:   0,
+  enhancedLaserFar:     false,
+  staminaDrainMult:     0,
+  trapOnDodge:          false,
+  comboRequiredStreak:  3,
+  berserkThreshold:     0,
+  berserkMult:          1,
+  bushidoNoDefenseStreak: 0,
 }
 
-// ─── All 14 characters ────────────────────────────────────────────────────────
+// ─── All 16 characters ────────────────────────────────────────────────────────
 
 export const CHARACTER_STATS: Record<SkinId, CharacterStats> = {
 
@@ -84,7 +119,8 @@ export const CHARACTER_STATS: Record<SkinId, CharacterStats> = {
 
   robot: {
     ...DEFAULTS,
-    maxHp: 100, dmgMult: 1.0, rageMult: 1.0,
+    maxHp: 70, dmgMult: 1.0, rageMult: 1.0,
+    allowedActions: ['attack', 'heavy', 'laser', 'shield', 'dodge', 'repair', 'special'],
     name:    'Робот',
     icon:    '🤖',
     color:   '#00e5ff',
@@ -96,7 +132,8 @@ export const CHARACTER_STATS: Record<SkinId, CharacterStats> = {
 
   gladiator: {
     ...DEFAULTS,
-    maxHp: 80, dmgMult: 1.35, rageMult: 1.5,
+    maxHp: 65, dmgMult: 1.35, rageMult: 1.5,
+    allowedActions: ['attack', 'heavy', 'combo', 'overcharge', 'special', 'sacrifice'],
     name:    'Гладиатор',
     icon:    '⚔️',
     color:   '#d97706',
@@ -108,8 +145,10 @@ export const CHARACTER_STATS: Record<SkinId, CharacterStats> = {
 
   boxer: {
     ...DEFAULTS,
-    maxHp: 105, dmgMult: 1.0, rageMult: 1.0,
+    maxHp: 60, dmgMult: 1.0, rageMult: 1.0,
     hasCounter: true,
+    comboRequiredStreak: 2,
+    allowedActions: ['attack', 'heavy', 'dodge', 'combo', 'special', 'reflect'],
     name:    'Боксёр',
     icon:    '🥊',
     color:   '#e6261f',
@@ -121,9 +160,11 @@ export const CHARACTER_STATS: Record<SkinId, CharacterStats> = {
 
   cosmonaut: {
     ...DEFAULTS,
-    maxHp: 120, dmgMult: 0.8, rageMult: 1.0,
+    maxHp: 55, dmgMult: 0.8, rageMult: 1.0,
     repairBonus: 15,
     shieldBonus: 0.1,
+    enhancedLaserFar: true,
+    allowedActions: ['laser', 'dodge', 'shield', 'overcharge', 'analyze', 'trap'],
     name:    'Космонавт',
     icon:    '🚀',
     color:   '#7c3aed',
@@ -135,8 +176,10 @@ export const CHARACTER_STATS: Record<SkinId, CharacterStats> = {
 
   ninja: {
     ...DEFAULTS,
-    maxHp: 75, dmgMult: 0.9, rageMult: 1.0,
+    maxHp: 50, dmgMult: 0.9, rageMult: 1.0,
     superDodge: true,
+    trapOnDodge: true,
+    allowedActions: ['attack', 'dodge', 'trap', 'reflect', 'hack', 'special'],
     name:    'Ниндзя',
     icon:    '🥷',
     color:   '#8b5cf6',
@@ -148,8 +191,10 @@ export const CHARACTER_STATS: Record<SkinId, CharacterStats> = {
 
   mage: {
     ...DEFAULTS,
-    maxHp: 80, dmgMult: 1.05, rageMult: 1.0,
+    maxHp: 50, dmgMult: 1.05, rageMult: 1.0,
     staminaCostOverrides: { laser: 0 },
+    staminaDrainMult: 0.5,
+    allowedActions: ['laser', 'special', 'overcharge', 'analyze', 'transfer', 'trap'],
     name:    'Маг',
     icon:    '🧙',
     color:   '#3b82f6',
@@ -161,8 +206,12 @@ export const CHARACTER_STATS: Record<SkinId, CharacterStats> = {
 
   paladin: {
     ...DEFAULTS,
-    maxHp: 115, dmgMult: 0.85, rageMult: 1.0,
+    maxHp: 100, dmgMult: 0.85, rageMult: 1.0,
     shieldHealAmount: 10,
+    repairBonus: 10,
+    maxRebootUses: 2,
+    cooldownOverrides: { shield: 1 },
+    allowedActions: ['attack', 'shield', 'repair', 'reflect', 'reboot', 'transfer', 'adaptive_shield'],
     name:    'Паладин',
     icon:    '⚜️',
     color:   '#f59e0b',
@@ -174,9 +223,11 @@ export const CHARACTER_STATS: Record<SkinId, CharacterStats> = {
 
   sniper: {
     ...DEFAULTS,
-    maxHp: 85, dmgMult: 1.0, rageMult: 1.0,
+    maxHp: 45, dmgMult: 1.0, rageMult: 1.0,
+    maxChargeStacks: 8,
     cooldownOverrides:  { laser: 1 },
     actionDmgOverrides: { attack: 0.5 },
+    allowedActions: ['laser', 'overcharge', 'analyze', 'sacrifice', 'special', 'trap'],
     name:    'Снайпер',
     icon:    '🎯',
     color:   '#10b981',
@@ -188,21 +239,23 @@ export const CHARACTER_STATS: Record<SkinId, CharacterStats> = {
 
   tank: {
     ...DEFAULTS,
-    maxHp: 130, dmgMult: 0.65, rageMult: 1.0,
+    maxHp: 120, dmgMult: 0.65, rageMult: 1.0,
     flatDmgReduction: 5,
+    allowedActions: ['attack', 'shield', 'repair', 'reflect', 'reboot', 'adaptive_shield', 'transfer'],
     name:    'Рино',
     icon:    '🦏',
     color:   '#78716c',
     tagline: 'Непробиваемый носорог',
     passive: '🦏 Броня носорога: каждый входящий удар снижается на 5 HP (минимум 1). Очень живуч.',
-    strengths:  ['Огромный запас HP (130)', 'Снижает абсолютно весь входящий урон'],
+    strengths:  ['Огромный запас HP (120)', 'Снижает абсолютно весь входящий урон'],
     weaknesses: ['Очень низкий урон (×0.65)', 'Выигрывает только измором'],
   },
 
   vampire: {
     ...DEFAULTS,
-    maxHp: 85, dmgMult: 1.1, rageMult: 1.0,
+    maxHp: 75, dmgMult: 1.1, rageMult: 1.0,
     lifestealRate: 0.25,
+    allowedActions: ['attack', 'heavy', 'special', 'sacrifice', 'reflect', 'combo'],
     name:    'Вампир',
     icon:    '🧛',
     color:   '#dc2626',
@@ -214,9 +267,11 @@ export const CHARACTER_STATS: Record<SkinId, CharacterStats> = {
 
   samurai: {
     ...DEFAULTS,
-    maxHp: 75, dmgMult: 1.0, rageMult: 1.0,
+    maxHp: 70, dmgMult: 1.0, rageMult: 1.0,
     bushidoThreshold: 0.25,
     bushidoMult:      2.0,
+    bushidoNoDefenseStreak: 3,
+    allowedActions: ['attack', 'heavy', 'special', 'combo', 'overcharge', 'sacrifice'],
     name:    'Самурай',
     icon:    '🗡️',
     color:   '#f43f5e',
@@ -228,8 +283,9 @@ export const CHARACTER_STATS: Record<SkinId, CharacterStats> = {
 
   phantom: {
     ...DEFAULTS,
-    maxHp: 80, dmgMult: 1.05, rageMult: 1.0,
+    maxHp: 55, dmgMult: 1.05, rageMult: 1.0,
     cooldownOverrides: { dodge: 0 },
+    allowedActions: ['attack', 'dodge', 'trap', 'hack', 'special', 'analyze'],
     name:    'Призрак',
     icon:    '👻',
     color:   '#a78bfa',
@@ -241,8 +297,10 @@ export const CHARACTER_STATS: Record<SkinId, CharacterStats> = {
 
   engineer: {
     ...DEFAULTS,
-    maxHp: 100, dmgMult: 0.9, rageMult: 1.0,
+    maxHp: 65, dmgMult: 0.9, rageMult: 1.0,
     specialRageCost: 60,
+    maxRebootUses: 3,
+    allowedActions: ['attack', 'repair', 'trap', 'reboot', 'transfer', 'analyze', 'adaptive_shield'],
     name:    'Инженер',
     icon:    '🔧',
     color:   '#f97316',
@@ -254,21 +312,26 @@ export const CHARACTER_STATS: Record<SkinId, CharacterStats> = {
 
   berserker: {
     ...DEFAULTS,
-    maxHp: 65, dmgMult: 1.5, rageMult: 1.0,
+    maxHp: 60, dmgMult: 1.5, rageMult: 1.0,
     rageFromDealt: true,
+    berserkThreshold: 30,
+    berserkMult: 2.0,
+    sacrificeRageBonus: 50,
+    allowedActions: ['attack', 'heavy', 'special', 'sacrifice', 'combo', 'overcharge'],
     name:    'Берсерк',
     icon:    '🪓',
     color:   '#b91c1c',
     tagline: 'Ярость от атак в обе стороны',
     passive: '🔥 Кровожажда: ярость накапливается от получаемого И от наносимого урона. Спецудар очень часто.',
     strengths:  ['Экстремальный урон ×1.5', 'Спецудар срабатывает очень часто'],
-    weaknesses: ['Критически мало HP (65)', 'Умирает от 4-5 тяжёлых ударов'],
+    weaknesses: ['Критически мало HP (60)', 'Умирает от 4-5 тяжёлых ударов'],
   },
 
   scorpion: {
     ...DEFAULTS,
-    maxHp: 90, dmgMult: 1.1, rageMult: 1.0,
+    maxHp: 55, dmgMult: 1.1, rageMult: 1.0,
     attackIgnoresDodge: true,
+    allowedActions: ['attack', 'trap', 'analyze', 'special', 'sacrifice', 'hack'],
     name:    'Скорпион',
     icon:    '🦂',
     color:   '#d97706',
@@ -280,8 +343,9 @@ export const CHARACTER_STATS: Record<SkinId, CharacterStats> = {
 
   plague: {
     ...DEFAULTS,
-    maxHp: 85, dmgMult: 0.9, rageMult: 1.0,
+    maxHp: 60, dmgMult: 0.9, rageMult: 1.0,
     poisonOnHit: 4,
+    allowedActions: ['attack', 'analyze', 'adaptive_shield', 'trap', 'transfer', 'hack', 'special'],
     name:    'Чумной доктор',
     icon:    '🎭',
     color:   '#065f46',

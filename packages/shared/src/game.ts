@@ -18,13 +18,23 @@ export const STAMINA_REGEN = 8
  * Negative = gain (shield/dodge restore stamina instead of spending it).
  */
 export const STAMINA_COSTS: Record<ActionName, number> = {
-  attack:  10,
-  heavy:   35,   // heavy attack — expensive
-  laser:   20,
-  shield: -20,   // bracing recovers stamina
-  dodge:  -10,   // quick sidestep is stamina-neutral+
-  repair:  0,    // resting — no stamina cost
-  special: 0,    // rage-gated, not stamina-gated
+  attack:          10,
+  heavy:           35,   // heavy attack — expensive
+  laser:           20,
+  shield:         -20,   // bracing recovers stamina
+  dodge:          -10,   // quick sidestep is stamina-neutral+
+  repair:           0,   // resting — no stamina cost
+  special:          0,   // rage-gated, not stamina-gated
+  combo:           15,
+  overcharge:     -10,   // gains stamina (like defense)
+  reflect:         -5,
+  adaptive_shield:  0,
+  trap:            15,
+  hack:            25,
+  sacrifice:        0,
+  reboot:          30,
+  transfer:         0,
+  analyze:          0,
 }
 
 /**
@@ -46,12 +56,24 @@ export const SPECIAL_RAGE_COST   = 100
 
 // ─── Base damage (before modifiers) ──────────────────────────────────────────
 
-export const BASE_DAMAGE: Partial<Record<ActionName, number>> = {
-  attack:  12,
-  heavy:   28,
-  laser:   20,
-  special: 50,
-  // shield, dodge, repair = 0
+export const BASE_DAMAGE: Record<ActionName, number> = {
+  attack:          12,
+  heavy:           28,
+  laser:           20,
+  special:         50,
+  shield:           0,
+  dodge:            0,
+  repair:           0,
+  combo:           12,   // same as attack base, ×2 if combo streak active
+  overcharge:       0,   // no direct damage — charges up
+  reflect:          0,   // no direct damage — defensive
+  adaptive_shield:  0,
+  trap:             0,   // damage comes from trap trigger
+  hack:             0,
+  sacrifice:        0,
+  reboot:           0,
+  transfer:         0,
+  analyze:          0,
 }
 
 // ─── Counter / mitigation ────────────────────────────────────────────────────
@@ -76,14 +98,35 @@ export const REPEAT_DAMAGE_FACTOR  = 0.5
 // ─── Cooldowns ───────────────────────────────────────────────────────────────
 
 export const COOLDOWNS: Record<ActionName, number> = {
-  attack:  0,
-  heavy:   4,
-  laser:   3,
-  shield:  2,
-  dodge:   1,
-  repair:  3,
-  special: 0,  // rage-gated; no cooldown once rage refills
+  attack:          0,
+  heavy:           4,
+  laser:           3,
+  shield:          2,
+  dodge:           1,
+  repair:          3,
+  special:         0,  // rage-gated; no cooldown once rage refills
+  combo:           0,
+  overcharge:      5,
+  reflect:         3,
+  adaptive_shield: 3,
+  trap:            4,
+  hack:            5,
+  sacrifice:       3,
+  reboot:          0,  // limited by rebootUsed counter, not cooldown
+  transfer:        2,
+  analyze:         4,
 }
+
+// ─── New action constants ─────────────────────────────────────────────────────
+
+export const TRAP_DAMAGE                  = 24   // 3 charges × 8 damage
+export const SACRIFICE_HP_COST            = 20   // HP lost
+export const SACRIFICE_RAGE_GAIN          = 50   // rage gained
+export const TRANSFER_STAMINA_COST        = 25
+export const TRANSFER_HP_GAIN             = 15
+export const OVERCHARGE_DAMAGE_PER_STACK  = 15
+export const MAX_CHARGE_STACKS            = 5
+export const REFLECT_RETURN_RATE          = 0.40
 
 // ─── Position modifiers (Phase 1 v2) ─────────────────────────────────────────
 //
@@ -96,6 +139,7 @@ const POSITION_MULTIPLIERS: Partial<Record<ActionName, Record<Position, number>>
   attack: { close: 1.3, mid: 1.0, far: 0.6 },
   heavy:  { close: 1.5, mid: 1.0, far: 0.3 },
   laser:  { close: 0.7, mid: 1.0, far: 1.4 },
+  combo:  { close: 1.3, mid: 1.0, far: 0.6 },
 }
 
 export function getPositionMultiplier(action: ActionName, position: Position): number {
