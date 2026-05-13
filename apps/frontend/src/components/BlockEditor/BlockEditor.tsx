@@ -697,10 +697,7 @@ function removeBlockEverywhere(scripts: Script[], targetInstId: string): Script[
   return changed ? next : scripts
 }
 
-function removeFromInstance(inst: BlockInstance, targetId: string): BlockInstance | null {
-  if (inst.next?.instanceId === targetId) {
-    return { ...inst, next: inst.next.next }
-  }
+function removeFromInstance(inst: BlockInstance, targetId: string): BlockInstance {
   return {
     ...inst,
     slots: inst.slots.map(s => {
@@ -709,14 +706,33 @@ function removeFromInstance(inst: BlockInstance, targetId: string): BlockInstanc
       if (nested.instanceId === targetId) return { ...s, value: null }
       return { ...s, value: removeFromInstance(nested, targetId) }
     }),
-    next: inst.next ? removeFromInstance(inst.next, targetId) ?? undefined : undefined,
-    body: inst.body
-      ?.filter(b => b.instanceId !== targetId)
-      .map(b => removeFromInstance(b, targetId) ?? b),
-    elseBody: inst.elseBody
-      ?.filter(b => b.instanceId !== targetId)
-      .map(b => removeFromInstance(b, targetId) ?? b),
+    next: removeFromNextChain(inst.next, targetId),
+    body: removeFromBlockList(inst.body, targetId),
+    elseBody: removeFromBlockList(inst.elseBody, targetId),
   }
+}
+
+function removeFromNextChain(inst: BlockInstance | undefined, targetId: string): BlockInstance | undefined {
+  let current = inst
+  while (current && current.instanceId === targetId) {
+    current = current.next
+  }
+  return current ? removeFromInstance(current, targetId) : undefined
+}
+
+function removeFromBlockList(blocks: BlockInstance[] | undefined, targetId: string): BlockInstance[] | undefined {
+  if (!blocks) return blocks
+
+  const cleaned: BlockInstance[] = []
+  for (const block of blocks) {
+    if (block.instanceId === targetId) {
+      const promoted = removeFromNextChain(block.next, targetId)
+      if (promoted) cleaned.push(promoted)
+      continue
+    }
+    cleaned.push(removeFromInstance(block, targetId))
+  }
+  return cleaned
 }
 
 // ── Snap system ────────────────────────────────────────────────────────────────
