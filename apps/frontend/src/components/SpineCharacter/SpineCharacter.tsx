@@ -72,8 +72,8 @@ export const SPINE_SKIN_CONFIG: Record<string, {
 }> = {
   default:   { dir: 'spineboy',  scale: 0.38, yOffset: 0,  flipCanvasY: true },
   robot:     { dir: 'spineboy',  scale: 0.38, yOffset: 0,  flipCanvasY: true },
-  boxer:     { dir: 'boxer',     scale: 1.0,  yOffset: 0,  flipCanvasY: true },
-  gladiator: { dir: 'gladiator', scale: 0.45, yOffset: 54, flipCanvasY: true },
+  boxer:     { dir: 'boxer',     scale: 1.0,  yOffset: 0,  autoFit: true, flipCanvasY: true },
+  gladiator: { dir: 'gladiator', scale: 1.0,  yOffset: 0,  flipCanvasY: true },
   cosmonaut: { dir: 'spineboy',  scale: 0.38, yOffset: 0,  flipCanvasY: true },
   ninja:     { dir: 'spineboy',  scale: 0.38, yOffset: 0,  flipCanvasY: true },
   mage:      { dir: 'spineboy',  scale: 0.38, yOffset: 0,  flipCanvasY: true },

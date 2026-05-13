@@ -57,8 +57,8 @@
     {
       "name": "weapon",
       "parent": "hand_l",
-      "x": 40,
-      "y": -20
+      "x": 77,
+      "y": 0
     },
     {
       "name": "arm_r",
