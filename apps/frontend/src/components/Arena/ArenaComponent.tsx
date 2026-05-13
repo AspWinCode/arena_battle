@@ -286,6 +286,7 @@ export default function ArenaComponent({
         <SpineCharacter
           skinId={p1Skin}
           action={p1Action}
+          turnKey={latestTurn?.turn ?? -1}
           flipX={false}
           isDead={p1Dead}
           style={{
@@ -303,6 +304,7 @@ export default function ArenaComponent({
         <SpineCharacter
           skinId={p2Skin}
           action={p2Action}
+          turnKey={latestTurn?.turn ?? -1}
           flipX={true}
           isDead={p2Dead}
           style={{

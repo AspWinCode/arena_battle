@@ -93,13 +93,15 @@ interface SpineRefs {
 interface Props {
   skinId:    string
   action?:   ActionName | null
+  /** Increments each turn — ensures the animation fires even if action didn't change */
+  turnKey?:  number
   flipX?:    boolean
   isDead?:   boolean
   className?: string
   style?:     React.CSSProperties
 }
 
-export default function SpineCharacter({ skinId, action, flipX = false, isDead = false, className, style }: Props) {
+export default function SpineCharacter({ skinId, action, turnKey, flipX = false, isDead = false, className, style }: Props) {
   const canvasRef   = useRef<HTMLCanvasElement>(null)
   const spineRef    = useRef<SpineRefs | null>(null)
   const rafRef      = useRef<number>(0)
@@ -267,7 +269,10 @@ export default function SpineCharacter({ skinId, action, flipX = false, isDead =
         state.setAnimation(0, animName, true)
       }
     } catch { /* animation not found */ }
-  }, [action, isDead])
+  // turnKey changes every turn (even if action is the same) → animation re-fires.
+  // loaded is included so the effect re-runs once the skeleton is ready (handles the
+  // race where action arrived before the skeleton finished loading).
+  }, [action, isDead, turnKey, loaded])
 
   // ── Update flipX reactively ────────────────────────────────────────────────
   useEffect(() => {
