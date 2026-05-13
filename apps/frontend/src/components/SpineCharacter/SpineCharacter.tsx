@@ -66,11 +66,7 @@ export const SPINE_SKIN_CONFIG: Record<string, { dir: string; scale: number; yOf
   default:   { dir: 'spineboy', scale: 0.38, yOffset: 0 },
   robot:     { dir: 'spineboy', scale: 0.38, yOffset: 0 },
   boxer:     { dir: 'spineboy', scale: 0.38, yOffset: 0 },
-  // Gladiator skeleton: attachments use full atlas px as Spine units.
-  // Character spans ~510 units (boots bottom y≈−120 → head top y≈390).
-  // scale=0.45 → fits ~230px of the 280px canvas.
-  // yOffset = scale*120 so boot soles land exactly at canvas bottom.
-  gladiator: { dir: 'gladiator', scale: 0.45, yOffset: 54 },
+  gladiator: { dir: 'gladiator', scale: 1.0,  yOffset: 0 },
   cosmonaut: { dir: 'spineboy', scale: 0.38, yOffset: 0 },
   ninja:     { dir: 'spineboy', scale: 0.38, yOffset: 0 },
   mage:      { dir: 'spineboy', scale: 0.38, yOffset: 0 },
