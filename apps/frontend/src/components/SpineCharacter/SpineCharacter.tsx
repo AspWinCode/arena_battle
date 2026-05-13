@@ -68,6 +68,8 @@ export const SPINE_SKIN_CONFIG: Record<string, { dir: string; scale: number; yOf
   phantom:   { dir: 'spineboy', scale: 0.38, yOffset: 0 },
   engineer:  { dir: 'spineboy', scale: 0.38, yOffset: 0 },
   berserker: { dir: 'spineboy', scale: 0.38, yOffset: 0 },
+  scorpion:  { dir: 'spineboy', scale: 0.38, yOffset: 0 },
+  plague:    { dir: 'spineboy', scale: 0.38, yOffset: 0 },
 }
 
 interface SpineRefs {
