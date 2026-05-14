@@ -79,6 +79,8 @@
   align-items: center;
   gap: 12px;
   flex: 1;
+  min-width: 0;
+  overflow: hidden;
 }
 .myAvatar {
   font-size: 32px;
@@ -90,7 +92,7 @@
   background: var(--bg-mid);
   border-radius: var(--radius);
 }
-.myName { font-size: 16px; font-weight: 800; color: var(--text); }
+.myName { font-size: 16px; font-weight: 800; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 220px; }
 .myMeta { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
 
 .myStats {

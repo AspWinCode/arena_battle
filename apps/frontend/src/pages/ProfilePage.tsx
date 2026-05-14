@@ -46,11 +46,12 @@ interface EloPoint {
   opponent?: { displayName: string; username: string } | null
 }
 
-type Tab = 'history' | 'achievements' | 'progress' | 'settings'
+type Tab = 'history' | 'achievements' | 'progress' | 'settings' | 'leaderboard'
 const TABS: { id: Tab; label: string }[] = [
-  { id: 'history',      label: '⚔️ История'    },
-  { id: 'achievements', label: '🏅 Достижения' },
-  { id: 'progress',     label: '🔥 Прогресс'   },
+  { id: 'history',      label: '⚔️ История'         },
+  { id: 'achievements', label: '🏅 Достижения'      },
+  { id: 'progress',     label: '🔥 Прогресс'        },
+  { id: 'leaderboard',  label: '🏆 Таблица лидеров' },
 ]
 
 const NAV_ITEMS = [
@@ -76,6 +77,8 @@ export default function ProfilePage() {
   const [error, setError]       = useState('')
   const [eloHistory, setEloHistory] = useState<EloPoint[]>([])
   const [eloLoading, setEloLoading] = useState(false)
+  const [lbEntries, setLbEntries]   = useState<any[]>([])
+  const [lbLoaded,  setLbLoaded]    = useState(false)
 
   // Matchmaking state
   const [inQueue,   setInQueue]   = useState(false)
@@ -118,6 +121,13 @@ export default function ProfilePage() {
     api.get<EloPoint[]>('/elo-history/~me', token)
       .then(h => setEloHistory(h)).catch(() => {}).finally(() => setEloLoading(false))
   }, [tab, token])
+
+  useEffect(() => {
+    if (tab !== 'leaderboard' || lbLoaded) return
+    api.get<any[]>('/user/profile/leaderboard')
+      .then(d => { setLbEntries(d); setLbLoaded(true) })
+      .catch(() => setLbLoaded(true))
+  }, [tab, lbLoaded])
 
   const handleJoinQueue = useCallback(async () => {
     if (!user || !token || !data) return
@@ -440,6 +450,58 @@ export default function ProfilePage() {
                   </div>
                 )
               })()}
+
+              {/* ── Leaderboard ──────────────────────────────────────────── */}
+              {tab === 'leaderboard' && (
+                <div>
+                  {!lbLoaded ? (
+                    <div style={{ textAlign: 'center', color: 'var(--text-muted)', padding: 40 }}>Загружаем...</div>
+                  ) : lbEntries.length === 0 ? (
+                    <p className={styles.empty}>Нет данных</p>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                      {['#', 'Боец', 'Рейтинг', 'Побед', 'Винрейт'].map((h, i) => (
+                        <span key={h} />
+                      ))}
+                      {/* header */}
+                      <div style={{ display: 'grid', gridTemplateColumns: '36px 1fr 80px 60px 70px', padding: '6px 10px', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.05em', color: 'var(--text-muted)', borderBottom: '1px solid var(--border)' }}>
+                        <span>#</span><span>Боец</span><span style={{ textAlign: 'right' }}>Рейтинг</span><span style={{ textAlign: 'right' }}>Побед</span><span style={{ textAlign: 'right' }}>Винрейт</span>
+                      </div>
+                      {lbEntries.map((p: any, i: number) => {
+                        const isMe = p.username === user?.username
+                        const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i + 1}`
+                        return (
+                          <div key={p.username} style={{
+                            display: 'grid', gridTemplateColumns: '36px 1fr 80px 60px 70px',
+                            padding: '8px 10px', borderRadius: 8, alignItems: 'center', gap: 4,
+                            background: isMe ? 'rgba(0,229,255,.06)' : i % 2 === 0 ? 'var(--bg-mid)' : 'transparent',
+                            border: isMe ? '1px solid rgba(0,229,255,.2)' : '1px solid transparent',
+                          }}>
+                            <span style={{ fontSize: 13, fontWeight: 700 }}>{medal}</span>
+                            <span style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
+                              <span style={{ fontSize: 20, flexShrink: 0 }}>
+                                {p.avatar?.startsWith('data:') || p.avatar?.startsWith('/')
+                                  ? <img src={p.avatar} style={{ width: 26, height: 26, borderRadius: '50%', objectFit: 'cover', verticalAlign: 'middle' }} alt="" />
+                                  : p.avatar}
+                              </span>
+                              <span style={{ fontWeight: 700, fontSize: 13, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                {p.displayName || p.username}
+                                {isMe && <span style={{ marginLeft: 6, fontSize: 10, color: 'var(--accent)', fontWeight: 700 }}>ты</span>}
+                              </span>
+                            </span>
+                            <span style={{ textAlign: 'right', color: 'var(--lightning)', fontWeight: 800, fontSize: 14 }}>{p.elo ?? 1000}</span>
+                            <span style={{ textAlign: 'right', color: '#fbbf24', fontWeight: 700 }}>{p.wins}</span>
+                            <span style={{ textAlign: 'right', color: (p.winRate ?? 0) >= 60 ? '#4ade80' : (p.winRate ?? 0) >= 50 ? '#fbbf24' : '#f87171', fontWeight: 700 }}>{p.winRate ?? 0}%</span>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )}
+                  <div style={{ marginTop: 16, textAlign: 'center' }}>
+                    <Link to="/leaderboard" style={{ fontSize: 13, color: 'var(--accent)', textDecoration: 'none' }}>Открыть полную таблицу →</Link>
+                  </div>
+                </div>
+              )}
 
               {/* ── Settings ─────────────────────────────────────────────── */}
               {tab === 'settings' && (

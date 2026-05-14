@@ -90,10 +90,10 @@ export default function LeaderboardPage() {
 
       <div className={styles.content}>
         {/* Header */}
-        <Link to="/join" className={styles.back}>← Главная</Link>
+        <Link to="/" className={styles.back}>← Главная</Link>
         <div className={styles.headerRow}>
           <h1 className={styles.title}>
-            🏆 Лидерборд
+            🏆 Таблица лидеров
             {isLive && (
               <span style={{
                 marginLeft: 10, fontSize: 12, fontWeight: 700,
