@@ -16,6 +16,7 @@ const PORTRAIT_IDS = new Set([
   'berserker',
   'robot',
   'engineer',
+  'sniper',
 ])
 
 export function getPortraitUrl(charId: string): string | null {
