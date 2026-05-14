@@ -266,6 +266,34 @@ export default function ProfilePage() {
         </div>
       </div>
 
+      {/* ── Quick nav ────────────────────────────────────────────────────── */}
+      <div className={styles.quickNav}>
+        <Link to="/learn"        className={styles.navCard}>
+          <span className={styles.navCardIcon}>🎓</span>
+          <span className={styles.navCardLabel}>Обучение</span>
+        </Link>
+        <Link to="/sparring"     className={styles.navCard}>
+          <span className={styles.navCardIcon}>🥊</span>
+          <span className={styles.navCardLabel}>Спарринг</span>
+        </Link>
+        <Link to="/daily"        className={styles.navCard}>
+          <span className={styles.navCardIcon}>📅</span>
+          <span className={styles.navCardLabel}>Задания</span>
+        </Link>
+        <Link to="/leaderboard"  className={styles.navCard}>
+          <span className={styles.navCardIcon}>🏆</span>
+          <span className={styles.navCardLabel}>Рейтинг</span>
+        </Link>
+        <Link to="/tournaments"  className={styles.navCard}>
+          <span className={styles.navCardIcon}>🏟</span>
+          <span className={styles.navCardLabel}>Турниры</span>
+        </Link>
+        <Link to="/clans"        className={styles.navCard}>
+          <span className={styles.navCardIcon}>⚔️</span>
+          <span className={styles.navCardLabel}>Кланы</span>
+        </Link>
+      </div>
+
       {/* ── Quick stats ───────────────────────────────────────────────────── */}
       {/* Fix #8: semantic colours — wins=green, winrate=gold, rounds=muted, tournaments=fire */}
       <div className={styles.quickStats}>
