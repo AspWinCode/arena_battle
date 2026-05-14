@@ -11,7 +11,13 @@
   /* canvas has fixed width/height attrs; let CSS scale it to fill the container */
   width:  100%;
   height: 100%;
-  transition: opacity 0.8s ease;
+  /* Fast fade-in on load so characters appear immediately */
+  transition: opacity 0.15s ease;
+}
+
+/* Slower fade-out when dying — applied via JS className */
+.canvasDying {
+  transition: opacity 0.9s ease;
 }
 
 /* Skeleton loading shimmer */

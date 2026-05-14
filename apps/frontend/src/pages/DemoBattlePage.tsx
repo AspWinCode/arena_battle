@@ -1,9 +1,13 @@
-import { useState, useRef, useCallback } from 'react'
+import { useState, useRef, useCallback, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { CHARACTER_STATS, SKIN_ICON } from '@robocode/shared'
 import type { SkinId, Strategy, StrategyContext, TurnResult, RoundResult } from '@robocode/shared'
 import { runLocalMatch } from '../engine/battleEngine'
-import SpineCharacter from '../components/SpineCharacter/SpineCharacter'
+import { SPINE_SKIN_CONFIG } from '../components/SpineCharacter/SpineCharacter'
+import CharacterView from '../animation/CharacterView'
+import type { CharacterViewHandle } from '../animation/CharacterView'
+import { AnimationPlayer } from '../animation/AnimationPlayer'
+import { turnToEvents } from '../animation/battleReplay'
 import styles from './DemoBattlePage.module.css'
 
 // ── Per-character preset strategies ───────────────────────────────────────────
@@ -127,7 +131,27 @@ export default function DemoBattlePage() {
   const [action1,    setAction1]    = useState<string | null>(null)
   const [action2,    setAction2]    = useState<string | null>(null)
 
-  const animRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  // CharacterView imperative refs
+  const p1CharRef = useRef<CharacterViewHandle>(null)
+  const p2CharRef = useRef<CharacterViewHandle>(null)
+
+  // AnimationPlayer — stable across renders
+  const playerRef = useRef<AnimationPlayer>(new AnimationPlayer())
+
+  // ── Preload Spine assets for selected characters while on select screen ───────
+  useEffect(() => {
+    if (phase !== 'select') return
+    const dirs = new Set([p1Skin, p2Skin].map(skin => {
+      const cfg = SPINE_SKIN_CONFIG[skin] ?? SPINE_SKIN_CONFIG['default']
+      return cfg.dir
+    }))
+    dirs.forEach(dir => {
+      const base = `/spine/${dir}/`
+      fetch(base + 'spineboy.json').catch(() => {})
+      fetch(base + 'spineboy.atlas').catch(() => {})
+      fetch(base + 'spineboy.png').catch(() => {})
+    })
+  }, [p1Skin, p2Skin, phase])
 
   const p1Stats = CHARACTER_STATS[p1Skin]
   const p2Stats = CHARACTER_STATS[p2Skin]
@@ -140,13 +164,18 @@ export default function DemoBattlePage() {
   const turn  = curTurn?.turn ?? 0
 
   const handleStart = useCallback(() => {
-    if (animRef.current) clearTimeout(animRef.current)
+    const player = playerRef.current
+    player.pause()
 
     const result = runLocalMatch(
       makeStrategy(p1Skin),
       makeStrategy(p2Skin),
       'bo3',
     )
+
+    const allTurns: TurnResult[] = []
+    for (const r of result.rounds) allTurns.push(...r.turns)
+
     setRounds(result.rounds)
     setWinner(result.winner)
     setScore(result.score)
@@ -156,32 +185,47 @@ export default function DemoBattlePage() {
     setAction2(null)
     setPhase('battle')
 
-    const allTurns: TurnResult[] = []
-    for (const r of result.rounds) allTurns.push(...r.turns)
+    // Reset CharacterViews
+    p1CharRef.current?.reset()
+    p2CharRef.current?.reset()
 
-    let idx = 0
-    const step = () => {
-      if (idx >= allTurns.length) {
-        setPhase('result')
-        return
-      }
-      const t = allTurns[idx++]
+    // Build per-turn event groups (each group = one turn's events)
+    const eventGroups = allTurns.map(t => turnToEvents(t))
+    player.loadTurns(eventGroups)
+
+    // Wire up callbacks
+    player.onTurnStart = (idx) => {
+      const t = allTurns[idx]
+      if (!t) return
       setCurTurn(t)
-      setAction1(t.p1Action)
-      setAction2(t.p2Action)
       setTurnLog(prev => [...prev, t].slice(-25))
-      animRef.current = setTimeout(step, 350)
     }
-    step()
+
+    player.onEvent = (event) => {
+      // Update action badges
+      if (event.type === 'action') {
+        if (event.actor === 'p1') setAction1(event.action)
+        else setAction2(event.action)
+      }
+      // Drive character animations
+      if (event.actor === 'p1') p1CharRef.current?.applyEvent(event)
+      else p2CharRef.current?.applyEvent(event)
+    }
+
+    player.onComplete = () => setPhase('result')
+
+    player.play()
   }, [p1Skin, p2Skin])
 
   const handleReset = useCallback(() => {
-    if (animRef.current) clearTimeout(animRef.current)
+    playerRef.current.pause()
     setPhase('select')
     setCurTurn(null)
     setTurnLog([])
     setAction1(null)
     setAction2(null)
+    p1CharRef.current?.reset()
+    p2CharRef.current?.reset()
   }, [])
 
   return (
@@ -338,12 +382,10 @@ export default function DemoBattlePage() {
 
             {/* P1 fighter */}
             <div className={styles.fighter}>
-              <SpineCharacter
+              <CharacterView
+                ref={p1CharRef}
                 skinId={p1Skin}
-                action={action1 as any}
-                turnKey={curTurn?.turn}
                 flipX={false}
-                isDead={p1Hp <= 0}
                 className={styles.spineChar}
               />
               {action1 && (
@@ -360,12 +402,10 @@ export default function DemoBattlePage() {
 
             {/* P2 fighter */}
             <div className={`${styles.fighter} ${styles.fighterRight}`}>
-              <SpineCharacter
+              <CharacterView
+                ref={p2CharRef}
                 skinId={p2Skin}
-                action={action2 as any}
-                turnKey={curTurn?.turn}
                 flipX={true}
-                isDead={p2Hp <= 0}
                 className={styles.spineChar}
               />
               {action2 && (
