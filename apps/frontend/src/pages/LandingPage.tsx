@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { CHARACTER_STATS } from '@robocode/shared'
 import { useCharacterThumbs } from '../hooks/useCharacterThumbs'
+import { getPortraitUrl } from '../hooks/usePortraits'
 import styles from './LandingPage.module.css'
 
 export default function LandingPage() {
@@ -142,10 +143,13 @@ export default function LandingPage() {
                     className={styles.charCard}
                     style={{ '--cc': ch.color } as React.CSSProperties}
                   >
-                    {thumbs[id]
-                      ? <img src={thumbs[id]} className={styles.charCardImg} alt={ch.name} />
-                      : <div className={styles.charCardFallback}><span className={styles.charCardEmoji}>{ch.icon}</span></div>
-                    }
+                    {(() => {
+                      const portrait = getPortraitUrl(id)
+                      const src = portrait ?? thumbs[id]
+                      return src
+                        ? <img src={src} className={`${styles.charCardImg} ${portrait ? styles.charCardPortrait : ''}`} alt={ch.name} />
+                        : <div className={styles.charCardFallback}><span className={styles.charCardEmoji}>{ch.icon}</span></div>
+                    })()}
                     <div className={styles.charCardOverlay}>
                       <span className={styles.charCardName}>◉ {ch.name}</span>
                       <span className={styles.charCardTag}>{ch.tagline}</span>
