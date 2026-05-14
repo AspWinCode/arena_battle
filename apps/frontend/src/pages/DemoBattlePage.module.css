@@ -171,6 +171,24 @@
   line-height: 1;
 }
 
+.charThumb {
+  width: 52px;
+  height: 52px;
+  object-fit: contain;
+}
+
+.vsThumb {
+  width: 36px;
+  height: 36px;
+  object-fit: contain;
+}
+
+.statsThumb {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+}
+
 .charName {
   font-size: 10px;
   font-weight: 700;

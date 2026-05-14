@@ -7,6 +7,7 @@ import { useBattleStore } from '../stores/battleStore'
 import { useUserStore } from '../stores/userStore'
 import RankBadge from '../components/RankBadge'
 import UserMenu from '../components/UserMenu'
+import { useCharacterThumbs } from '../hooks/useCharacterThumbs'
 import styles from './JoinPage.module.css'
 
 const SKINS = ALL_SKIN_IDS.map(id => ({
@@ -24,6 +25,7 @@ export default function JoinPage() {
   const navigate   = useNavigate()
   const setSession = useBattleStore(s => s.setSession)
   const { user, token } = useUserStore()
+  const thumbs = useCharacterThumbs()
 
   const [name, setName]         = useState('')
   const [code, setCode]         = useState('')
@@ -196,7 +198,9 @@ export default function JoinPage() {
                   style={{ '--skin-color': s.color } as React.CSSProperties}
                   onClick={() => setSkin(s.id)}
                 >
-                  <span className={styles.skinIcon}>{s.icon}</span>
+                  {thumbs[s.id]
+                    ? <img src={thumbs[s.id]} className={styles.skinThumb} alt={s.label} />
+                    : <span className={styles.skinIcon}>{s.icon}</span>}
                   <span className={styles.skinLabel}>{s.label}</span>
                 </button>
               ))}
@@ -213,7 +217,9 @@ export default function JoinPage() {
               return (
                 <div className={styles.charPanel} style={{ borderColor: `${skinMeta.color}44` }}>
                   <div className={styles.charPanelHeader}>
-                    <span className={styles.charPanelIcon}>{ch.icon}</span>
+                    {thumbs[safeSkin]
+                      ? <img src={thumbs[safeSkin]} className={styles.charPanelThumb} alt={ch.name} />
+                      : <span className={styles.charPanelIcon}>{ch.icon}</span>}
                     <div>
                       <div className={styles.charPanelName} style={{ color: skinMeta.color }}>{ch.name}</div>
                       <div className={styles.charPanelTagline}>{ch.tagline}</div>

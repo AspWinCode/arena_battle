@@ -1,8 +1,10 @@
 import { Link } from 'react-router-dom'
 import { CHARACTER_STATS } from '@robocode/shared'
+import { useCharacterThumbs } from '../hooks/useCharacterThumbs'
 import styles from './LandingPage.module.css'
 
 export default function LandingPage() {
+  const thumbs = useCharacterThumbs()
   return (
     <div className={styles.page}>
 
@@ -125,7 +127,9 @@ export default function LandingPage() {
                 className={styles.charChip}
                 style={{ '--cc': ch.color } as React.CSSProperties}
               >
-                <span className={styles.charChipIcon}>{ch.icon}</span>
+                {thumbs[id]
+                  ? <img src={thumbs[id]} className={styles.charChipThumb} alt={ch.name} />
+                  : <span className={styles.charChipIcon}>{ch.icon}</span>}
                 <span className={styles.charChipName}>{ch.name}</span>
                 <span className={styles.charChipTag}>{ch.tagline}</span>
               </div>
