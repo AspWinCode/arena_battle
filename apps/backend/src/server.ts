@@ -25,6 +25,7 @@ import { clanRoutes } from './routes/clans.js'
 import { adminSkinsRoutes } from './routes/adminSkins.js'
 import { shopRoutes } from './routes/shop.js'
 import { skinsPublicRoutes } from './routes/skinsPublic.js'
+import { learnRoutes } from './routes/learn.js'
 import { wsRoutes } from './ws/index.js'
 import { checkAndGeneratePendingBrackets, spawnRecurringInstances } from './tournament/tournament-service.js'
 
@@ -102,6 +103,7 @@ export async function buildServer() {
   await server.register(adminSkinsRoutes,   { prefix: '/api/v1/admin/skins' })
   await server.register(shopRoutes,         { prefix: '/api/v1/shop' })
   await server.register(skinsPublicRoutes,  { prefix: '/api/v1/skins' })
+  await server.register(learnRoutes,        { prefix: '/api/v1/learn' })
   await server.register(wsRoutes,           { prefix: '/ws' })
 
   server.get('/health', async () => ({ status: 'ok', ts: Date.now() }))
