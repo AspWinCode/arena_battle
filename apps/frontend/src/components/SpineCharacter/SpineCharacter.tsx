@@ -150,13 +150,15 @@ interface Props {
   action?:   ActionName | null
   /** Increments each turn — ensures the animation fires even if action didn't change */
   turnKey?:  number
+  /** Increments each time this character takes damage — triggers hit reaction */
+  hitKey?:   number
   flipX?:    boolean
   isDead?:   boolean
   className?: string
   style?:     React.CSSProperties
 }
 
-export default function SpineCharacter({ skinId, action, turnKey, flipX = false, isDead = false, className, style }: Props) {
+export default function SpineCharacter({ skinId, action, turnKey, hitKey, flipX = false, isDead = false, className, style }: Props) {
   const canvasRef   = useRef<HTMLCanvasElement>(null)
   const spineRef    = useRef<SpineRefs | null>(null)
   const rafRef      = useRef<number>(0)
@@ -330,6 +332,20 @@ export default function SpineCharacter({ skinId, action, turnKey, flipX = false,
   // race where action arrived before the skeleton finished loading).
   }, [action, isDead, turnKey, loaded])
 
+  // ── Hit reaction when character takes damage ───────────────────────────────
+  useEffect(() => {
+    if (!spineRef.current || hitKey === undefined || hitKey === 0) return
+    const { state, skeleton } = spineRef.current
+    if (!skeleton.data.findAnimation('hit')) return
+    try {
+      // Track 2 plays on top of action (tracks 0+1) — brief impact reaction
+      const entry = state.setAnimation(2, 'hit', false)
+      entry.listener = {
+        complete: () => { try { state.clearTrack(2) } catch { /* ignore */ } },
+      }
+    } catch { /* ignore */ }
+  }, [hitKey])
+
   // ── Update flipX reactively ────────────────────────────────────────────────
   useEffect(() => {
     if (!spineRef.current) return
@@ -356,7 +372,7 @@ export default function SpineCharacter({ skinId, action, turnKey, flipX = false,
         ref={canvasRef}
         width={260}
         height={340}
-        className={styles.canvas}
+        className={`${styles.canvas} ${isDead ? styles.canvasDying : ''}`}
         style={{ opacity: loaded ? (isDead ? 0 : 1) : 0 }}
       />
     </div>

@@ -1,6 +1,8 @@
 import { useRef, useEffect, useCallback } from 'react'
 import type { SkinId, ActionName, TurnResult } from '@robocode/shared'
-import SpineCharacter from '../SpineCharacter/SpineCharacter'
+import CharacterView from '../../animation/CharacterView'
+import type { CharacterViewHandle } from '../../animation/CharacterView'
+import { turnToEvents } from '../../animation/battleReplay'
 import VFXCanvas, { type VFXHandle } from './VFXCanvas'
 import styles from './ArenaComponent.module.css'
 
@@ -71,6 +73,8 @@ export default function ArenaComponent({
   latestTurn, round,
 }: Props) {
   const vfxRef      = useRef<VFXHandle>(null)
+  const p1CharRef   = useRef<CharacterViewHandle>(null)
+  const p2CharRef   = useRef<CharacterViewHandle>(null)
   const prevTurnRef = useRef<TurnResult | null>(null)
   const prevP1Hp    = useRef(p1MaxHp)
   const prevP2Hp    = useRef(p2MaxHp)
@@ -154,6 +158,16 @@ export default function ArenaComponent({
 
     if (p1DmgTaken > 20 || p2DmgTaken > 20) vfx.shake(10)
   }, [latestTurn, p1Skin, p2Skin, p1Hp, p2Hp, effectivePos])
+
+  // ── Drive CharacterView via BattleEvents when a new turn arrives ─────────────
+  useEffect(() => {
+    if (!latestTurn) return
+    const events = turnToEvents(latestTurn)
+    for (const ev of events) {
+      if (ev.actor === 'p1') p1CharRef.current?.applyEvent(ev)
+      else p2CharRef.current?.applyEvent(ev)
+    }
+  }, [latestTurn])
 
   // ── CSS positioning helpers ────────────────────────────────────────────────
   // Convert SVG-space X to CSS percentage of stage width, centered on character
@@ -282,13 +296,11 @@ export default function ArenaComponent({
           )}
         </svg>
 
-        {/* ── Spine character P1 (left) ────────────────────────────────── */}
-        <SpineCharacter
+        {/* ── Character P1 (left) ─────────────────────────────────────── */}
+        <CharacterView
+          ref={p1CharRef}
           skinId={p1Skin}
-          action={p1Action}
-          turnKey={latestTurn?.turn ?? -1}
           flipX={false}
-          isDead={p1Dead}
           style={{
             position: 'absolute',
             left:     toCssLeft(P1_X),
@@ -300,13 +312,11 @@ export default function ArenaComponent({
           }}
         />
 
-        {/* ── Spine character P2 (right, mirrored) ────────────────────── */}
-        <SpineCharacter
+        {/* ── Character P2 (right, mirrored) ──────────────────────────── */}
+        <CharacterView
+          ref={p2CharRef}
           skinId={p2Skin}
-          action={p2Action}
-          turnKey={latestTurn?.turn ?? -1}
           flipX={true}
-          isDead={p2Dead}
           style={{
             position: 'absolute',
             left:     toCssLeft(P2_X),

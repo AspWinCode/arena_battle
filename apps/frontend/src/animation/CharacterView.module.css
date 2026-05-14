@@ -1,0 +1,40 @@
+.wrap {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+/* Floating damage / heal numbers */
+.float {
+  position: absolute;
+  top: 20%;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 26px;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  pointer-events: none;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.7);
+  animation: floatUp 0.9s ease-out forwards;
+}
+
+.damage {
+  color: #f87171;
+}
+
+.crit {
+  color: #fbbf24;
+  font-size: 34px;
+  text-shadow: 0 0 12px rgba(251,191,36,0.6), 0 2px 8px rgba(0,0,0,0.8);
+}
+
+.heal {
+  color: #4ade80;
+}
+
+@keyframes floatUp {
+  0%   { opacity: 1;   transform: translateX(-50%) translateY(0); }
+  60%  { opacity: 1;   transform: translateX(-50%) translateY(-36px); }
+  100% { opacity: 0;   transform: translateX(-50%) translateY(-56px); }
+}
