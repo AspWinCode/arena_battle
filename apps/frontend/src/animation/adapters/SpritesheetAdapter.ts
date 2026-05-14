@@ -47,6 +47,11 @@ export class SpritesheetAdapter {
   // pending hit overlay (brief flash)
   private hitFlash    = 0           // countdown frames
 
+  // stable scale computed once from the largest frame across all animations
+  private stableScale  = 1
+  private stableCanonW = 0
+  private stableCanonH = 0
+
   constructor(canvas: HTMLCanvasElement, flipX = false) {
     this.canvas = canvas
     this.ctx    = canvas.getContext('2d')!
@@ -61,6 +66,18 @@ export class SpritesheetAdapter {
       fetch(base + `${spriteId}.json`).then(r => r.json()) as Promise<SheetDef>,
     ])
     this.def = def
+
+    // Precompute a stable scale from the largest frame across ALL animations.
+    // This keeps the character anchored (feet at same pixel) across every frame.
+    const allFrames = Object.values(def.animations).flatMap(a => a.frames)
+    const maxW = Math.max(...allFrames.map(f => f.w))
+    const maxH = Math.max(...allFrames.map(f => f.h))
+    this.stableScale  = Math.min(
+      (this.canvas.width  * 0.92) / maxW,
+      (this.canvas.height * 0.92) / maxH,
+    )
+    this.stableCanonW = maxW * this.stableScale
+    this.stableCanonH = maxH * this.stableScale
 
     await new Promise<void>((resolve, reject) => {
       const img  = new Image()
@@ -168,7 +185,7 @@ export class SpritesheetAdapter {
         }
       }
 
-      this._draw(anim)
+      this._draw()
 
       if (this.hitFlash > 0) this.hitFlash--
 
@@ -178,9 +195,12 @@ export class SpritesheetAdapter {
     this.rafId = requestAnimationFrame(loop)
   }
 
-  private _draw(anim: AnimDef): void {
-    const { canvas, ctx, img, flipX } = this
-    if (!img) return
+  private _draw(): void {
+    const { canvas, ctx, img, flipX, def } = this
+    if (!img || !def) return
+
+    const anim = def.animations[this.currentAnim]
+    if (!anim) return
 
     // Reset ALL context state before every frame to avoid filter/alpha leakage
     ctx.globalAlpha      = 1
@@ -192,17 +212,15 @@ export class SpritesheetAdapter {
     const frame = anim.frames[this.frameIndex]
     if (!frame) return
 
-    // Scale to fit within canvas, constrained by BOTH width and height
-    const scale = Math.min(
-      (canvas.width  * 0.92) / frame.w,
-      (canvas.height * 0.92) / frame.h,
-    )
+    // Use stable scale (computed from max frame across all animations) so the
+    // character stays anchored at the same position regardless of frame size.
+    const scale = this.stableScale
     const dw = frame.w * scale
     const dh = frame.h * scale
 
-    // Center horizontally, pin to bottom
-    const dx = (canvas.width - dw) / 2
-    const dy = canvas.height - dh - 2
+    // Center horizontally and pin feet to bottom within the canonical bounding box.
+    const dx = (canvas.width  - this.stableCanonW) / 2 + (this.stableCanonW - dw) / 2
+    const dy = canvas.height  - this.stableCanonH - 2  + (this.stableCanonH - dh)
 
     // Hit flash
     if (this.hitFlash > 0) {
