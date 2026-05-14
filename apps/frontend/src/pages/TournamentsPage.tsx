@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { api } from '../api/client'
 import styles from './TournamentsPage.module.css'
 
@@ -28,6 +28,7 @@ const FORMAT_LABEL: Record<string, string> = { bo1: 'BO1', bo3: 'BO3', bo5: 'BO5
 const LEVEL_ICON: Record<string, string>   = { BLOCKS: '🧩', CODE: '💻', PRO: '⚡' }
 
 export default function TournamentsPage() {
+  const navigate = useNavigate()
   const [tournaments, setTournaments] = useState<Tournament[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -47,7 +48,7 @@ export default function TournamentsPage() {
 
       <div className={styles.content}>
         <div className={styles.header}>
-          <Link to="/" className={styles.back}>← Главная</Link>
+          <button onClick={() => navigate(-1)} className={styles.back} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>← Назад</button>
           <h1 className={styles.title}>🏆 Турниры</h1>
           <p className={styles.subtitle}>Соревнуйся с лучшими программистами арены</p>
         </div>
