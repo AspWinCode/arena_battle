@@ -81,71 +81,71 @@ interface CtxField {
 
 const CTX_GROUPS: { title: string; fields: CtxField[] }[] = [
   {
-    title: '🧑‍💻 Твои параметры',
+    title: '🧑‍💻 Ты',
     fields: [
-      { name: 'ctx.myHp',           tip: 'Твоё HP (0–100). При ≤ 30 — consider repair.' },
-      { name: 'ctx.myMaxHp',        tip: 'Твой максимальный HP (зависит от скина).' },
-      { name: 'ctx.myStamina',      tip: 'Стамина (0–100). attack = 10, heavy = 35, laser = 25.' },
-      { name: 'ctx.myRage',         tip: 'Ярость (0–100). При 100 → special наносит макс. урон.' },
-      { name: 'ctx.myLastAction',   tip: 'Твоё прошлое действие (строка или null).' },
-      { name: 'ctx.myRepeatCount',  tip: 'Сколько раз подряд ты повторил действие. После 2 — штраф к урону.' },
-      { name: 'ctx.myPosition',     tip: "'close'|'mid'|'far' — влияет на множитель урона." },
+      { name: 'ctx.myHp',           tip: '❤️ Твои очки жизни (от 0 до 100).\nЕсли меньше 30 — лучше вылечись!\nПример: if (ctx.myHp < 30) return "repair";' },
+      { name: 'ctx.myMaxHp',        tip: '❤️ Сколько HP у тебя максимум.\nОбычно 100, но зависит от персонажа.' },
+      { name: 'ctx.myStamina',      tip: '⚡ Твоя выносливость (от 0 до 100).\nБез неё сильные удары слабее.\n• attack тратит 10\n• heavy тратит 35\n• laser тратит 25\nПример: if (ctx.myStamina < 35) return "attack";' },
+      { name: 'ctx.myRage',         tip: '🔥 Твоя ярость (от 0 до 100).\nКопится когда получаешь удары.\nКогда 100 — жми special, он будет супер мощным!\nПример: if (ctx.myRage >= 100) return "special";' },
+      { name: 'ctx.myLastAction',   tip: '↩️ Что ты делал в прошлом ходу.\nМожет быть "attack", "heavy", "dodge" и т.д.\nПример: if (ctx.myLastAction === "shield") return "attack";' },
+      { name: 'ctx.myRepeatCount',  tip: '🔁 Сколько раз подряд ты делаешь одно и то же.\nПосле 2 повторов — штраф к урону.\nСтарайся чередовать приёмы!\nПример: if (ctx.myRepeatCount >= 2) return "heavy";' },
+      { name: 'ctx.myPosition',     tip: '📍 Твоя позиция на арене.\n"close" — вплотную (удары сильнее)\n"mid"   — середина\n"far"   — далеко (лазер сильнее)' },
     ],
   },
   {
-    title: '🤖 Параметры врага',
+    title: '🤖 Враг',
     fields: [
-      { name: 'ctx.enemyHp',         tip: 'HP врага (0–100). При ≤ 25 — добей heavy!' },
-      { name: 'ctx.enemyMaxHp',       tip: 'Максимальный HP врага.' },
-      { name: 'ctx.enemyStamina',     tip: 'Стамина врага. При 0 — его атаки слабее.' },
-      { name: 'ctx.enemyRage',        tip: 'Ярость врага. При ≥ 80 → dodge или shield!' },
-      { name: 'ctx.enemyLastAction',  tip: "Последнее действие врага. Пример: if (ctx.enemyLastAction === 'laser') return 'dodge';" },
-      { name: 'ctx.enemyPosition',    tip: "'close'|'mid'|'far' — позиция врага." },
+      { name: 'ctx.enemyHp',         tip: '💀 Очки жизни врага (от 0 до 100).\nЕсли меньше 25 — добей его тяжёлым ударом!\nПример: if (ctx.enemyHp < 25) return "heavy";' },
+      { name: 'ctx.enemyMaxHp',       tip: '💀 Максимальный HP врага.' },
+      { name: 'ctx.enemyStamina',     tip: '⚡ Выносливость врага.\nЕсли 0 — его удары намного слабее.\nМожно смело атаковать!\nПример: if (ctx.enemyStamina < 20) return "attack";' },
+      { name: 'ctx.enemyRage',        tip: '🔥 Ярость врага.\nЕсли больше 80 — он скоро применит special!\nЛучше защититься.\nПример: if (ctx.enemyRage >= 80) return "shield";' },
+      { name: 'ctx.enemyLastAction',  tip: '👁️ Что враг делал в прошлом ходу.\nСамое важное поле — предсказывай врага!\nПример: if (ctx.enemyLastAction === "laser") return "dodge";' },
+      { name: 'ctx.enemyPosition',    tip: '📍 Позиция врага на арене.\n"close" — рядом\n"mid"   — середина\n"far"   — далеко' },
     ],
   },
   {
-    title: '⏱️ Кулдауны',
+    title: '⏱️ Перезарядка',
     fields: [
-      { name: 'ctx.cooldowns.heavy',   tip: 'Ходов до следующего heavy (0 = готов). heavy cooldown = 2.' },
-      { name: 'ctx.cooldowns.laser',   tip: 'Ходов до следующего laser (0 = готов). laser cooldown = 3.' },
-      { name: 'ctx.cooldowns.shield',  tip: 'Ходов до следующего shield (0 = готов).' },
-      { name: 'ctx.cooldowns.dodge',   tip: 'Ходов до следующего dodge (0 = готов).' },
-      { name: 'ctx.cooldowns.repair',  tip: 'Ходов до следующего repair (0 = готов). repair cooldown = 3.' },
-      { name: 'ctx.cooldowns.special', tip: 'Ходов до следующего special (0 = готов).' },
+      { name: 'ctx.cooldowns.heavy',   tip: '⏱️ Сколько ходов нельзя использовать heavy.\n0 — можно использовать прямо сейчас!\nПример: if (ctx.cooldowns.heavy === 0) return "heavy";' },
+      { name: 'ctx.cooldowns.laser',   tip: '⏱️ Сколько ходов нельзя использовать laser.\n0 — готов к использованию.' },
+      { name: 'ctx.cooldowns.shield',  tip: '⏱️ Сколько ходов нельзя использовать shield.\n0 — готов к использованию.' },
+      { name: 'ctx.cooldowns.dodge',   tip: '⏱️ Сколько ходов нельзя использовать dodge.\n0 — готов к использованию.' },
+      { name: 'ctx.cooldowns.repair',  tip: '⏱️ Сколько ходов нельзя использовать repair.\n0 — готов к использованию.' },
+      { name: 'ctx.cooldowns.special', tip: '⏱️ Сколько ходов нельзя использовать special.\n0 — готов к использованию.' },
     ],
   },
   {
-    title: '🎮 Игровой контекст',
+    title: '🎮 Бой',
     fields: [
-      { name: 'ctx.turn',              tip: 'Текущий ход (1–20). Раунд заканчивается на 20.' },
-      { name: 'ctx.distanceModifier',  tip: 'Множитель урона от дистанции (~0.8–1.3).' },
+      { name: 'ctx.turn',              tip: '🔢 Номер текущего хода (от 1 до 20).\nЕсли у обоих есть HP — после 20 ходов ничья.\nПример: if (ctx.turn > 15) return "heavy"; // давай дожимай!' },
+      { name: 'ctx.distanceModifier',  tip: '📏 Бонус к урону от расстояния.\nОбычно около 1.0 — чаще всего можно игнорировать.' },
     ],
   },
   {
-    title: '📜 История (уровень 2)',
+    title: '📜 История ходов',
     fields: [
-      { name: 'ctx.myHistory',        tip: "Массив всех твоих действий. Пример: ctx.myHistory.filter(a => a === 'attack').length" },
-      { name: 'ctx.enemyHistory',     tip: 'Массив всех действий врага — анализируй паттерны!' },
-      { name: 'ctx.damageLog',        tip: 'Урон нанесённый тобой по ходам.' },
-      { name: 'ctx.damageTakenLog',   tip: 'Урон полученный тобой по ходам.' },
-      { name: 'ctx.myHpLog',          tip: 'История HP тебя по ходам.' },
-      { name: 'ctx.enemyHpLog',       tip: 'История HP врага по ходам.' },
+      { name: 'ctx.myHistory',        tip: '📋 Список всех твоих ударов за раунд.\nНапример ["attack","attack","heavy"]\nПример: ctx.myHistory.length — сколько ходов сыграно.' },
+      { name: 'ctx.enemyHistory',     tip: '📋 Список всех ударов врага.\nМожно найти его любимый приём!\nПример: ctx.enemyHistory.filter(a => a === "heavy").length' },
+      { name: 'ctx.damageLog',        tip: '💥 Сколько урона ты нанёс на каждом ходу.\nНапример [12, 0, 18, 0]' },
+      { name: 'ctx.damageTakenLog',   tip: '🩸 Сколько урона ты получил на каждом ходу.' },
+      { name: 'ctx.myHpLog',          tip: '❤️ Твой HP после каждого хода.\nНапример [100, 88, 88, 70]' },
+      { name: 'ctx.enemyHpLog',       tip: '💀 HP врага после каждого хода.' },
     ],
   },
   {
-    title: '📊 Аналитика (уровень 3)',
+    title: '📊 Статистика врага',
     fields: [
-      { name: 'ctx.enemyFrequency',   tip: "Частота действий врага. Пример: ctx.enemyFrequency['heavy'] > 3 → shield." },
-      { name: 'ctx.enemyPhase',       tip: "'early'|'mid'|'late' — фаза врага по его HP." },
-      { name: 'ctx.enemyTrend',       tip: "'aggressive'|'defensive'|'mixed' — поведение врага." },
+      { name: 'ctx.enemyFrequency',   tip: '📊 Как часто враг использует каждый удар.\nНапример: { attack: 5, heavy: 2 }\nПример: if (ctx.enemyFrequency["heavy"] > 3) return "shield";' },
+      { name: 'ctx.enemyPhase',       tip: '🎯 Стадия боя врага по его HP.\n"early" — у него много HP\n"mid"   — половина\n"late"  — мало, будет отчаянным!' },
+      { name: 'ctx.enemyTrend',       tip: '📈 Стиль игры врага прямо сейчас.\n"aggressive" — атакует без остановки\n"defensive"  — в основном защищается\n"mixed"      — чередует' },
     ],
   },
   {
-    title: '🧠 Продвинутые (уровень 4)',
+    title: '🧠 Для продвинутых',
     fields: [
-      { name: 'ctx.simulate(a,b)',    tip: "Симуляция хода. Возвращает {myHpAfter, enemyHpAfter, myStaminaAfter}. Пример: ctx.simulate('heavy','shield').enemyHpAfter" },
-      { name: 'ctx.bestAction()',     tip: 'Возвращает наилучшее действие по матричному расчёту.' },
-      { name: 'ctx.predict(n)',       tip: 'Предсказание следующего действия врага через Марков.' },
+      { name: 'ctx.simulate(a,b)',    tip: '🔮 Предсказывает что случится если ты сделаешь удар "a", а враг — "b".\nВозвращает: { myHpAfter, enemyHpAfter }\nПример:\nconst r = ctx.simulate("heavy","shield");\nif (r.enemyHpAfter < 10) return "heavy";' },
+      { name: 'ctx.bestAction()',     tip: '🏆 Автоматически считает лучший удар.\nПросто вызови — и получи совет!\nПример: return ctx.bestAction();' },
+      { name: 'ctx.predict(n)',       tip: '🔮 Угадывает следующий удар врага.\nВозвращает строку, например "heavy".\nПример:\nif (ctx.predict(1) === "laser") return "dodge";' },
     ],
   },
 ]
@@ -315,10 +315,6 @@ export default function LearningBattlePage() {
       <div className={styles.body}>
         {/* Left — editor */}
         <div className={styles.editorPane}>
-          <div className={styles.storyBox}>
-            <p className={styles.storyText}>{mission.story}</p>
-          </div>
-
           {/* Mode + language bar */}
           <div className={styles.editorModeBar}>
             <div className={styles.modeTabs}>

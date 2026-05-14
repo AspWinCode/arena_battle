@@ -214,25 +214,25 @@
 .apiChip[data-tip]::after {
   content: attr(data-tip);
   position: absolute;
-  bottom: calc(100% + 6px);
-  left: 50%;
-  transform: translateX(-50%);
-  background: #1e293b;
+  top: 50%;
+  right: calc(100% + 10px);
+  transform: translateY(-50%);
+  background: #0f172a;
   color: #e2e8f0;
-  border: 1px solid #334155;
-  border-radius: 6px;
-  padding: 6px 10px;
-  font-size: 11px;
-  font-family: -apple-system, sans-serif;
+  border: 1px solid #38bdf8;
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 12px;
+  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
   white-space: pre-wrap;
-  width: 220px;
+  width: 270px;
   text-align: left;
-  line-height: 1.45;
-  z-index: 100;
+  line-height: 1.6;
+  z-index: 9999;
   pointer-events: none;
   opacity: 0;
   transition: opacity .15s;
-  box-shadow: 0 4px 16px rgba(0,0,0,.5);
+  box-shadow: 0 8px 24px rgba(0,0,0,.8);
 }
 .apiChip[data-tip]:hover::after { opacity: 1; }
 
