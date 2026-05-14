@@ -35,11 +35,7 @@ export default function LoginPage() {
 
       <div className={styles.card}>
         <div className={styles.logo}>
-          <span style={{ fontSize: 40 }}>🤖</span>
-          <div>
-            <h1 className={styles.title}>Вход</h1>
-            <p className={styles.sub}>CodeFighters</p>
-          </div>
+          <h1 className={styles.title}>Вход</h1>
         </div>
 
         <form onSubmit={handleSubmit} className={styles.form}>
