@@ -1,0 +1,221 @@
+.root {
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--text);
+  padding: 40px 16px 80px;
+}
+
+.container {
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 32px;
+  gap: 20px;
+}
+
+.back {
+  display: inline-block;
+  font-size: 13px;
+  color: var(--muted);
+  text-decoration: none;
+  margin-bottom: 8px;
+}
+.back:hover { color: var(--text); }
+
+.title {
+  font-size: 28px;
+  font-weight: 800;
+  margin: 0 0 4px;
+}
+
+.sub {
+  color: var(--muted);
+  font-size: 14px;
+  margin: 0;
+}
+
+.balance {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px 20px;
+  text-align: center;
+  min-width: 120px;
+  flex-shrink: 0;
+}
+
+.balanceLabel {
+  display: block;
+  font-size: 11px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 4px;
+}
+
+.balanceVal {
+  font-size: 22px;
+  font-weight: 700;
+  color: #fbbf24;
+}
+
+/* ── Tabs ─────────────────────────────────────────── */
+
+.tabs {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 24px;
+}
+
+.tab {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 6px 16px;
+  font-size: 13px;
+  color: var(--muted);
+  cursor: pointer;
+  text-transform: capitalize;
+}
+
+.tab:hover { border-color: var(--primary); color: var(--text); }
+
+.tabActive {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
+}
+
+/* ── Grid ─────────────────────────────────────────── */
+
+.center {
+  text-align: center;
+  padding: 60px 0;
+  color: var(--muted);
+}
+
+.centerErr {
+  text-align: center;
+  padding: 60px 0;
+  color: #f87171;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 20px;
+}
+
+/* ── Card ─────────────────────────────────────────── */
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+}
+
+.cardOwned {
+  border-color: var(--green, #4ade80);
+}
+
+.rarityBadge {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 3px 8px;
+  border-radius: 10px;
+  color: #000;
+  opacity: 0.9;
+}
+
+.preview {
+  background: rgba(0,0,0,0.2);
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+}
+
+.previewImg {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.previewEmpty {
+  font-size: 48px;
+  opacity: 0.3;
+}
+
+.actions {
+  display: flex;
+  border-top: 1px solid var(--border);
+  background: rgba(0,0,0,0.15);
+}
+
+.actionImg {
+  flex: 1;
+  aspect-ratio: 1;
+  object-fit: contain;
+  padding: 4px;
+  opacity: 0.7;
+}
+
+.info {
+  padding: 12px 14px;
+  flex: 1;
+}
+
+.skinName {
+  font-weight: 700;
+  font-size: 15px;
+  margin-bottom: 2px;
+}
+
+.skinChar {
+  font-size: 12px;
+  color: var(--muted);
+  text-transform: capitalize;
+  margin-bottom: 6px;
+}
+
+.skinDesc {
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.4;
+}
+
+.footer {
+  padding: 10px 12px;
+  border-top: 1px solid var(--border);
+}
+
+.equipped {
+  display: block;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--green, #4ade80);
+  padding: 7px 0;
+}

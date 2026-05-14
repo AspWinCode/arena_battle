@@ -35,6 +35,7 @@ services:
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
+      - skin_uploads:/app/uploads
     ports:
       - "3005:3001"
     healthcheck:
@@ -58,6 +59,7 @@ services:
 
 volumes:
   postgres_data:
+  skin_uploads:
 
 networks:
   reverse_proxy:

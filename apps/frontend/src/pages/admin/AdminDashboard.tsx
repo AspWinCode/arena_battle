@@ -86,6 +86,9 @@ export default function AdminDashboard() {
           <Link to="/admin/tournaments" className="btn btn-ghost" style={{ fontSize: 13 }}>
             🏆 Турниры
           </Link>
+          <Link to="/admin/skins" className="btn btn-ghost" style={{ fontSize: 13 }}>
+            🎨 Скины
+          </Link>
           <Link to="/admin/session/new" className="btn btn-primary" style={{ fontSize: 13 }}>
             + Новая сессия
           </Link>

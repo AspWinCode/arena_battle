@@ -27,6 +27,8 @@ import AdminTournaments from './pages/admin/AdminTournaments'
 import AdminTournamentNew from './pages/admin/AdminTournamentNew'
 import AdminTournamentDetail from './pages/admin/AdminTournamentDetail'
 import AdminUsersPage from './pages/admin/AdminUsersPage'
+import AdminSkinsPage from './pages/admin/AdminSkinsPage'
+import ShopPage from './pages/ShopPage'
 import DemoBattlePage from './pages/DemoBattlePage'
 import ForgotPasswordPage from './pages/ForgotPasswordPage'
 import { ProtectedRoute } from './components/ProtectedRoute'
@@ -70,6 +72,9 @@ export default function App() {
       <Route path="/admin/tournaments/new" element={<ProtectedRoute><AdminTournamentNew /></ProtectedRoute>} />
       <Route path="/admin/tournaments/:id" element={<ProtectedRoute><AdminTournamentDetail /></ProtectedRoute>} />
       <Route path="/admin/users" element={<ProtectedRoute><AdminUsersPage /></ProtectedRoute>} />
+      <Route path="/admin/skins" element={<ProtectedRoute><AdminSkinsPage /></ProtectedRoute>} />
+
+      <Route path="/shop" element={<ShopPage />} />
 
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

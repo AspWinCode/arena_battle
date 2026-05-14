@@ -5,6 +5,10 @@ import fastifyJwt from '@fastify/jwt'
 import fastifyCookie from '@fastify/cookie'
 import fastifyRateLimit from '@fastify/rate-limit'
 import fastifyWebsocket from '@fastify/websocket'
+import fastifyMultipart from '@fastify/multipart'
+import fastifyStatic from '@fastify/static'
+import path from 'path'
+import fs from 'fs'
 
 import { authRoutes } from './routes/auth.js'
 import { sessionRoutes } from './routes/sessions.js'
@@ -18,6 +22,8 @@ import { eloHistoryRoutes } from './routes/eloHistory.js'
 import { seasonRoutes } from './routes/seasons.js'
 import { challengeRoutes } from './routes/challenges.js'
 import { clanRoutes } from './routes/clans.js'
+import { adminSkinsRoutes } from './routes/adminSkins.js'
+import { shopRoutes } from './routes/shop.js'
 import { wsRoutes } from './ws/index.js'
 import { checkAndGeneratePendingBrackets, spawnRecurringInstances } from './tournament/tournament-service.js'
 
@@ -57,6 +63,19 @@ export async function buildServer() {
 
   await server.register(fastifyWebsocket)
 
+  await server.register(fastifyMultipart, {
+    limits: { fileSize: 5 * 1024 * 1024 }, // 5 MB
+  })
+
+  // Serve uploaded skin images
+  const uploadsDir = process.env.UPLOADS_DIR ?? '/app/uploads'
+  if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true })
+  await server.register(fastifyStatic, {
+    root:   path.resolve(uploadsDir),
+    prefix: '/api/v1/uploads/',
+    decorateReply: false,
+  })
+
   // Decorators
   server.decorate('authenticate', async function (request: any, reply: any) {
     try {
@@ -79,6 +98,8 @@ export async function buildServer() {
   await server.register(seasonRoutes,       { prefix: '/api/v1/seasons' })
   await server.register(challengeRoutes,    { prefix: '/api/v1/challenges' })
   await server.register(clanRoutes,         { prefix: '/api/v1/clans' })
+  await server.register(adminSkinsRoutes,   { prefix: '/api/v1/admin/skins' })
+  await server.register(shopRoutes,         { prefix: '/api/v1/shop' })
   await server.register(wsRoutes,           { prefix: '/ws' })
 
   server.get('/health', async () => ({ status: 'ok', ts: Date.now() }))
