@@ -447,8 +447,18 @@
   flex-direction: column;
   gap: 5px;
   padding-bottom: 80px;
-  -webkit-mask-image: linear-gradient(to right, transparent 0%, black 7%, black 93%, transparent 100%);
-  mask-image: linear-gradient(to right, transparent 0%, black 7%, black 93%, transparent 100%);
+  position: relative;
+}
+
+/* Dota 2-style vignette: dark on all 4 edges, transparent in center */
+.charsVignette {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 10;
+  background:
+    linear-gradient(to right,  var(--bg-mid) 0%, transparent 10%, transparent 90%, var(--bg-mid) 100%),
+    linear-gradient(to bottom, var(--bg-mid) 0%, transparent 18%, transparent 72%, var(--bg-mid) 100%);
 }
 
 @keyframes marqueeL {

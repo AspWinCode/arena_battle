@@ -127,6 +127,7 @@ export default function LandingPage() {
         </div>
 
         <div className={styles.charsMosaic}>
+          <div className={styles.charsVignette} aria-hidden />
           {([
             { list: rowA, rev: false, cls: styles.rowTall },
             { list: rowB, rev: true,  cls: styles.rowShort },
