@@ -179,45 +179,45 @@ export class SpritesheetAdapter {
   }
 
   private _draw(anim: AnimDef): void {
-    const { canvas, ctx, img, flipX, hitFlash } = this
+    const { canvas, ctx, img, flipX } = this
     if (!img) return
 
+    // Reset ALL context state before every frame to avoid filter/alpha leakage
+    ctx.globalAlpha      = 1
+    ctx.globalCompositeOperation = 'source-over'
+    ctx.filter           = 'none'
+    ctx.setTransform(1, 0, 0, 1, 0, 0)
     ctx.clearRect(0, 0, canvas.width, canvas.height)
 
     const frame = anim.frames[this.frameIndex]
     if (!frame) return
 
-    // Scale to fit canvas while keeping aspect ratio
-    const scale = Math.min(
-      canvas.width  / frame.w,
-      canvas.height / frame.h,
-    ) * 0.9  // 90% to leave breathing room
+    // Scale the frame height to fill the canvas height (90%), width follows aspect ratio
+    const scale = (canvas.height * 0.9) / frame.h
+    const dw    = frame.w * scale
+    const dh    = frame.h * scale
 
-    const dw = frame.w * scale
-    const dh = frame.h * scale
-    const dx = (canvas.width  - dw) / 2
-    const dy = (canvas.height - dh) / 2 + canvas.height * 0.05  // slight bottom offset
+    // Pin character bottom to canvas bottom (with small gap)
+    const dx = (canvas.width - dw) / 2
+    const dy = canvas.height - dh - 4
 
-    ctx.save()
+    // Hit flash
+    if (this.hitFlash > 0) {
+      ctx.filter = 'brightness(8) saturate(0)'
+    }
 
     if (flipX) {
       ctx.translate(canvas.width, 0)
       ctx.scale(-1, 1)
     }
 
-    // Hit flash — white overlay
-    if (hitFlash > 0) {
-      ctx.filter = 'brightness(10) saturate(0)'
-    }
-
     ctx.drawImage(img, frame.x, frame.y, frame.w, frame.h, dx, dy, dw, dh)
 
-    // Fade out on death
+    // Fade to nothing on death held frame
     if (this.dead && this.finished) {
+      ctx.setTransform(1, 0, 0, 1, 0, 0)
       ctx.globalAlpha = 0
       ctx.clearRect(0, 0, canvas.width, canvas.height)
     }
-
-    ctx.restore()
   }
 }
