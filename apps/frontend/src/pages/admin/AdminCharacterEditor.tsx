@@ -110,6 +110,8 @@ export default function AdminCharacterEditor() {
 
   // ── Editing frame index (null = composing a new frame) ───────────────────────
   const [editingFrameIdx, setEditingFrameIdx] = useState<number | null>(null)
+  // true when the edited frame has no saved layer metadata (old frame, pre-persistence)
+  const [noLayerData,     setNoLayerData]     = useState(false)
 
   // ── Layer composer state ─────────────────────────────────────────────────────
   const [layers,      setLayers]      = useState<Layer[]>([])
@@ -147,6 +149,7 @@ export default function AdminCharacterEditor() {
     setFps(actionDef.fps)
     setPreviewIdx(0)
     setEditingFrameIdx(null)
+    setNoLayerData(false)
     stopPreview()
   }, [selectedAction, activeSkinId])
 
@@ -230,7 +233,9 @@ export default function AdminCharacterEditor() {
   }
 
   // Load a frame's original layer stack for editing.
-  // If layer metadata exists, restores individual layers; otherwise falls back to flattened PNG.
+  // If layer metadata exists, restores individual layers.
+  // If not (old frame saved before layer persistence), shows the canvas reference only —
+  // layers panel starts empty so user can build a new layer stack from scratch.
   const loadFrameForEdit = useCallback((frameIdx: number, url: string, frameLayers?: LayerMeta[]) => {
     setLayers(prev => {
       prev.forEach(l => { if (l.src.startsWith('blob:')) URL.revokeObjectURL(l.src) })
@@ -238,13 +243,30 @@ export default function AdminCharacterEditor() {
     })
     setEditingFrameIdx(frameIdx)
 
-    const metas = frameLayers && frameLayers.length > 0
-      ? frameLayers
-      : [{ url, name: `кадр ${frameIdx + 1}`, visible: true }]
+    const hasMetadata = frameLayers && frameLayers.length > 0
+    setNoLayerData(!hasMetadata)
 
-    const result: Layer[] = new Array(metas.length)
+    if (!hasMetadata) {
+      // No layer data — draw the flattened frame on the canvas as a visual reference
+      // but leave the layer list empty so the user builds a fresh stack.
+      const ref = new Image()
+      ref.crossOrigin = 'anonymous'
+      ref.onload = () => {
+        const canvas = document.querySelector('canvas') as HTMLCanvasElement | null
+        if (!canvas) return
+        const ctx = canvas.getContext('2d')!
+        ctx.clearRect(0, 0, canvas.width, canvas.height)
+        ctx.globalAlpha = 0.35  // dim to signal it's reference-only
+        ctx.drawImage(ref, 0, 0, canvas.width, canvas.height)
+        ctx.globalAlpha = 1
+      }
+      ref.src = url
+      return
+    }
+
+    const result: Layer[] = new Array(frameLayers.length)
     let done = 0
-    metas.forEach((meta, i) => {
+    frameLayers.forEach((meta, i) => {
       const img = new Image()
       img.crossOrigin = 'anonymous'
       img.onload = () => {
@@ -257,9 +279,9 @@ export default function AdminCharacterEditor() {
           visible:   meta.visible,
           img,
         }
-        if (++done === metas.length) setLayers([...result])
+        if (++done === frameLayers.length) setLayers([...result])
       }
-      img.onerror = () => { if (++done === metas.length) setLayers([...result].filter(Boolean)) }
+      img.onerror = () => { if (++done === frameLayers.length) setLayers([...result].filter(Boolean)) }
       img.src = meta.url
     })
   }, [])
@@ -524,8 +546,27 @@ export default function AdminCharacterEditor() {
             <div className={styles.layerPanel}>
               <div className={styles.layerPanelHeader}>
                 <span className={styles.layerPanelTitle}>Слои</span>
-                <span className={styles.layerPanelHint}>снизу → вверх</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  {layers.length > 0 && editingFrameIdx !== null && (
+                    <button
+                      className={styles.layerClearBtn}
+                      onClick={() => setLayers(prev => {
+                        prev.forEach(l => { if (l.src.startsWith('blob:')) URL.revokeObjectURL(l.src) })
+                        return []
+                      })}
+                      title="Очистить все слои"
+                    >🗑 Очистить</button>
+                  )}
+                  <span className={styles.layerPanelHint}>снизу → вверх</span>
+                </div>
               </div>
+
+              {/* Hint for frames saved without layer metadata */}
+              {noLayerData && (
+                <div className={styles.noLayerHint}>
+                  ⚠️ Слои этого кадра не сохранены — он создан до добавления системы слоёв. На холсте показан кадр для ориентира. Добавьте слои и нажмите «Заменить» чтобы обновить кадр с данными о слоях.
+                </div>
+              )}
 
               {/* Layer list (reversed: top of list = top of stack) */}
               <div className={styles.layerList}>
@@ -564,7 +605,11 @@ export default function AdminCharacterEditor() {
                   )
                 })}
                 {layers.length === 0 && (
-                  <div className={styles.layerEmpty}>Добавьте слои →</div>
+                  <div className={styles.layerEmpty}>
+                    {editingFrameIdx !== null
+                      ? '← Добавьте слои для нового кадра'
+                      : 'Добавьте слои →'}
+                  </div>
                 )}
               </div>
 
