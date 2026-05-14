@@ -54,7 +54,7 @@ function RageBar({ value, max, flip }: { value: number; max: number; flip?: bool
   return (
     <div className={styles.statRow} style={{ flexDirection: flip ? 'row-reverse' : 'row' }}>
       <span className={styles.statLabel} style={{ color: ready ? '#f97316' : undefined }}>
-        {ready ? '☄️ RAGE!' : `${Math.round(value)} RAGE`}
+        {ready ? '☄️ ЯРОСТЬ!' : `${Math.round(value)} ЯР`}
       </span>
       <div className={styles.statTrack}>
         <div className={styles.statFill} style={{
@@ -379,7 +379,7 @@ export default function SparringPage() {
                   <StatBar value={displayTurn?.p1HpAfter ?? MAX_HP} max={MAX_HP}
                     color="#4ade80" lowColor="#f87171" label={`${displayTurn?.p1HpAfter ?? MAX_HP} HP`} />
                   <StatBar value={displayTurn?.p1Stamina ?? MAX_STAMINA} max={MAX_STAMINA}
-                    color="#60a5fa" label={`${displayTurn?.p1Stamina ?? MAX_STAMINA} STA`} />
+                    color="#60a5fa" label={`${displayTurn?.p1Stamina ?? MAX_STAMINA} ВЫН`} />
                   <RageBar value={displayTurn?.p1Rage ?? 0} max={MAX_RAGE} />
                 </div>
                 <div className={styles.statsMid}>
@@ -396,7 +396,7 @@ export default function SparringPage() {
                   <StatBar value={displayTurn?.p2HpAfter ?? MAX_HP} max={MAX_HP}
                     color="#f87171" lowColor="#6b7280" label={`${displayTurn?.p2HpAfter ?? MAX_HP} HP`} flip />
                   <StatBar value={displayTurn?.p2Stamina ?? MAX_STAMINA} max={MAX_STAMINA}
-                    color="#f97316" label={`${displayTurn?.p2Stamina ?? MAX_STAMINA} STA`} flip />
+                    color="#f97316" label={`${displayTurn?.p2Stamina ?? MAX_STAMINA} ВЫН`} flip />
                   <RageBar value={displayTurn?.p2Rage ?? 0} max={MAX_RAGE} flip />
                 </div>
               </div>
@@ -406,9 +406,9 @@ export default function SparringPage() {
                 {[...turnLog].reverse().map((t, i) => (
                   <div key={i} className={`${styles.logRow} ${i === 0 ? styles.logRowLatest : ''}`}>
                     <span className={styles.logTurn}>#{t.turn}</span>
-                    <span className={styles.logAction}>{ACTION_ICON[t.p1Action]} {t.p1Action}</span>
+                    <span className={styles.logAction}>{ACTION_ICON[t.p1Action]} {ACTION_LABEL[t.p1Action] ?? t.p1Action}</span>
                     <span className={styles.logVs}>vs</span>
-                    <span className={styles.logAction}>{ACTION_ICON[t.p2Action]} {t.p2Action}</span>
+                    <span className={styles.logAction}>{ACTION_ICON[t.p2Action]} {ACTION_LABEL[t.p2Action] ?? t.p2Action}</span>
                     <span className={styles.logDmg}>{t.log}</span>
                   </div>
                 ))}

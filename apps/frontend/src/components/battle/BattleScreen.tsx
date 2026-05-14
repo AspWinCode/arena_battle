@@ -10,7 +10,7 @@ const ACTION_LABELS: Record<string, string> = {
   shield:  '🛡 Щит',
   dodge:   '💨 Уклон',
   repair:  '💚 Ремонт',
-  special: '☄️ СПЕШЛ',
+  special: '☄️ Спецудар',
 }
 
 export default function BattleScreen() {
@@ -163,7 +163,7 @@ function RageRow({ value, max, flip }: { value: number; max: number; flip?: bool
   return (
     <div className={styles.statRow} style={{ flexDirection: flip ? 'row-reverse' : 'row' }}>
       <span className={styles.statLabel} style={{ color: ready ? '#f97316' : undefined }}>
-        {ready ? '☄️ RAGE!' : `${Math.round(value)} RAGE`}
+        {ready ? '☄️ ЯРОСТЬ!' : `${Math.round(value)} ЯР`}
       </span>
       <div className={styles.statTrack}>
         <div

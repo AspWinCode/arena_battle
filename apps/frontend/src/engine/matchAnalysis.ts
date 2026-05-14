@@ -167,15 +167,15 @@ function computePlayer(
 
   const detectedStyle =
     isCounterStyle                   ? '🎯 Контратакер'    :
-    isRageRusher                     ? '💢 Rage Rusher'    :
-    specialCount >= 2                ? '⚡ Rage Fighter'   :
-    heavyCount >= totalTurns * 0.25  ? '💥 Heavy Puncher'  :
+    isRageRusher                     ? '💢 Охотник ярости'  :
+    specialCount >= 2                ? '⚡ Боец ярости'    :
+    heavyCount >= totalTurns * 0.25  ? '💥 Тяжеловес'      :
     laserCount >= totalTurns * 0.25  ? '🔫 Снайпер'        :
     healPct  >= 0.2                  ? '💚 Регенератор'    :
     defPct   >= 0.3 && aggPct < 0.5  ? '🛡️ Черепаха'      :
     aggPct   >= 0.7                  ? '⚔️ Берсерк'        :
-    specialPct > 0.1                 ? '⚡ Rage Fighter'   :
-                                       '⚖️ Balanced'
+    specialPct > 0.1                 ? '⚡ Боец ярости'    :
+                                       '⚖️ Сбалансированный'
 
   // ── Efficiency score ───────────────────────────────────────────
   // Factors: damage ratio, healing efficiency, dodging, avoiding repeats
@@ -195,7 +195,7 @@ function computePlayer(
   const recs: string[] = []
 
   if (specialCount === 0)
-    recs.push('💡 Накапливай ярость до 100 — Special наносит 50 урона!')
+    recs.push('💡 Накапливай ярость до 100 — Спецудар наносит 50 урона!')
 
   if (repeatPenalties >= 3)
     recs.push('⚠️ Повтор одного действия 3+ раз даёт штраф ×0.5 урона — чередуй атаки')
@@ -204,10 +204,10 @@ function computePlayer(
     recs.push('💡 Dodge уклоняется от атаки и тяжёлого удара на 100%')
 
   if (heavyCount === 0 && totalTurns >= 5)
-    recs.push('💡 Heavy наносит 28 урона (×1.5 при CLOSE = 42!) — используй на короткой дистанции')
+    recs.push('💡 Тяжёлый наносит 28 урона (×1.5 при CLOSE = 42!) — используй на короткой дистанции')
 
   if (laserCount === 0 && counts['attack'] && (counts['attack'] ?? 0) > totalTurns * 0.4)
-    recs.push('💡 Laser эффективен на дальней дистанции: ×1.4 урона при FAR')
+    recs.push('💡 Лазер эффективен на дальней дистанции: ×1.4 урона при FAR')
 
   if (shieldTurns > totalTurns * 0.25 && damageDealt < damageReceived)
     recs.push('💡 Слишком много блоков при малом уроне — Shield не контратакует, нужен баланс')
@@ -272,7 +272,7 @@ export const ACTION_LABEL: Record<ActionName, string> = {
   shield:          'Щит',
   dodge:           'Уклон',
   repair:          'Лечение',
-  special:         'Спешл',
+  special:         'Спецудар',
   combo:           'Комбо',
   overcharge:      'Зарядка',
   reflect:         'Отражение',

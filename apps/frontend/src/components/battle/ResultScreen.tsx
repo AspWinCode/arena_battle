@@ -110,7 +110,7 @@ function DmgCard({ analysis, name, color }: { analysis: PlayerAnalysis; name: st
         </div>
         <div className={styles.dmgItem}>
           <span className={styles.dmgVal} style={{ color: '#fbbf24' }}>{analysis.specialCount}</span>
-          <span className={styles.dmgKey}>Special активаций</span>
+          <span className={styles.dmgKey}>Спецудар активаций</span>
         </div>
       </div>
       <div className={styles.styleTag}>{analysis.detectedStyle}</div>

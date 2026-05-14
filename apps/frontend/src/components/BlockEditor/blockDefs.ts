@@ -9,7 +9,7 @@ export const BLOCK_DEFS: BlockDef[] = [
   { id: 'doShield',  type: 'command', category: 'combat', label: '🛡️ щит',             color: '#2980b9' },
   { id: 'doDodge',   type: 'command', category: 'combat', label: '💨 уклон',            color: '#8e44ad' },
   { id: 'doRepair',  type: 'command', category: 'combat', label: '💊 лечение',          color: '#27ae60' },
-  { id: 'doSpecial', type: 'command', category: 'combat', label: '☄️ спешл',            color: '#d35400' },
+  { id: 'doSpecial', type: 'command', category: 'combat', label: '☄️ спецудар',         color: '#d35400' },
   { id: 'doRandom',         type: 'command', category: 'combat', label: '🎲 случайный приём',      color: '#7f8c8d' },
   // ── Новые действия ────────────────────────────────────────────────────────────
   { id: 'doCombo',          type: 'command', category: 'combat', label: '🥊 комбо-удар',           color: '#e74c3c' },
@@ -50,12 +50,12 @@ export const BLOCK_DEFS: BlockDef[] = [
   // ── Sensing ───────────────────────────────────────────────────────────────────
   { id: 'ctxMyHp',            type: 'reporter',  category: 'sensing', label: 'мой HP',              color: '#5cb1d6' },
   { id: 'ctxEnemyHp',         type: 'reporter',  category: 'sensing', label: 'HP врага',             color: '#5cb1d6' },
-  { id: 'ctxMyRage',          type: 'reporter',  category: 'sensing', label: 'моя Rage',             color: '#5cb1d6' },
+  { id: 'ctxMyRage',          type: 'reporter',  category: 'sensing', label: 'моя ярость',           color: '#5cb1d6' },
   { id: 'ctxMyStamina',       type: 'reporter',  category: 'sensing', label: 'выносливость',         color: '#5cb1d6' },
   { id: 'ctxMyLastAction',    type: 'reporter',  category: 'sensing', label: 'мой последний ход',    color: '#5cb1d6' },
   { id: 'ctxEnemyLastAction', type: 'reporter',  category: 'sensing', label: 'ход врага',            color: '#5cb1d6' },
   { id: 'ctxCooldownLaser',   type: 'reporter',  category: 'sensing', label: 'КД лазера',            color: '#5cb1d6' },
-  { id: 'ctxCooldownHeavy',   type: 'reporter',  category: 'sensing', label: 'КД heavy',             color: '#5cb1d6' },
+  { id: 'ctxCooldownHeavy',   type: 'reporter',  category: 'sensing', label: 'КД тяжёлого',          color: '#5cb1d6' },
   { id: 'ctxTurn',            type: 'reporter',  category: 'sensing', label: 'ход #',               color: '#5cb1d6' },
   { id: 'ctxRepeatCount',     type: 'reporter',  category: 'sensing', label: 'повторов подряд',      color: '#5cb1d6' },
   { id: 'ctxEnemyHasShield',  type: 'predicate', category: 'sensing', label: 'враг в щите?',         color: '#5cb1d6' },
