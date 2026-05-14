@@ -250,12 +250,6 @@ export default function ProfilePage() {
             </div>
           </div>
 
-          {/* Right: character */}
-          <div className={styles.heroChar}>
-            <CharacterView skinId={u.preferredSkin} className={styles.heroCharView} />
-            <div className={styles.heroCharName} style={{ color: ch.color }}>{ch.name}</div>
-          </div>
-
         </div>
       </div>
 
