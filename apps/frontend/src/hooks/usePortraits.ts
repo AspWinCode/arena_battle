@@ -11,6 +11,7 @@ const PORTRAIT_IDS = new Set([
   'gladiator',
   'samurai',
   'paladin',
+  'tank',
 ])
 
 export function getPortraitUrl(charId: string): string | null {
