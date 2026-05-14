@@ -748,7 +748,7 @@ interface SnapTarget {
 }
 
 // Real block height: PuzzleTop(6) + Body(32 min) + PuzzleBottom(6) = 44px
-const BLOCK_H = 44
+const BLOCK_H = 50
 
 function findSnapTarget(scripts: Script[], inst: BlockInstance, radius: number): SnapTarget | null {
   for (const script of scripts) {
