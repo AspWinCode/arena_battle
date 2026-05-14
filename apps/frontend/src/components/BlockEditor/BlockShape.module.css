@@ -33,12 +33,22 @@
 
 /* ── type-hat ─────────────────────────────────────────────────── */
 .type-hat .body {
-  border-radius: 16px 16px 0 0;
+  border-radius: 18px 18px 0 0;
 }
 
 /* ── type-cap ─────────────────────────────────────────────────── */
 .type-cap .body {
-  border-radius: 0 0 6px 6px;
+  border-radius: 0 8px 8px 0;
+}
+
+/* ── type-command ─────────────────────────────────────────────── */
+.type-command .body {
+  border-radius: 0 8px 8px 0;
+}
+
+/* ── type-c-block ─────────────────────────────────────────────── */
+.type-c-block .body {
+  border-radius: 0 8px 8px 0;
 }
 
 /* ── type-reporter ────────────────────────────────────────────── */
