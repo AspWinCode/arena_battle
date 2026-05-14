@@ -11,7 +11,7 @@
   --bg-hover:   #1a1a1f;
   --border:     #222228;
   /* Player 1 — green (left fighter) */
-  --accent:     #00e676;
+  --accent:     #16C784;
   --accent2:    #00b54a;
   /* Player 2 — orange/fire (right fighter) */
   --fire:       #ff5500;
@@ -246,8 +246,8 @@
   font-family: var(--font-main);
 }
 .heroGrad {
-  /* Logo-style: green (P1) → lightning yellow → orange (P2) */
-  background: linear-gradient(100deg, var(--accent) 0%, var(--lightning) 48%, var(--fire) 100%);
+  /* White → green */
+  background: linear-gradient(100deg, #ffffff 0%, var(--accent) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -612,7 +612,7 @@
 .featCard:hover::before { opacity: 1; }
 .featIcon  { font-size: 32px; margin-bottom: 14px; }
 .featTitle { font-size: 17px; font-weight: 700; margin-bottom: 10px; }
-.featDesc  { font-size: 14px; color: var(--text-muted); line-height: 1.6; }
+.featDesc  { font-size: 14px; color: #D1D5DB; line-height: 1.7; }
 
 /* ── How it works ────────────────────────────────────────────── */
 .how {
@@ -671,7 +671,7 @@
 }
 .stepIcon   { font-size: 36px; margin-bottom: 14px; }
 .stepTitle  { font-size: 18px; font-weight: 700; margin-bottom: 10px; }
-.stepDesc   { font-size: 14px; color: var(--text-muted); line-height: 1.65; }
+.stepDesc   { font-size: 14px; color: #D1D5DB; line-height: 1.7; }
 
 /* Actions row */
 .actionsRow {
@@ -806,6 +806,69 @@
 :global(.cn) { color: #f9a8d4; }
 :global(.co) { color: #94a3b8; }
 :global(.cc) { color: #4b5563; font-style: italic; }
+
+/* ── Player counter ─────────────────────────────────────────── */
+.playerCounter {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-top: 16px;
+}
+.playerOnline {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--accent);
+  font-weight: 700;
+}
+.playerOnline::before {
+  content: '';
+  width: 7px;
+  height: 7px;
+  background: var(--accent);
+  border-radius: 50%;
+  box-shadow: 0 0 8px var(--accent);
+  animation: pulse 1.5s ease-in-out infinite;
+}
+.playerDot { color: var(--border); }
+
+/* ── Demo secondary link ─────────────────────────────────────── */
+.demoLink {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-decoration: none;
+  transition: color .15s;
+  white-space: nowrap;
+}
+.demoLink:hover { color: var(--accent); }
+
+/* ── CTA perks ───────────────────────────────────────────────── */
+.ctaPerks {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 28px;
+  text-align: left;
+  max-width: 380px;
+  margin-left: auto;
+  margin-right: auto;
+}
+.ctaPerk {
+  font-size: 14px;
+  color: #D1D5DB;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.ctaPerk::before {
+  content: '✓';
+  color: var(--accent);
+  font-weight: 700;
+  flex-shrink: 0;
+}
 
 /* ── CTA ─────────────────────────────────────────────────────── */
 .ctaSection {

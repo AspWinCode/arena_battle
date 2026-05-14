@@ -25,6 +25,7 @@ export default function LandingPage() {
             <Link to="/tournaments" className={styles.navLink}>Турниры</Link>
             <Link to="/leaderboard" className={styles.navLink}>Рейтинг</Link>
             <Link to="/learn"       className={styles.navLink}>Обучение</Link>
+            <a href="https://discord.gg/codefighters" target="_blank" rel="noopener noreferrer" className={styles.navLink}>Discord</a>
             {user ? (
               <>
                 <span className={styles.navLink} style={{ color: 'var(--text-muted)', fontSize: 13 }}>
@@ -70,14 +71,19 @@ export default function LandingPage() {
               </h1>
 
               <p className={styles.heroSub}>
-                Пиши стратегии на Python или JavaScript, отправляй своего бойца
-                в реальный бой и побеждай соперников. Идеально для тех, кто хочет
-                учиться программируя, а не решая задачки.
+                Пишешь код, но задачи на LeetCode скучны? Здесь ты сражаешься.
+                Напиши стратегию на Python или JavaScript — и твой боец идёт в реальный бой.
               </p>
 
               <div className={styles.heroCta}>
-                <Link to="/join"     className={`btn btn-primary ${styles.ctaMain}`}>⚔️ Начать бой</Link>
-                <Link to="/demo"     className={`btn btn-ghost  ${styles.ctaGhost}`}>🎮 Демо без регистрации</Link>
+                <Link to="/join" className={`btn btn-primary ${styles.ctaMain}`}>⚔️ Начать бой</Link>
+                <Link to="/demo" className={styles.demoLink}>Попробовать демо →</Link>
+              </div>
+
+              <div className={styles.playerCounter}>
+                <span className={styles.playerOnline}>47 онлайн</span>
+                <span className={styles.playerDot}>·</span>
+                <span>1 240 зарегистрированы</span>
               </div>
 
               <div className={styles.heroStats}>
@@ -182,7 +188,7 @@ export default function LandingPage() {
       <section className={styles.features}>
         <div className={styles.container}>
           <div className={styles.sectionLabel}>Возможности</div>
-          <h2 className={styles.sectionTitle}>Всё для роста юного программиста</h2>
+          <h2 className={styles.sectionTitle}>Всё для роста в программировании</h2>
           <div className={styles.featGrid}>
             {[
               { icon: '⚔️', title: 'Реальные бои',           accent: '#00e5ff', desc: 'Пишешь стратегию — бот идёт в бой. Видишь каждый ход: атаки, уклоны, урон в реальном времени.' },
@@ -311,9 +317,14 @@ export default function LandingPage() {
             <p className={styles.ctaSub}>
               Это бесплатно. Напиши первую стратегию и отправь своего бойца на арену прямо сейчас.
             </p>
+            <div className={styles.ctaPerks}>
+              <span className={styles.ctaPerk}>Блочный редактор — никакого барьера входа</span>
+              <span className={styles.ctaPerk}>Python и JavaScript уже на старте</span>
+              <span className={styles.ctaPerk}>Реальные бои, турниры, рейтинг</span>
+            </div>
             <div className={styles.ctaBtns}>
-              <Link to="/join"     className={`btn btn-primary ${styles.ctaBig}`}>⚔️ Начать бой</Link>
-              <Link to="/demo"     className={`btn btn-ghost  ${styles.ctaBig}`}>🎮 Демо без кода</Link>
+              <Link to="/join" className={`btn btn-primary ${styles.ctaBig}`}>⚔️ Начать бой</Link>
+              <Link to="/demo" className={`btn btn-ghost  ${styles.ctaBig}`}>🎮 Демо без кода</Link>
             </div>
           </div>
         </div>
@@ -331,6 +342,7 @@ export default function LandingPage() {
               <Link to="/leaderboard">Рейтинг</Link>
               <Link to="/learn">Обучение</Link>
               <Link to="/join">В бой</Link>
+              <a href="https://discord.gg/codefighters" target="_blank" rel="noopener noreferrer">Discord</a>
             </div>
             <div className={styles.footerCopy}>© 2026 CodeFighters</div>
           </div>
