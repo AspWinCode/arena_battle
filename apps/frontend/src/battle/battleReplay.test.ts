@@ -84,6 +84,6 @@ describe('battle replay converter', () => {
 
     expect(replay.rounds).toHaveLength(1)
     expect(replay.rounds[0].turns).toHaveLength(2)
-    expect(replay.events.at(-1)).toEqual({ actor: 'p1', type: 'victory' })
+    expect(replay.events[replay.events.length - 1]).toEqual({ actor: 'p1', type: 'victory' })
   })
 })
