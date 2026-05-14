@@ -252,11 +252,15 @@ export default function BlockEditor({
       const x = (e.clientX - rect.left - panOffset.x) / zoom
       const y = (e.clientY - rect.top  - panOffset.y) / zoom
 
-      // Dropped on palette → delete
+      // Dropped on palette
       const onPalette = e.clientX < rect.left
-      if (onPalette && !d.fromPalette) {
-        scriptsRef.current = baseScripts
-        setScripts(baseScripts)
+      if (onPalette) {
+        if (!d.fromPalette) {
+          // Canvas block → delete it
+          scriptsRef.current = baseScripts
+          setScripts(baseScripts)
+        }
+        // Palette block dropped back on palette → just cancel, don't place off-screen
         setDrag(null)
         return
       }
@@ -743,82 +747,96 @@ interface SnapTarget {
   type: 'next' | 'body' | 'elseBody'
 }
 
-const BLOCK_H = 36
-
-/** Estimated bottom Y of the last block in a chain (rough, no DOM measurement) */
-function chainBottomY(inst: BlockInstance): number {
-  let cur: BlockInstance = inst
-  while (cur.next) cur = cur.next
-  const bodyRows = (cur.body?.length ?? 0) + (cur.elseBody?.length ?? 0)
-  return cur.y + BLOCK_H + bodyRows * BLOCK_H
-}
+// Real block height: PuzzleTop(6) + Body(32 min) + PuzzleBottom(6) = 44px
+const BLOCK_H = 44
 
 function findSnapTarget(scripts: Script[], inst: BlockInstance, radius: number): SnapTarget | null {
   for (const script of scripts) {
-    const t = findSnap(script.id, script.root, inst, radius)
+    const t = findSnap(script.id, script.root, inst, radius, script.root.x, script.root.y)
     if (t) return t
   }
   return null
 }
 
-function findSnap(scriptId: string, root: BlockInstance, inst: BlockInstance, radius: number): SnapTarget | null {
+/**
+ * rx, ry = actual rendered canvas position of `root`.
+ * Only root blocks have correct .x/.y; chained blocks' coords are stale,
+ * so we accumulate position as we recurse.
+ */
+function findSnap(
+  scriptId: string,
+  root: BlockInstance,
+  inst: BlockInstance,
+  radius: number,
+  rx: number,
+  ry: number,
+): SnapTarget | null {
   const def = BLOCK_DEF_MAP.get(root.defId)
 
   // ── Single-body snap ──────────────────────────────────────────────────────
   if (def?.canHaveBody && !def.hasTwoBody) {
-    const bodyX = root.x + 16
-    const bodyY = root.y + BLOCK_H
-    const dx = inst.x - bodyX
-    const dy = inst.y - bodyY
-    if (Math.abs(dx) < radius * 1.5 && Math.abs(dy) < radius * 1.5) {
+    const bodyX = rx + 16
+    const bodyY = ry + BLOCK_H
+    if (Math.abs(inst.x - bodyX) < radius * 1.5 && Math.abs(inst.y - bodyY) < radius * 1.5) {
       return { scriptId, afterInstanceId: root.instanceId, type: 'body' }
     }
   }
 
   // ── Two-body snap (ifElse) ─────────────────────────────────────────────────
   if (def?.hasTwoBody) {
-    const bx = root.x + 16
-    const thenBodyY = root.y + BLOCK_H
+    const bx = rx + 16
+    const thenBodyY = ry + BLOCK_H
     const thenBodyH = Math.max(1, root.body?.length ?? 0) * BLOCK_H
-    const elseBodyY = thenBodyY + thenBodyH + BLOCK_H   // extra BLOCK_H for "иначе" label
+    const elseBodyY = thenBodyY + thenBodyH + BLOCK_H
 
-    const dxThen = inst.x - bx
-    const dyThen = inst.y - thenBodyY
-    if (Math.abs(dxThen) < radius * 1.5 && dyThen > -radius && dyThen < thenBodyH + radius) {
+    if (Math.abs(inst.x - bx) < radius * 1.5 && inst.y > thenBodyY - radius && inst.y < thenBodyY + thenBodyH + radius) {
       return { scriptId, afterInstanceId: root.instanceId, type: 'body' }
     }
-
-    const dxElse = inst.x - bx
-    const dyElse = inst.y - elseBodyY
-    if (Math.abs(dxElse) < radius * 1.5 && Math.abs(dyElse) < radius * 1.5) {
+    if (Math.abs(inst.x - bx) < radius * 1.5 && Math.abs(inst.y - elseBodyY) < radius * 1.5) {
       return { scriptId, afterInstanceId: root.instanceId, type: 'elseBody' }
     }
   }
 
-  // ── Next snap (attach below) ───────────────────────────────────────────────
+  // ── Next snap (bottom of entire chain from rx/ry) ─────────────────────────
   if (def?.type !== 'cap') {
-    const bottomY = chainBottomY(root)
-    const dx = inst.x - root.x
-    const dy = inst.y - bottomY
-    if (Math.abs(dx) < radius && Math.abs(dy) < radius) {
+    // Accumulate height of the whole chain starting from (rx, ry)
+    let bottomY = ry
+    let cur: BlockInstance = root
+    while (true) {
+      bottomY += BLOCK_H + ((cur.body?.length ?? 0) + (cur.elseBody?.length ?? 0)) * BLOCK_H
+      if (!cur.next) break
+      cur = cur.next
+    }
+    if (Math.abs(inst.x - rx) < radius && Math.abs(inst.y - bottomY) < radius) {
       let last: BlockInstance = root
       while (last.next) last = last.next
       return { scriptId, afterInstanceId: last.instanceId, type: 'next' }
     }
   }
 
-  // ── Recurse ────────────────────────────────────────────────────────────────
+  // ── Recurse into next with accumulated position ───────────────────────────
   if (root.next) {
-    const f = findSnap(scriptId, root.next, inst, radius)
+    const ownRows = (root.body?.length ?? 0) + (root.elseBody?.length ?? 0)
+    const nextY = ry + BLOCK_H + ownRows * BLOCK_H
+    const f = findSnap(scriptId, root.next, inst, radius, rx, nextY)
     if (f) return f
   }
+
+  // ── Recurse into body children ────────────────────────────────────────────
+  let childY = ry + BLOCK_H
   for (const child of root.body ?? []) {
-    const f = findSnap(scriptId, child, inst, radius)
+    const f = findSnap(scriptId, child, inst, radius, rx + 16, childY)
     if (f) return f
+    childY += BLOCK_H + ((child.body?.length ?? 0) + (child.elseBody?.length ?? 0)) * BLOCK_H
   }
+
+  // ── Recurse into elseBody children ───────────────────────────────────────
+  const thenTotalH = (root.body?.length ?? 0) * BLOCK_H + BLOCK_H // "иначе" label row
+  let elseChildY = ry + BLOCK_H + thenTotalH
   for (const child of root.elseBody ?? []) {
-    const f = findSnap(scriptId, child, inst, radius)
+    const f = findSnap(scriptId, child, inst, radius, rx + 16, elseChildY)
     if (f) return f
+    elseChildY += BLOCK_H + ((child.body?.length ?? 0) + (child.elseBody?.length ?? 0)) * BLOCK_H
   }
 
   return null
