@@ -99,6 +99,9 @@ export default function AdminCharacterEditor() {
 
   const actionDef: ActionDef = activeSkin?.actions?.[selectedAction] ?? { fps: 12, frames: [] }
 
+  // ── Editing frame index (null = composing a new frame) ───────────────────────
+  const [editingFrameIdx, setEditingFrameIdx] = useState<number | null>(null)
+
   // ── Layer composer state ─────────────────────────────────────────────────────
   const [layers,      setLayers]      = useState<Layer[]>([])
   const [dragIdx,     setDragIdx]     = useState<number | null>(null)
@@ -130,10 +133,11 @@ export default function AdminCharacterEditor() {
       .finally(() => setLoading(false))
   }, [characterId, token])
 
-  // Sync fps from action def when switching actions
+  // Sync fps from action def when switching actions; also clear editing state
   useEffect(() => {
     setFps(actionDef.fps)
     setPreviewIdx(0)
+    setEditingFrameIdx(null)
     stopPreview()
   }, [selectedAction, activeSkinId])
 
@@ -202,6 +206,28 @@ export default function AdminCharacterEditor() {
     })
   }
 
+  // Load a saved frame URL as a single layer so the user can paint on top of it
+  const loadFrameForEdit = useCallback((frameIdx: number, url: string) => {
+    // Clear current layers
+    setLayers(prev => {
+      prev.forEach(l => URL.revokeObjectURL(l.src))
+      return []
+    })
+    setEditingFrameIdx(frameIdx)
+    const img = new Image()
+    img.crossOrigin = 'anonymous'
+    img.onload = () => {
+      setLayers([{
+        id:      crypto.randomUUID(),
+        name:    `кадр ${frameIdx + 1}`,
+        src:     url,
+        visible: true,
+        img,
+      }])
+    }
+    img.src = url
+  }, [])
+
   const toggleLayerVisibility = (id: string) => {
     setLayers(prev => prev.map(l => l.id === id ? { ...l, visible: !l.visible } : l))
   }
@@ -257,15 +283,22 @@ export default function AdminCharacterEditor() {
       if (!upRes.ok) throw new Error('Upload failed')
       const { url } = await upRes.json()
 
-      // Append frame to current action
-      const newFrames = [...actionDef.frames, url]
+      // Replace the frame being edited, or append a new one
+      let newFrames: string[]
+      if (editingFrameIdx !== null) {
+        newFrames = [...actionDef.frames]
+        newFrames[editingFrameIdx] = url
+        setEditingFrameIdx(null)
+      } else {
+        newFrames = [...actionDef.frames, url]
+      }
       await saveAction(newFrames, fps)
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Ошибка при сохранении кадра')
     } finally {
       setFlatteningCanvas(false)
     }
-  }, [activeSkin, layers, selectedAction, actionDef, fps, token])
+  }, [activeSkin, layers, selectedAction, actionDef, editingFrameIdx, fps, token])
 
   // ── Save action (frames + fps) to backend ────────────────────────────────────
 
@@ -372,13 +405,21 @@ export default function AdminCharacterEditor() {
               {actionDef.frames.map((url, i) => (
                 <div
                   key={url + i}
-                  className={`${styles.frameTile} ${previewing && previewIdx === i ? styles.frameTileActive : ''}`}
+                  className={`${styles.frameTile} ${
+                    editingFrameIdx === i
+                      ? styles.frameTileEditing
+                      : previewing && previewIdx === i
+                      ? styles.frameTileActive
+                      : ''
+                  }`}
+                  onClick={() => loadFrameForEdit(i, url)}
+                  title="Открыть кадр для редактирования"
                 >
                   <img src={url} alt={`frame ${i + 1}`} className={styles.frameTileImg} />
                   <div className={styles.frameTileNum}>{i + 1}</div>
                   <button
                     className={styles.frameTileDel}
-                    onClick={() => deleteFrame(i)}
+                    onClick={e => { e.stopPropagation(); deleteFrame(i) }}
                     title="Удалить кадр"
                   >×</button>
                 </div>
@@ -496,11 +537,23 @@ export default function AdminCharacterEditor() {
                 <button
                   className="btn btn-primary"
                   style={{ fontSize: 13, flex: 1 }}
-                  disabled={layers.length === 0 || flatteningCanvas || actionDef.frames.length >= 10}
+                  disabled={layers.length === 0 || flatteningCanvas || (editingFrameIdx === null && actionDef.frames.length >= 10)}
                   onClick={saveFrame}
                 >
-                  {flatteningCanvas ? 'Сохранение...' : '💾 Сохранить кадр'}
+                  {flatteningCanvas
+                    ? 'Сохранение...'
+                    : editingFrameIdx !== null
+                    ? `✏️ Заменить кадр ${editingFrameIdx + 1}`
+                    : '💾 Сохранить кадр'}
                 </button>
+                {editingFrameIdx !== null && (
+                  <button
+                    className="btn btn-ghost"
+                    style={{ fontSize: 12 }}
+                    onClick={() => { setEditingFrameIdx(null); setLayers([]) }}
+                    title="Отменить редактирование"
+                  >✕</button>
+                )}
               </div>
               {actionDef.frames.length >= 10 && (
                 <div className={styles.maxFrames}>Максимум 10 кадров достигнут</div>

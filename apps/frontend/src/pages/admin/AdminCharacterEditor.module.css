@@ -184,12 +184,22 @@
   flex-shrink: 0;
   background: var(--bg);
   cursor: pointer;
-  transition: border-color 0.12s;
+  transition: border-color 0.12s, box-shadow 0.12s;
+}
+
+.frameTile:hover {
+  border-color: #f59e0b;
 }
 
 .frameTileActive {
   border-color: var(--primary);
   box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.35);
+}
+
+.frameTileEditing {
+  border-color: #f59e0b;
+  box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.4);
+  cursor: default;
 }
 
 .frameTileImg {
