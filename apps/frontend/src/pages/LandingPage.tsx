@@ -2,10 +2,12 @@ import { Link } from 'react-router-dom'
 import { CHARACTER_STATS } from '@robocode/shared'
 import { useCharacterThumbs } from '../hooks/useCharacterThumbs'
 import { getPortraitUrl } from '../hooks/usePortraits'
+import { useUserStore } from '../stores/userStore'
 import styles from './LandingPage.module.css'
 
 export default function LandingPage() {
   const thumbs = useCharacterThumbs()
+  const { user } = useUserStore()
   const charEntries = Object.entries(CHARACTER_STATS)
   const rowA = charEntries
   const rowB = [...charEntries].reverse()
@@ -23,8 +25,22 @@ export default function LandingPage() {
             <Link to="/tournaments" className={styles.navLink}>Турниры</Link>
             <Link to="/leaderboard" className={styles.navLink}>Рейтинг</Link>
             <Link to="/learn"       className={styles.navLink}>Обучение</Link>
-            <Link to="/login"       className={styles.navLink}>Войти</Link>
-            <Link to="/register"    className={`btn btn-primary ${styles.navBtn}`}>Начать бесплатно</Link>
+            {user ? (
+              <>
+                <span className={styles.navLink} style={{ color: 'var(--text-muted)', fontSize: 13 }}>
+                  {user.avatar?.startsWith('data:') || user.avatar?.startsWith('/')
+                    ? <img src={user.avatar} style={{ width: 22, height: 22, borderRadius: '50%', objectFit: 'cover', verticalAlign: 'middle', marginRight: 6 }} alt="" />
+                    : <span style={{ marginRight: 4 }}>{user.avatar}</span>}
+                  {user.displayName}
+                </span>
+                <Link to="/profile" className={`btn btn-primary ${styles.navBtn}`}>В игру</Link>
+              </>
+            ) : (
+              <>
+                <Link to="/login"    className={styles.navLink}>Войти</Link>
+                <Link to="/register" className={`btn btn-primary ${styles.navBtn}`}>Начать бесплатно</Link>
+              </>
+            )}
           </div>
         </div>
       </nav>
