@@ -183,6 +183,49 @@
   height: 180px !important;
 }
 
+/* ── Quick nav ───────────────────────────────────────────────────────── */
+.quickNav {
+  max-width: 860px;
+  margin: 20px auto 0;
+  padding: 0 24px;
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 10px;
+}
+
+.navCard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 14px 8px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  text-decoration: none;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 600;
+  transition: border-color .15s, color .15s, background .15s;
+  cursor: pointer;
+}
+
+.navCard:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: rgba(0, 230, 118, .05);
+}
+
+.navCardIcon {
+  font-size: 22px;
+  line-height: 1;
+}
+
+.navCardLabel {
+  white-space: nowrap;
+  font-size: 11px;
+}
+
 /* ── Quick stats ─────────────────────────────────────────────────────── */
 .quickStats {
   max-width: 860px;
@@ -621,6 +664,7 @@
 
 /* ── Responsive ──────────────────────────────────────────────────────── */
 @media (max-width: 640px) {
+  .quickNav   { grid-template-columns: repeat(3, 1fr); }
   .quickStats { grid-template-columns: repeat(3, 1fr) !important; }
   .heroInner  { flex-direction: column; align-items: flex-start; }
   .heroActions { flex-direction: row; flex-wrap: wrap; }

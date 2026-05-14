@@ -73,15 +73,6 @@ export default function UserMenu() {
           <Link to="/notifications" className={styles.dropItem} onClick={() => setOpen(false)}>
             🔔 Уведомления
           </Link>
-          <Link to="/tournaments" className={styles.dropItem} onClick={() => setOpen(false)}>
-            🏆 Турниры
-          </Link>
-          <Link to="/clans" className={styles.dropItem} onClick={() => setOpen(false)}>
-            ⚔️ Кланы
-          </Link>
-          <Link to="/learn" className={styles.dropItem} onClick={() => setOpen(false)}>
-            🎓 Обучение
-          </Link>
           <div className={styles.dropDivider} />
           <button className={`${styles.dropItem} ${styles.dropItemDanger}`} onClick={handleLogout}>
             🚪 Выйти

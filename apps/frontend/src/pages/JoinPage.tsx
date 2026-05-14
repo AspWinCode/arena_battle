@@ -319,13 +319,6 @@ export default function JoinPage() {
         )}
 
         <div className={styles.bottomLinks}>
-          <div className={styles.publicLinks}>
-            <a href="/learn" className={styles.learnLink}>🎓 Обучение</a>
-            <a href="/sparring" className={styles.learnLink}>🥊 Спарринг</a>
-            <a href="/daily" className={styles.learnLink}>📅 Задания</a>
-            <a href="/leaderboard" className={styles.learnLink}>🏆 Рейтинг</a>
-            <a href="/tournaments" className={styles.tournamentLink}>🏟 Турниры</a>
-          </div>
           <div style={{ display: 'flex', justifyContent: 'center' }}>
             <UserMenu />
           </div>
