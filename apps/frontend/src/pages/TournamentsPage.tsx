@@ -47,7 +47,7 @@ export default function TournamentsPage() {
 
       <div className={styles.content}>
         <div className={styles.header}>
-          <Link to="/join" className={styles.back}>← Главная</Link>
+          <Link to="/" className={styles.back}>← Главная</Link>
           <h1 className={styles.title}>🏆 Турниры</h1>
           <p className={styles.subtitle}>Соревнуйся с лучшими программистами арены</p>
         </div>
