@@ -115,7 +115,7 @@ export default function LeaderboardPage() {
         <div className={styles.myCard}>
           <div className={styles.myCardLeft}>
             <span className={styles.myAvatar}>{user?.avatar ?? '🧑‍💻'}</span>
-            <div style={{ minWidth: 0, overflow: 'hidden' }}>
+            <div style={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
               <div className={styles.myName}>{user?.displayName ?? 'Ты'}</div>
               <div className={styles.myMeta} style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
                 {user?.elo != null && <RankBadge elo={user.elo} size="sm" />}
