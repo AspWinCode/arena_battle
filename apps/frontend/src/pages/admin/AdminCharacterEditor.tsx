@@ -59,9 +59,16 @@ const CANVAS_SIZE = 1254
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
+interface LayerMeta {
+  url:     string   // server URL of the uploaded layer PNG
+  name:    string
+  visible: boolean
+}
+
 interface ActionDef {
   fps:    number
   frames: string[]
+  layers?: LayerMeta[][]   // layers[i] = original layer stack for frame i
 }
 
 interface SkinDef {
@@ -72,11 +79,13 @@ interface SkinDef {
 }
 
 interface Layer {
-  id:      string
-  name:    string
-  src:     string        // object URL or server URL
-  visible: boolean
-  img:     HTMLImageElement
+  id:        string
+  name:      string
+  src:       string     // local objectURL for canvas preview
+  serverUrl: string     // server URL after upload (empty = uploading)
+  uploading: boolean
+  visible:   boolean
+  img:       HTMLImageElement
 }
 
 // ── Main component ─────────────────────────────────────────────────────────────
@@ -178,20 +187,34 @@ export default function AdminCharacterEditor() {
 
   // ── Layer helpers ─────────────────────────────────────────────────────────────
 
-  const addLayerFromFile = (file: File) => {
-    const src = URL.createObjectURL(file)
+  // Upload a layer PNG to the server immediately on add, so we can persist metadata later.
+  const addLayerFromFile = useCallback((file: File) => {
+    const localSrc = URL.createObjectURL(file)
+    const id = crypto.randomUUID()
     const img = new Image()
     img.onload = () => {
       setLayers(prev => [...prev, {
-        id:      crypto.randomUUID(),
-        name:    file.name,
-        src,
-        visible: true,
-        img,
+        id, name: file.name, src: localSrc, serverUrl: '', uploading: true, visible: true, img,
       }])
     }
-    img.src = src
-  }
+    img.src = localSrc
+
+    // Upload in background — store serverUrl when done
+    const fd = new FormData()
+    fd.append('file', file)
+    fetch(`${API}/admin/skins/upload`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` },
+      body: fd,
+    })
+      .then(r => r.ok ? r.json() : Promise.reject())
+      .then(({ url }: { url: string }) => {
+        setLayers(prev => prev.map(l => l.id === id ? { ...l, serverUrl: url, uploading: false } : l))
+      })
+      .catch(() => {
+        setLayers(prev => prev.map(l => l.id === id ? { ...l, uploading: false } : l))
+      })
+  }, [token])
 
   const handleLayerFiles = (e: React.ChangeEvent<HTMLInputElement>) => {
     Array.from(e.target.files ?? []).forEach(addLayerFromFile)
@@ -201,31 +224,44 @@ export default function AdminCharacterEditor() {
   const removeLayer = (id: string) => {
     setLayers(prev => {
       const layer = prev.find(l => l.id === id)
-      if (layer) URL.revokeObjectURL(layer.src)
+      if (layer?.src.startsWith('blob:')) URL.revokeObjectURL(layer.src)
       return prev.filter(l => l.id !== id)
     })
   }
 
-  // Load a saved frame URL as a single layer so the user can paint on top of it
-  const loadFrameForEdit = useCallback((frameIdx: number, url: string) => {
-    // Clear current layers
+  // Load a frame's original layer stack for editing.
+  // If layer metadata exists, restores individual layers; otherwise falls back to flattened PNG.
+  const loadFrameForEdit = useCallback((frameIdx: number, url: string, frameLayers?: LayerMeta[]) => {
     setLayers(prev => {
-      prev.forEach(l => URL.revokeObjectURL(l.src))
+      prev.forEach(l => { if (l.src.startsWith('blob:')) URL.revokeObjectURL(l.src) })
       return []
     })
     setEditingFrameIdx(frameIdx)
-    const img = new Image()
-    img.crossOrigin = 'anonymous'
-    img.onload = () => {
-      setLayers([{
-        id:      crypto.randomUUID(),
-        name:    `кадр ${frameIdx + 1}`,
-        src:     url,
-        visible: true,
-        img,
-      }])
-    }
-    img.src = url
+
+    const metas = frameLayers && frameLayers.length > 0
+      ? frameLayers
+      : [{ url, name: `кадр ${frameIdx + 1}`, visible: true }]
+
+    const result: Layer[] = new Array(metas.length)
+    let done = 0
+    metas.forEach((meta, i) => {
+      const img = new Image()
+      img.crossOrigin = 'anonymous'
+      img.onload = () => {
+        result[i] = {
+          id:        crypto.randomUUID(),
+          name:      meta.name,
+          src:       meta.url,
+          serverUrl: meta.url,
+          uploading: false,
+          visible:   meta.visible,
+          img,
+        }
+        if (++done === metas.length) setLayers([...result])
+      }
+      img.onerror = () => { if (++done === metas.length) setLayers([...result].filter(Boolean)) }
+      img.src = meta.url
+    })
   }, [])
 
   const toggleLayerVisibility = (id: string) => {
@@ -283,16 +319,26 @@ export default function AdminCharacterEditor() {
       if (!upRes.ok) throw new Error('Upload failed')
       const { url } = await upRes.json()
 
+      // Build layer metadata from the current layer stack
+      const layerMetas: LayerMeta[] = layers
+        .filter(l => l.serverUrl)
+        .map(l => ({ url: l.serverUrl, name: l.name, visible: l.visible }))
+
       // Replace the frame being edited, or append a new one
       let newFrames: string[]
+      let newLayersMeta: LayerMeta[][]
+      const existingLayers = actionDef.layers ?? actionDef.frames.map(() => [])
       if (editingFrameIdx !== null) {
         newFrames = [...actionDef.frames]
         newFrames[editingFrameIdx] = url
+        newLayersMeta = [...existingLayers]
+        newLayersMeta[editingFrameIdx] = layerMetas
         setEditingFrameIdx(null)
       } else {
         newFrames = [...actionDef.frames, url]
+        newLayersMeta = [...existingLayers, layerMetas]
       }
-      await saveAction(newFrames, fps)
+      await saveAction(newFrames, fps, newLayersMeta)
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Ошибка при сохранении кадра')
     } finally {
@@ -302,7 +348,7 @@ export default function AdminCharacterEditor() {
 
   // ── Save action (frames + fps) to backend ────────────────────────────────────
 
-  const saveAction = useCallback(async (frames: string[], fpsVal: number) => {
+  const saveAction = useCallback(async (frames: string[], fpsVal: number, layersMeta?: LayerMeta[][]) => {
     if (!activeSkin) return
     setSaving(true)
     try {
@@ -312,7 +358,7 @@ export default function AdminCharacterEditor() {
           'Content-Type': 'application/json',
           Authorization:  `Bearer ${token}`,
         },
-        body: JSON.stringify({ action: selectedAction, fps: fpsVal, frames }),
+        body: JSON.stringify({ action: selectedAction, fps: fpsVal, frames, layers: layersMeta }),
       })
       if (!res.ok) throw new Error('Save failed')
       const updated: SkinDef = await res.json()
@@ -324,7 +370,8 @@ export default function AdminCharacterEditor() {
 
   const deleteFrame = async (frameIdx: number) => {
     const newFrames = actionDef.frames.filter((_, i) => i !== frameIdx)
-    await saveAction(newFrames, fps)
+    const newLayers = (actionDef.layers ?? []).filter((_, i) => i !== frameIdx)
+    await saveAction(newFrames, fps, newLayers)
     if (previewing) stopPreview()
   }
 
@@ -412,7 +459,7 @@ export default function AdminCharacterEditor() {
                       ? styles.frameTileActive
                       : ''
                   }`}
-                  onClick={() => loadFrameForEdit(i, url)}
+                  onClick={() => loadFrameForEdit(i, url, actionDef.layers?.[i])}
                   title="Открыть кадр для редактирования"
                 >
                   <img src={url} alt={`frame ${i + 1}`} className={styles.frameTileImg} />
@@ -497,7 +544,10 @@ export default function AdminCharacterEditor() {
                     >
                       <span className={styles.layerDrag} title="Перетащить">⠿</span>
                       <img src={layer.src} alt="" className={styles.layerThumb} />
-                      <span className={styles.layerName} title={layer.name}>{layer.name}</span>
+                      <span className={styles.layerName} title={layer.name}>
+                        {layer.uploading ? <span className={styles.layerUploading}>⏳</span> : null}
+                        {layer.name}
+                      </span>
                       <button
                         className={styles.layerVis}
                         onClick={() => toggleLayerVisibility(layer.id)}
@@ -537,11 +587,18 @@ export default function AdminCharacterEditor() {
                 <button
                   className="btn btn-primary"
                   style={{ fontSize: 13, flex: 1 }}
-                  disabled={layers.length === 0 || flatteningCanvas || (editingFrameIdx === null && actionDef.frames.length >= 10)}
+                  disabled={
+                    layers.length === 0 ||
+                    flatteningCanvas ||
+                    layers.some(l => l.uploading) ||
+                    (editingFrameIdx === null && actionDef.frames.length >= 10)
+                  }
                   onClick={saveFrame}
                 >
                   {flatteningCanvas
                     ? 'Сохранение...'
+                    : layers.some(l => l.uploading)
+                    ? '⏳ Загрузка...'
                     : editingFrameIdx !== null
                     ? `✏️ Заменить кадр ${editingFrameIdx + 1}`
                     : '💾 Сохранить кадр'}
