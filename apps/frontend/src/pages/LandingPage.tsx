@@ -5,6 +5,10 @@ import styles from './LandingPage.module.css'
 
 export default function LandingPage() {
   const thumbs = useCharacterThumbs()
+  const charEntries = Object.entries(CHARACTER_STATS)
+  const rowA = charEntries
+  const rowB = [...charEntries].reverse()
+  const rowC = [...charEntries.slice(5), ...charEntries.slice(0, 5)]
   return (
     <div className={styles.page}>
 
@@ -120,21 +124,36 @@ export default function LandingPage() {
             </div>
             <Link to="/join" className={`btn btn-ghost ${styles.charsLink}`}>Все персонажи →</Link>
           </div>
-          <div className={styles.charsScroll}>
-            {Object.entries(CHARACTER_STATS).map(([id, ch]) => (
-              <div
-                key={id}
-                className={styles.charChip}
-                style={{ '--cc': ch.color } as React.CSSProperties}
-              >
-                {thumbs[id]
-                  ? <img src={thumbs[id]} className={styles.charChipThumb} alt={ch.name} />
-                  : <span className={styles.charChipIcon}>{ch.icon}</span>}
-                <span className={styles.charChipName}>{ch.name}</span>
-                <span className={styles.charChipTag}>{ch.tagline}</span>
+        </div>
+
+        <div className={styles.charsMosaic}>
+          {([
+            { list: rowA, rev: false, cls: styles.rowTall },
+            { list: rowB, rev: true,  cls: styles.rowShort },
+            { list: rowC, rev: false, cls: styles.rowMid },
+          ] as const).map(({ list, rev, cls }, ri) => {
+            const doubled = [...list, ...list]
+            return (
+              <div key={ri} className={`${styles.marqueeRow} ${rev ? styles.marqueeRev : ''} ${cls}`}>
+                {doubled.map(([id, ch], i) => (
+                  <div
+                    key={`${id}-${i}`}
+                    className={styles.charCard}
+                    style={{ '--cc': ch.color } as React.CSSProperties}
+                  >
+                    {thumbs[id]
+                      ? <img src={thumbs[id]} className={styles.charCardImg} alt={ch.name} />
+                      : <div className={styles.charCardFallback}><span className={styles.charCardEmoji}>{ch.icon}</span></div>
+                    }
+                    <div className={styles.charCardOverlay}>
+                      <span className={styles.charCardName}>◉ {ch.name}</span>
+                      <span className={styles.charCardTag}>{ch.tagline}</span>
+                    </div>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
+            )
+          })}
         </div>
       </section>
 
