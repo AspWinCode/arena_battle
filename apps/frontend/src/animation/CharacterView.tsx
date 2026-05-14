@@ -23,7 +23,9 @@ import {
 } from 'react'
 import SpineCharacter from '../components/SpineCharacter/SpineCharacter'
 import SpritesheetCharacter from '../components/SpritesheetCharacter/SpritesheetCharacter'
+import PngCharacter from '../components/PngCharacter/PngCharacter'
 import type { SpritesheetCharacterHandle } from '../components/SpritesheetCharacter/SpritesheetCharacter'
+import type { PngCharacterHandle, PngSkinImages } from '../components/PngCharacter/PngCharacter'
 import { SpineAdapter } from './adapters/SpineAdapter'
 import type { SpineAdapterState } from './adapters/SpineAdapter'
 import type { BattleEvent, AnimationName, CharacterSkin } from '@robocode/shared'
@@ -32,6 +34,20 @@ import styles from './CharacterView.module.css'
 // ── Which characters use spritesheet (have /sprites/<id>/<id>.json) ────────────
 // Add more ids here as you create spritesheets
 const SPRITESHEET_CHARS = new Set(['boxer'])
+
+// ── Fetch skin images from the shop API (by full skinId like "boxer_blue_gloves") ─
+async function fetchSkinImages(skinId: string): Promise<PngSkinImages | null> {
+  try {
+    const res = await fetch(`/api/v1/shop`)
+    if (!res.ok) return null
+    const skins: Array<{ id: string; imgIdle: string; imgAttack: string; imgHit: string; imgDeath: string }> = await res.json()
+    const skin = skins.find(s => s.id === skinId)
+    if (!skin) return null
+    return { imgIdle: skin.imgIdle, imgAttack: skin.imgAttack, imgHit: skin.imgHit, imgDeath: skin.imgDeath }
+  } catch {
+    return null
+  }
+}
 
 // ── Floating number ────────────────────────────────────────────────────────────
 
@@ -68,7 +84,20 @@ export interface CharacterViewProps {
 const CharacterView = forwardRef<CharacterViewHandle, CharacterViewProps>(
   function CharacterView({ skinId, flipX = false, className, style }, ref) {
 
-    const useSprite = SPRITESHEET_CHARS.has(skinId)
+    // skinId can be a base characterId ("boxer") or a full skin variant ("boxer_blue_gloves")
+    const baseCharId = skinId.includes('_') ? skinId.split('_')[0] : skinId
+    const isVariantSkin = skinId.includes('_') && skinId !== baseCharId
+
+    const useSprite = !isVariantSkin && SPRITESHEET_CHARS.has(skinId)
+
+    // ── PNG variant path (fetched skin images) ──────────────────────────────
+    const [pngImages, setPngImages] = useState<PngSkinImages | null>(null)
+    const pngRef = useRef<PngCharacterHandle>(null)
+    useEffect(() => {
+      if (!isVariantSkin) { setPngImages(null); return }
+      fetchSkinImages(skinId).then(imgs => setPngImages(imgs))
+    }, [skinId, isVariantSkin])
+    const usePng = isVariantSkin && pngImages !== null
 
     // ── Spritesheet path ─────────────────────────────────────────────────────
     const spriteRef = useRef<SpritesheetCharacterHandle>(null)
@@ -103,7 +132,9 @@ const CharacterView = forwardRef<CharacterViewHandle, CharacterViewProps>(
 
     useImperativeHandle(ref, () => ({
       applyEvent(event: BattleEvent) {
-        if (useSprite) {
+        if (usePng) {
+          pngRef.current?.applyEvent(event)
+        } else if (useSprite) {
           spriteRef.current?.applyEvent(event)
         } else {
           spineAdapterRef.current?.applyEvent(event)
@@ -116,7 +147,9 @@ const CharacterView = forwardRef<CharacterViewHandle, CharacterViewProps>(
       },
 
       playAnimation(name: AnimationName) {
-        if (useSprite) {
+        if (usePng) {
+          pngRef.current?.playAnimation(name)
+        } else if (useSprite) {
           spriteRef.current?.playAnimation(name)
         } else {
           spineAdapterRef.current?.playAnimation(name)
@@ -132,7 +165,9 @@ const CharacterView = forwardRef<CharacterViewHandle, CharacterViewProps>(
       },
 
       reset() {
-        if (useSprite) {
+        if (usePng) {
+          pngRef.current?.reset()
+        } else if (useSprite) {
           spriteRef.current?.reset()
         } else {
           spineAdapterRef.current?.reset()
@@ -140,23 +175,30 @@ const CharacterView = forwardRef<CharacterViewHandle, CharacterViewProps>(
         }
         setFloats([])
       },
-    }), [useSprite, addFloat])
+    }), [usePng, useSprite, addFloat])
 
     // ── Render ────────────────────────────────────────────────────────────────
 
     return (
       <div className={`${styles.wrap} ${className ?? ''}`} style={style}>
 
-        {useSprite ? (
+        {usePng && pngImages ? (
+          <PngCharacter
+            ref={pngRef}
+            images={pngImages}
+            flipX={flipX}
+            style={{ width: '100%', height: '100%' }}
+          />
+        ) : useSprite ? (
           <SpritesheetCharacter
             ref={spriteRef}
-            spriteId={skinId}
+            spriteId={baseCharId}
             flipX={flipX}
             style={{ width: '100%', height: '100%' }}
           />
         ) : (
           <SpineCharacter
-            skinId={skinId}
+            skinId={baseCharId}
             action={spineState.action}
             turnKey={spineState.turnKey}
             hitKey={spineState.hitKey}

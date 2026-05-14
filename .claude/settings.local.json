@@ -24,7 +24,17 @@
       "Bash(git commit -m 'fix: reduce gladiator SH to 90 *)",
       "Bash(git commit -m 'fix: gladiator SH=30 *)",
       "Bash(git commit *)",
-      "Bash(unzip -p tz.docx word/document.xml)"
+      "Bash(unzip -p tz.docx word/document.xml)",
+      "Bash(sshpass -p 'WinCode2026!' ssh -o StrictHostKeyChecking=no root@80.87.201.25 \"echo connected && ls /var/www /opt /srv 2>/dev/null | head -40\")",
+      "PowerShell(Get-Command plink -ErrorAction SilentlyContinue)",
+      "PowerShell(Get-Command ssh -ErrorAction SilentlyContinue)",
+      "Bash(pip install *)",
+      "Bash(python3 -c \"import paramiko; print\\('paramiko ok'\\)\")",
+      "Bash(python3 -c \"import paramiko; print\\('ok'\\)\")",
+      "Bash(node -e \"const p=require\\('./apps/backend/package.json'\\); console.log\\(p.dependencies['@fastify/multipart'] || 'NOT FOUND'\\)\")",
+      "Bash(npx prisma *)",
+      "Bash(DATABASE_URL=\"postgresql://postgres:postgres@localhost:5432/robocode\" npx prisma migrate dev --name add_skin_shop --create-only)",
+      "Bash(node -e \"const p=require\\('./apps/backend/package.json'\\); console.log\\('@fastify/static:', p.dependencies['@fastify/static'] || 'NOT FOUND'\\)\")"
     ]
   }
 }

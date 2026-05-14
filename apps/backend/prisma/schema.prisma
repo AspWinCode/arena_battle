@@ -57,8 +57,11 @@ model User {
   passwordResetToken  String?
   passwordResetExpiry DateTime?
 
+  coins        Int      @default(0)
+
   players      Player[]
   applications TournamentApplication[]
+  ownedSkins   UserSkin[]
 
   // Phase 2 relations
   eloHistory         EloHistory[]
@@ -225,6 +228,38 @@ model TournamentMatch {
   createdAt    DateTime                @default(now())
 
   @@unique([tournamentId, round, position, bracket])
+}
+
+// ─── Skins & Shop ─────────────────────────────────────────────────────────────
+
+model SkinDef {
+  id          String     @id               // e.g. "boxer_blue_gloves"
+  characterId String                       // base character: "boxer", "robot", …
+  name        String
+  description String?
+  rarity      String     @default("common") // common | rare | epic | legendary
+  price       Int        @default(0)        // 0 = free
+  inShop      Boolean    @default(false)    // visible in store
+  imgIdle     String     @default("")
+  imgAttack   String     @default("")
+  imgHit      String     @default("")
+  imgDeath    String     @default("")
+  createdAt   DateTime   @default(now())
+
+  owners      UserSkin[]
+}
+
+model UserSkin {
+  id          String   @id @default(cuid())
+  userId      String
+  skinDefId   String
+  equippedFor String?                       // characterId this skin is equipped on, null = not equipped
+  createdAt   DateTime @default(now())
+
+  user    User    @relation(fields: [userId],    references: [id])
+  skinDef SkinDef @relation(fields: [skinDefId], references: [id])
+
+  @@unique([userId, skinDefId])
 }
 
 // ─── Phase 2: ELO History ─────────────────────────────────────────────────────

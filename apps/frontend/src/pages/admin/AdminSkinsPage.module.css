@@ -1,0 +1,249 @@
+.root {
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--text);
+  padding: 0 0 60px;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 32px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  gap: 16px;
+}
+
+.headerLeft {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.back {
+  color: var(--muted);
+  font-size: 13px;
+  text-decoration: none;
+}
+.back:hover { color: var(--text); }
+
+.title {
+  font-size: 20px;
+  font-weight: 700;
+  margin: 0;
+}
+
+/* ── Form ────────────────────────────────────────── */
+
+.formCard {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 24px 32px;
+}
+
+.formTitle {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0 0 20px;
+}
+
+.form {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px;
+  align-items: end;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.field input, .field select {
+  width: 100%;
+}
+
+.fieldCheck {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  padding-bottom: 8px;
+  cursor: pointer;
+}
+
+.hint {
+  font-size: 11px;
+  color: var(--muted);
+  opacity: 0.7;
+}
+
+/* ── Image grid ──────────────────────────────────── */
+
+.imgGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 16px;
+}
+
+.imgField {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.imgLabel {
+  font-size: 12px;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.imgPreview {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: contain;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.imgEmpty {
+  width: 100%;
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255,255,255,0.03);
+  border: 1px dashed var(--border);
+  border-radius: 8px;
+  color: var(--muted);
+  font-size: 24px;
+}
+
+.imgActions {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.formActions {
+  display: flex;
+  gap: 10px;
+  padding-top: 4px;
+}
+
+/* ── Content ─────────────────────────────────────── */
+
+.content {
+  padding: 32px;
+}
+
+.loading, .error, .empty {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--muted);
+  font-size: 15px;
+}
+.error { color: #f87171; }
+.empty { display: flex; flex-direction: column; align-items: center; gap: 8px; font-size: 32px; }
+
+/* ── Skin cards ──────────────────────────────────── */
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.cardImgs {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  background: rgba(0,0,0,0.2);
+  border-bottom: 1px solid var(--border);
+}
+
+.thumb {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: contain;
+  padding: 4px;
+}
+
+.thumbEmpty {
+  width: 100%;
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+  opacity: 0.3;
+  font-size: 18px;
+}
+
+.cardBody {
+  padding: 12px 16px;
+  flex: 1;
+}
+
+.cardName {
+  font-weight: 600;
+  font-size: 15px;
+  margin-bottom: 4px;
+}
+
+.cardMeta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.cardId {
+  font-size: 11px;
+  font-family: monospace;
+  color: var(--muted);
+  background: rgba(255,255,255,0.05);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.rarity {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.cardStats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.cardActions {
+  display: flex;
+  gap: 6px;
+  padding: 10px 16px;
+  border-top: 1px solid var(--border);
+  background: rgba(0,0,0,0.1);
+}
