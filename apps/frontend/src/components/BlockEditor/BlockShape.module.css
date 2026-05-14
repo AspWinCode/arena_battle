@@ -1,54 +1,72 @@
 .block {
   display: inline-flex;
   flex-direction: column;
-  min-width: 56px;
+  min-width: 64px;
   user-select: none;
-  filter: drop-shadow(0 2px 4px rgba(0,0,0,.4));
+  filter: drop-shadow(0 3px 6px rgba(0,0,0,.55));
 }
 
 .body {
   background: var(--block-color);
-  padding: 4px 8px;
-  min-height: 24px;
+  padding: 5px 10px;
+  min-height: 28px;
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 4px;
+  position: relative;
+}
+
+/* subtle top highlight stripe — Scratch-style depth */
+.body::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(
+    to bottom,
+    rgba(255,255,255,.18) 0%,
+    rgba(255,255,255,.04) 40%,
+    transparent 100%
+  );
+  pointer-events: none;
 }
 
 .labelRow {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
   flex-wrap: wrap;
-  min-height: 20px;
+  min-height: 22px;
+  position: relative;
 }
 
 .labelText {
   color: #fff;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
-  text-shadow: 0 1px 2px rgba(0,0,0,.5);
+  text-shadow: 0 1px 3px rgba(0,0,0,.45);
   white-space: nowrap;
+  letter-spacing: .01em;
 }
 
 /* ── type-hat ─────────────────────────────────────────────────── */
 .type-hat .body {
-  border-radius: 18px 18px 8px 8px;
+  border-radius: 24px 24px 4px 4px;
 }
 
 /* ── type-cap ─────────────────────────────────────────────────── */
 .type-cap .body {
-  border-radius: 8px;
+  border-radius: 4px 4px 20px 20px;
 }
 
 /* ── type-command ─────────────────────────────────────────────── */
 .type-command .body {
-  border-radius: 8px;
+  border-radius: 4px;
 }
 
 /* ── type-c-block ─────────────────────────────────────────────── */
 .type-c-block .body {
-  border-radius: 8px;
+  border-radius: 4px;
 }
 
 /* ── type-reporter ────────────────────────────────────────────── */
@@ -56,9 +74,9 @@
   display: inline-flex;
 }
 .type-reporter .body {
-  border-radius: 12px;
-  padding: 3px 8px;
-  min-width: 44px;
+  border-radius: 999px;
+  padding: 4px 12px;
+  min-width: 52px;
 }
 
 /* ── type-predicate ───────────────────────────────────────────── */
@@ -66,19 +84,19 @@
   display: inline-flex;
 }
 .type-predicate .body {
-  clip-path: polygon(12px 0%, calc(100% - 12px) 0%, 100% 50%, calc(100% - 12px) 100%, 12px 100%, 0% 50%);
-  padding: 3px 14px;
-  min-width: 44px;
+  clip-path: polygon(14px 0%, calc(100% - 14px) 0%, 100% 50%, calc(100% - 14px) 100%, 14px 100%, 0% 50%);
+  padding: 4px 18px;
+  min-width: 52px;
 }
 
-/* ── C-block ──────────────────────────────────────────────────── */
+/* ── C-block inner body ───────────────────────────────────────── */
 .innerBody {
-  background: rgba(0,0,0,.2);
-  border-left: 3px solid rgba(255,255,255,.2);
-  margin-left: 12px;
-  min-height: 22px;
-  padding: 3px 3px;
-  border-radius: 0 0 4px 4px;
+  background: rgba(0,0,0,.25);
+  border-left: 3px solid rgba(255,255,255,.22);
+  margin-left: 14px;
+  min-height: 26px;
+  padding: 4px 4px;
+  border-radius: 0 0 6px 6px;
   display: flex;
   flex-direction: column;
   gap: 0;
@@ -86,7 +104,7 @@
 
 .innerPlaceholder {
   font-size: 9px;
-  color: rgba(255,255,255,.4);
+  color: rgba(255,255,255,.38);
   font-style: italic;
   padding: 3px 6px;
   text-align: center;
@@ -94,49 +112,49 @@
 
 /* ── Slots ────────────────────────────────────────────────────── */
 .slotNumber {
-  width: 38px;
-  background: rgba(255,255,255,.15);
-  border: 1px solid rgba(255,255,255,.3);
-  border-radius: 6px;
+  width: 42px;
+  background: rgba(255,255,255,.2);
+  border: 1.5px solid rgba(255,255,255,.42);
+  border-radius: 8px;
   color: #fff;
   font-size: 11px;
   font-weight: 700;
-  padding: 2px 4px;
+  padding: 2px 5px;
   text-align: center;
   outline: none;
 }
 
 .slotString {
-  width: 58px;
-  background: rgba(255,255,255,.15);
-  border: 1px solid rgba(255,255,255,.3);
-  border-radius: 6px;
+  width: 62px;
+  background: rgba(255,255,255,.2);
+  border: 1.5px solid rgba(255,255,255,.42);
+  border-radius: 8px;
   color: #fff;
   font-size: 11px;
-  padding: 2px 4px;
+  padding: 2px 5px;
   outline: none;
 }
 
 .slotDropdown {
-  background: rgba(255,255,255,.15);
-  border: 1px solid rgba(255,255,255,.3);
-  border-radius: 6px;
+  background: rgba(255,255,255,.2);
+  border: 1.5px solid rgba(255,255,255,.42);
+  border-radius: 8px;
   color: #fff;
   font-size: 10px;
   font-weight: 600;
-  padding: 2px 3px;
+  padding: 2px 4px;
   outline: none;
   cursor: pointer;
-  max-width: 88px;
+  max-width: 96px;
 }
 
 .slotDropdown option { background: #1a1a35; color: #fff; }
 
 .slotBoolean {
-  min-width: 32px;
-  min-height: 16px;
-  clip-path: polygon(6px 0%, calc(100% - 6px) 0%, 100% 50%, calc(100% - 6px) 100%, 6px 100%, 0% 50%);
-  background: rgba(255,255,255,.15);
+  min-width: 34px;
+  min-height: 18px;
+  clip-path: polygon(8px 0%, calc(100% - 8px) 0%, 100% 50%, calc(100% - 8px) 100%, 8px 100%, 0% 50%);
+  background: rgba(255,255,255,.18);
   border-radius: 2px;
   display: flex;
   align-items: center;
@@ -144,27 +162,27 @@
 }
 
 .slotBooleanFilled { color: #fff; font-size: 10px; }
-.slotBooleanEmpty  { display: block; width: 20px; height: 10px; }
+.slotBooleanEmpty  { display: block; width: 22px; height: 10px; }
 
 .slotReporter {
-  min-width: 28px;
-  min-height: 18px;
-  background: rgba(255,255,255,.15);
-  border-radius: 8px;
+  min-width: 30px;
+  min-height: 20px;
+  background: rgba(255,255,255,.18);
+  border-radius: 999px;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 10px;
   color: #fff;
-  padding: 0 4px;
+  padding: 0 6px;
 }
 
-.slotReporterEmpty { display: block; width: 20px; height: 8px; }
+.slotReporterEmpty { display: block; width: 22px; height: 10px; }
 
 .slotNest {
   position: relative;
-  padding: 1px 3px;
-  border: 1px dashed rgba(255,255,255,.18);
+  padding: 2px 4px;
+  border: 1.5px dashed rgba(255,255,255,.2);
   transition: border-color .12s ease, box-shadow .12s ease, background-color .12s ease;
 }
 
@@ -204,24 +222,24 @@
 
 /* ── Two-body (ifElse) ────────────────────────────────────────── */
 .twoBodyLabel {
-  font-size: 9px;
+  font-size: 10px;
   font-weight: 800;
-  color: rgba(255,255,255,.7);
+  color: rgba(255,255,255,.75);
   letter-spacing: .06em;
   text-transform: uppercase;
   padding: 2px 4px 0;
-  margin-left: 12px;
+  margin-left: 14px;
 }
 
 .thenZone {
-  border-left-color: rgba(120,255,120,.35);
+  border-left-color: rgba(120,255,120,.38);
 }
 
 .elseZone {
-  border-left-color: rgba(255,120,120,.35);
+  border-left-color: rgba(255,120,120,.38);
 }
 
 /* ── Snap highlight ───────────────────────────────────────────── */
 .snapTarget {
-  filter: drop-shadow(0 0 8px rgba(255,255,255,.9)) drop-shadow(0 0 3px #fff);
+  filter: drop-shadow(0 0 10px rgba(255,255,255,.95)) drop-shadow(0 0 4px #fff);
 }
