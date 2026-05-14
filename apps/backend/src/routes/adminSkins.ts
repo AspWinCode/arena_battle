@@ -65,10 +65,17 @@ const updateSchema = z.object({
   })).optional(),
 })
 
+const layerMetaSchema = z.object({
+  url:     z.string().max(500),
+  name:    z.string().max(200),
+  visible: z.boolean(),
+})
+
 const actionSchema = z.object({
   action: z.string().min(1).max(40),
   fps:    z.number().int().min(1).max(60).default(12),
   frames: z.array(z.string().max(500)).max(10),
+  layers: z.array(z.array(layerMetaSchema).max(20)).max(10).optional(),
 })
 
 export const adminSkinsRoutes: FastifyPluginAsync = async (fastify) => {
@@ -191,7 +198,11 @@ export const adminSkinsRoutes: FastifyPluginAsync = async (fastify) => {
     const currentActions = (existing.actions as Record<string, unknown>) ?? {}
     const updated = {
       ...currentActions,
-      [body.data.action]: { fps: body.data.fps, frames: body.data.frames },
+      [body.data.action]: {
+        fps:    body.data.fps,
+        frames: body.data.frames,
+        ...(body.data.layers !== undefined ? { layers: body.data.layers } : {}),
+      },
     }
 
     const skin = await prisma.skinDef.update({

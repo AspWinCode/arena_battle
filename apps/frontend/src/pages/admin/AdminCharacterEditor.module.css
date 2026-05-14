@@ -435,6 +435,11 @@
   text-align: center;
 }
 
+.layerUploading {
+  margin-right: 4px;
+  font-size: 12px;
+}
+
 .layerActions {
   padding: 10px 12px;
   border-top: 1px solid var(--border);
