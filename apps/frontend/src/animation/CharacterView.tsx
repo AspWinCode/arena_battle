@@ -35,18 +35,23 @@ import styles from './CharacterView.module.css'
 // Add more ids here as you create spritesheets
 const SPRITESHEET_CHARS = new Set(['boxer'])
 
-// ── Fetch skin images from the shop API (by full skinId like "boxer_blue_gloves") ─
+// ── Fetch skin render data from the public skins API ──────────────────────────
+// Tries exact skinId first, then falls back to the character's default skin.
 async function fetchSkinImages(skinId: string): Promise<PngSkinImages | null> {
+  // Derive character ID: "boxer_blue" → "boxer", "boxer" → "boxer"
+  const charId = skinId.includes('_') ? skinId.split('_')[0] : skinId
   try {
-    const res = await fetch(`/api/v1/shop`)
+    const res = await fetch(`/api/v1/skins/character/${charId}`)
     if (!res.ok) return null
-    const skins: Array<{
+    const skin: {
       id: string
       imgIdle: string; imgAttack: string; imgHit: string; imgDeath: string
       actions?: Record<string, { fps: number; frames: string[] }>
-    }> = await res.json()
-    const skin = skins.find(s => s.id === skinId)
-    if (!skin) return null
+    } = await res.json()
+    // Only use PNG mode if there is at least one frame or legacy image
+    const hasFrames = skin.actions && Object.values(skin.actions).some(a => a.frames.length > 0)
+    const hasLegacy = skin.imgIdle || skin.imgAttack || skin.imgHit || skin.imgDeath
+    if (!hasFrames && !hasLegacy) return null
     return {
       imgIdle:   skin.imgIdle,
       imgAttack: skin.imgAttack,
@@ -96,18 +101,15 @@ const CharacterView = forwardRef<CharacterViewHandle, CharacterViewProps>(
 
     // skinId can be a base characterId ("boxer") or a full skin variant ("boxer_blue_gloves")
     const baseCharId = skinId.includes('_') ? skinId.split('_')[0] : skinId
-    const isVariantSkin = skinId.includes('_') && skinId !== baseCharId
 
-    const useSprite = !isVariantSkin && SPRITESHEET_CHARS.has(skinId)
-
-    // ── PNG variant path (fetched skin images) ──────────────────────────────
+    // ── PNG path: try to load frames for any skin; fall back to spritesheet/spine ─
     const [pngImages, setPngImages] = useState<PngSkinImages | null>(null)
     const pngRef = useRef<PngCharacterHandle>(null)
     useEffect(() => {
-      if (!isVariantSkin) { setPngImages(null); return }
       fetchSkinImages(skinId).then(imgs => setPngImages(imgs))
-    }, [skinId, isVariantSkin])
-    const usePng = isVariantSkin && pngImages !== null
+    }, [skinId])
+    const usePng    = pngImages !== null
+    const useSprite = !usePng && SPRITESHEET_CHARS.has(baseCharId)
 
     // ── Spritesheet path ─────────────────────────────────────────────────────
     const spriteRef = useRef<SpritesheetCharacterHandle>(null)
