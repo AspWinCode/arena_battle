@@ -315,6 +315,10 @@ export default function LearningBattlePage() {
       <div className={styles.body}>
         {/* Left — editor */}
         <div className={styles.editorPane}>
+          <div className={styles.storyBox}>
+            <p className={styles.storyText}>{mission.story}</p>
+          </div>
+
           {/* Mode + language bar */}
           <div className={styles.editorModeBar}>
             <div className={styles.modeTabs}>
