@@ -224,7 +224,7 @@ export default function ClanDetailPage() {
                 <span>👥 {clan._count.members} / 20 участников</span>
                 <span>⚔️ {clan.totalWars} войн</span>
                 <span>🏆 {clan.totalWins} побед</span>
-                <span style={{ color: 'var(--lightning)', fontWeight: 700 }}>{clan.elo} ELO</span>
+                <span style={{ color: 'var(--lightning)', fontWeight: 700 }}>{clan.elo} Рейтинг</span>
               </div>
             </div>
 
@@ -287,7 +287,7 @@ export default function ClanDetailPage() {
                     <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>@{m.user.username}</span>
                     <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{ROLE_LABEL[m.role]}</span>
                   </div>
-                  <div style={{ fontSize: 12, color: 'var(--lightning)', fontWeight: 700, marginTop: 2 }}>{m.user.elo} ELO</div>
+                  <div style={{ fontSize: 12, color: 'var(--lightning)', fontWeight: 700, marginTop: 2 }}>{m.user.elo} Рейтинг</div>
                 </div>
 
                 {/* Owner management controls */}

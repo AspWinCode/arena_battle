@@ -546,7 +546,7 @@ export default function ProfilePage() {
               {u.elo != null && (
                 <div className={styles.statItem}>
                   <span className={styles.statItemVal} style={{ color: 'var(--lightning)' }}>{u.elo}</span>
-                  <span className={styles.statItemLbl}>ELO</span>
+                  <span className={styles.statItemLbl}>Рейтинг</span>
                 </div>
               )}
               <div className={styles.statItem}>

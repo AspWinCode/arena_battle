@@ -233,7 +233,7 @@ export default function ResultScreen({ onPlayAgain }: { onPlayAgain: () => void 
             fontSize: 13,
           }}>
             <span style={{ fontWeight: 700, color: eloDelta.p1 > 0 ? '#4ade80' : '#f87171' }}>
-              {eloDelta.p1 > 0 ? `+${eloDelta.p1}` : eloDelta.p1} ELO
+              {eloDelta.p1 > 0 ? `+${eloDelta.p1}` : eloDelta.p1} Рейтинг
             </span>
             <span style={{ color: 'var(--text-muted)', fontSize: 11, fontWeight: 700 }}>
               ⚡ РЕЙТИНГ

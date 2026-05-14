@@ -183,7 +183,7 @@ export default function PublicProfilePage() {
         {u.elo != null && (
           <div className={styles.statBox}>
             <span className={styles.statVal} style={{ color: 'var(--lightning)' }}>{u.elo}</span>
-            <span className={styles.statLbl}>ELO</span>
+            <span className={styles.statLbl}>Рейтинг</span>
           </div>
         )}
         <div className={styles.statBox}>
@@ -332,7 +332,7 @@ export default function PublicProfilePage() {
             {u.elo != null && (
               <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
                 <RankBadge elo={u.elo} size="lg" />
-                <div style={{ color: 'var(--text-muted)', fontSize: 13 }}>Текущий рейтинг ELO</div>
+                <div style={{ color: 'var(--text-muted)', fontSize: 13 }}>Текущий рейтинг</div>
               </div>
             )}
             {eloLoading ? (
@@ -350,7 +350,7 @@ export default function PublicProfilePage() {
                   }}>
                     <span style={{ fontSize: 16 }}>{h.won ? '✅' : '❌'}</span>
                     <div style={{ flex: 1 }}>
-                      <span style={{ fontSize: 13, fontWeight: 600 }}>{h.elo} ELO</span>
+                      <span style={{ fontSize: 13, fontWeight: 600 }}>{h.elo} Рейтинг</span>
                       {h.opponent && (
                         <span style={{ fontSize: 12, color: 'var(--text-muted)', marginLeft: 8 }}>
                           vs {h.opponent.displayName}

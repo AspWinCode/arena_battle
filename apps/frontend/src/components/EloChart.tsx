@@ -28,7 +28,7 @@ export default function EloChart({ history, height = 120 }: Props) {
         borderRadius: 8,
         border: '1px solid var(--border)',
       }}>
-        Сыграй больше матчей для графика ELO
+        Сыграй больше матчей для графика рейтинга
       </div>
     )
   }

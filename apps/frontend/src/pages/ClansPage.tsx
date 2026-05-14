@@ -52,7 +52,7 @@ export default function ClansPage() {
               Объединяйся с другими игроками, сражайся в войнах кланов
             </p>
             <div style={{ marginTop: 10, display: 'inline-flex', alignItems: 'center', gap: 6, background: 'rgba(250,204,21,.08)', border: '1px solid rgba(250,204,21,.25)', borderRadius: 8, padding: '4px 12px', fontSize: 12, fontWeight: 700, color: '#facc15' }}>
-              🏆 Рейтинг кланов по ELO
+              🏆 Рейтинг кланов
             </div>
           </div>
           <div style={{ display: 'flex', gap: 10 }}>
@@ -136,7 +136,6 @@ export default function ClansPage() {
                     <div style={{ marginTop: 6, display: 'flex', gap: 14, fontSize: 12, color: 'var(--text-muted)' }}>
                       <span>👥 {clan._count.members} / 20</span>
                       <span>⚔️ {clan.totalWars} войн</span>
-                      <span>🏆 {clan.totalWins} побед</span>
                       <span style={{ color: 'var(--text-muted)' }}>Владелец: {clan.owner.displayName}</span>
                     </div>
                   </div>
@@ -144,7 +143,7 @@ export default function ClansPage() {
                   {/* ELO */}
                   <div style={{ textAlign: 'right' }}>
                     <div style={{ fontSize: 22, fontWeight: 900, color: 'var(--lightning)' }}>{clan.elo}</div>
-                    <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>ELO</div>
+                    <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>Рейтинг</div>
                   </div>
                 </div>
               </Link>

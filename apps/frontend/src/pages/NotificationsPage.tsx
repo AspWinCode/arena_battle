@@ -35,7 +35,7 @@ const TYPE_META: Record<string, { icon: string; label: string; text: (p: any) =>
   season_end: {
     icon: '🏆',
     label: 'Конец сезона',
-    text: p => `Сезон «${p.seasonName ?? ''}» завершён. Итоговый ELO: ${p.finalElo} → ${p.newElo}`,
+    text: p => `Сезон «${p.seasonName ?? ''}» завершён. Итоговый рейтинг: ${p.finalElo} → ${p.newElo}`,
   },
 }
 
@@ -147,8 +147,8 @@ export default function NotificationsPage() {
                   {n.type === 'season_end' && n.payload?.finalElo && n.payload?.newElo && (
                     <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
                       {n.payload.finalElo > n.payload.newElo
-                        ? `ELO снижен на ${n.payload.finalElo - n.payload.newElo}`
-                        : 'ELO сохранён'}
+                        ? `Рейтинг снижен на ${n.payload.finalElo - n.payload.newElo}`
+                        : 'Рейтинг сохранён'}
                     </div>
                   )}
                   <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>

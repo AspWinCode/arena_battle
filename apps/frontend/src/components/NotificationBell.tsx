@@ -8,7 +8,7 @@ const TYPE_LABELS: Record<string, { icon: string; text: (p: any) => string }> = 
   challenge_accepted: { icon: '✅', text: p => `${p.toName   ?? 'Соперник'} принял твой вызов!` },
   challenge_declined: { icon: '❌', text: p => `${p.toName   ?? 'Соперник'} отклонил твой вызов` },
   match_found:        { icon: '🎮', text: _p => 'Найден соперник! Матч начинается...'           },
-  season_end:         { icon: '🏆', text: p => `Сезон «${p.seasonName ?? ''}» завершён. ELO: ${p.newElo}` },
+  season_end:         { icon: '🏆', text: p => `Сезон «${p.seasonName ?? ''}» завершён. Рейтинг: ${p.newElo}` },
 }
 
 interface Notif {

@@ -196,7 +196,7 @@ export default function ChallengePage() {
               <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>@{opponent.username}</div>
               {opponent.elo != null && (
                 <div style={{ fontSize: 12, color: 'var(--lightning)', fontWeight: 700, marginTop: 2 }}>
-                  {opponent.elo} ELO
+                  {opponent.elo} Рейтинг
                 </div>
               )}
             </div>

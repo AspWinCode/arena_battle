@@ -126,7 +126,7 @@ export default function LeaderboardPage() {
           <div className={styles.myStats}>
             <div className={styles.myStat}>
               <span className={styles.myStatVal} style={{ color: 'var(--lightning)' }}>{user?.elo ?? 1000}</span>
-              <span className={styles.myStatKey}>ELO</span>
+              <span className={styles.myStatKey}>Рейтинг</span>
             </div>
             <div className={styles.myStat}>
               <span className={styles.myStatVal} style={{ color: 'var(--accent)' }}>{store.totalXp}</span>
@@ -157,7 +157,7 @@ export default function LeaderboardPage() {
             <div className={styles.tableHead}>
               <span className={styles.colRank}>#</span>
               <span className={styles.colName}>Боец</span>
-              <span className={styles.colXp}>ELO</span>
+              <span className={styles.colXp}>Рейтинг</span>
               <span className={styles.colWins}>Побед</span>
               <span className={styles.colStreak}>Серия</span>
               <span className={styles.colWr}>Винрейт</span>
