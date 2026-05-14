@@ -214,9 +214,8 @@
 .apiChip[data-tip]::after {
   content: attr(data-tip);
   position: absolute;
-  top: 50%;
-  right: calc(100% + 10px);
-  transform: translateY(-50%);
+  top: calc(100% + 6px);
+  left: 0;
   background: #0f172a;
   color: #e2e8f0;
   border: 1px solid #38bdf8;
@@ -225,7 +224,7 @@
   font-size: 12px;
   font-family: -apple-system, BlinkMacSystemFont, sans-serif;
   white-space: pre-wrap;
-  width: 270px;
+  width: 260px;
   text-align: left;
   line-height: 1.6;
   z-index: 9999;
