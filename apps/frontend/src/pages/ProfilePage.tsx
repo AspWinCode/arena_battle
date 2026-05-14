@@ -7,6 +7,7 @@ import { useAchievementsStore, ACHIEVEMENTS } from '../stores/achievementsStore'
 import { SKIN_ICON, CHARACTER_STATS } from '@robocode/shared'
 import type { SkinId } from '@robocode/shared'
 import CharacterCard from '../components/CharacterCard/CharacterCard'
+import CharacterView from '../animation/CharacterView'
 import RankBadge from '../components/RankBadge'
 import EloChart from '../components/EloChart'
 import styles from './ProfilePage.module.css'
@@ -257,6 +258,11 @@ export default function ProfilePage() {
               ✏️ Редактировать
             </button>
           </div>
+
+          {/* Character animation preview */}
+          <div className={styles.heroChar}>
+            <CharacterView skinId={u.preferredSkin} className={styles.heroCharView} />
+          </div>
         </div>
       </div>
 
@@ -372,10 +378,17 @@ export default function ProfilePage() {
               )}
             </div>
 
-            {/* Fix #4: CharacterCard moved inside tab content (relevant context) */}
+            {/* My fighter section */}
             <div style={{ marginTop: 8 }}>
               <div className={styles.achSectionLabel}>Мой боец</div>
-              <CharacterCard skinId={u.preferredSkin} />
+              <div className={styles.myFighter}>
+                <div className={styles.myFighterChar}>
+                  <CharacterView skinId={u.preferredSkin} className={styles.myFighterView} />
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <CharacterCard skinId={u.preferredSkin} />
+                </div>
+              </div>
             </div>
           </div>
         )}
