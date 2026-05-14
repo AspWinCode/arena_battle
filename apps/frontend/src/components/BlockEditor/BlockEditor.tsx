@@ -837,7 +837,7 @@ function pickUpBlock(scripts: Script[], scriptId: string, instId: string): [Scri
     if (s.id !== scriptId) return [s]
     if (s.root.instanceId === instId) {
       picked = s.root
-      return s.root.next ? [{ ...s, root: s.root.next }] : []
+      return []
     }
     const [newRoot, pickedBlock] = cutAtBlock(s.root, instId)
     picked = pickedBlock
