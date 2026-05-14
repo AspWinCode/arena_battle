@@ -467,6 +467,7 @@
   border-color: color-mix(in srgb, var(--cc) 50%, transparent);
 }
 .charChipIcon { font-size: 28px; line-height: 1; }
+.charChipThumb { width: 56px; height: 56px; object-fit: contain; }
 .charChipName { font-size: 12px; font-weight: 700; }
 .charChipTag  { font-size: 10px; color: var(--text-muted); max-width: 100px; text-align: center; line-height: 1.3; }
 

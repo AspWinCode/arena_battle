@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { CHARACTER_STATS, SKIN_ICON } from '@robocode/shared'
+import { useCharacterThumbs } from '../hooks/useCharacterThumbs'
 import type { SkinId, Strategy, StrategyContext, TurnResult, RoundResult } from '@robocode/shared'
 import { runLocalMatch } from '../engine/battleEngine'
 import { SPINE_SKIN_CONFIG } from '../components/SpineCharacter/SpineCharacter'
@@ -119,6 +120,7 @@ const ACTION_LABEL: Record<string, string> = {
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export default function DemoBattlePage() {
+  const thumbs = useCharacterThumbs()
   const [phase,      setPhase]      = useState<Phase>('select')
   const [p1Skin,     setP1Skin]     = useState<SkinId>('robot')
   const [p2Skin,     setP2Skin]     = useState<SkinId>('gladiator')
@@ -264,7 +266,9 @@ export default function DemoBattlePage() {
                     style={{ '--cc': ch.color } as React.CSSProperties}
                     onClick={() => setP1Skin(ch.id)}
                   >
-                    <span className={styles.charIcon}>{ch.icon}</span>
+                    {thumbs[ch.id]
+                      ? <img src={thumbs[ch.id]} className={styles.charThumb} alt={ch.name} />
+                      : <span className={styles.charIcon}>{ch.icon}</span>}
                     <span className={styles.charName}>{ch.name}</span>
                     <span className={styles.charTag}>{ch.tagline}</span>
                   </button>
@@ -277,13 +281,17 @@ export default function DemoBattlePage() {
               <div className={styles.vsCircle}>VS</div>
               <div className={styles.vsFighters}>
                 <div className={styles.vsPreview}>
-                  <span className={styles.vsIcon}>{p1Stats?.icon}</span>
+                  {p1Skin && thumbs[p1Skin]
+                    ? <img src={thumbs[p1Skin]} className={styles.vsThumb} alt="" />
+                    : <span className={styles.vsIcon}>{p1Stats?.icon}</span>}
                   <span className={styles.vsName}>{p1Stats?.name}</span>
                   <span className={styles.vsTagline}>{p1Stats?.tagline}</span>
                 </div>
                 <div className={styles.vsDivider} />
                 <div className={`${styles.vsPreview} ${styles.vsPreviewRight}`}>
-                  <span className={styles.vsIcon}>{p2Stats?.icon}</span>
+                  {p2Skin && thumbs[p2Skin]
+                    ? <img src={thumbs[p2Skin]} className={styles.vsThumb} alt="" />
+                    : <span className={styles.vsIcon}>{p2Stats?.icon}</span>}
                   <span className={styles.vsName}>{p2Stats?.name}</span>
                   <span className={styles.vsTagline}>{p2Stats?.tagline}</span>
                 </div>
@@ -307,7 +315,9 @@ export default function DemoBattlePage() {
                     style={{ '--cc': ch.color } as React.CSSProperties}
                     onClick={() => setP2Skin(ch.id)}
                   >
-                    <span className={styles.charIcon}>{ch.icon}</span>
+                    {thumbs[ch.id]
+                      ? <img src={thumbs[ch.id]} className={styles.charThumb} alt={ch.name} />
+                      : <span className={styles.charIcon}>{ch.icon}</span>}
                     <span className={styles.charName}>{ch.name}</span>
                     <span className={styles.charTag}>{ch.tagline}</span>
                   </button>
@@ -330,7 +340,9 @@ export default function DemoBattlePage() {
             {/* P1 */}
             <div className={styles.statsSide}>
               <div className={styles.statsName}>
-                <span>{p1Stats?.icon}</span>
+                {thumbs[p1Skin]
+                  ? <img src={thumbs[p1Skin]} className={styles.statsThumb} alt="" />
+                  : <span>{p1Stats?.icon}</span>}
                 <span>{p1Stats?.name}</span>
               </div>
               <div className={styles.hpRow}>
@@ -359,7 +371,9 @@ export default function DemoBattlePage() {
             <div className={`${styles.statsSide} ${styles.statsSideRight}`}>
               <div className={`${styles.statsName} ${styles.statsNameRight}`}>
                 <span>{p2Stats?.name}</span>
-                <span>{p2Stats?.icon}</span>
+                {thumbs[p2Skin]
+                  ? <img src={thumbs[p2Skin]} className={styles.statsThumb} alt="" />
+                  : <span>{p2Stats?.icon}</span>}
               </div>
               <div className={`${styles.hpRow} ${styles.hpRowRight}`}>
                 <span className={styles.hpNum}>{Math.max(0, p2Hp)}</span>
