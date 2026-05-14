@@ -70,11 +70,11 @@ export const userAuthRoutes: FastifyPluginAsync = async (fastify) => {
     const { email, username, displayName, password, ...profile } = body.data
 
     const exists = await prisma.user.findFirst({
-      where: { OR: [{ email }, { username }] },
-      select: { email: true, username: true },
+      where: { OR: [{ email }, { username }, { displayName }] },
+      select: { email: true, username: true, displayName: true },
     })
     if (exists) {
-      const field = exists.email === email ? 'Email' : 'Username'
+      const field = exists.email === email ? 'Email' : exists.username === username ? 'Username' : 'Имя на арене'
       return reply.status(409).send({ error: `${field} уже занят`, code: 'CONFLICT' })
     }
 
@@ -86,6 +86,17 @@ export const userAuthRoutes: FastifyPluginAsync = async (fastify) => {
 
     const token = signUserToken(fastify, user.id, user.email)
     return reply.status(201).send({ user, token })
+  })
+
+  // Check display name availability (no auth required)
+  fastify.get('/check-display-name', async (req, reply) => {
+    const { name } = req.query as { name?: string }
+    if (!name || name.trim().length < 1) return reply.send({ available: false })
+    const found = await prisma.user.findFirst({
+      where: { displayName: { equals: name.trim(), mode: 'insensitive' } },
+      select: { id: true },
+    })
+    return reply.send({ available: !found })
   })
 
   // Login
