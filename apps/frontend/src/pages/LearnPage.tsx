@@ -20,7 +20,7 @@ export default function LearnPage() {
 
       <div className={styles.content}>
         <div className={styles.header}>
-          <Link to="/join" className={styles.back}>← Назад</Link>
+          <Link to="/profile" className={styles.back}>← Назад</Link>
           <div className={styles.titleRow}>
             <h1 className={styles.title}>🎓 Режим обучения</h1>
             <span className={styles.progress}>{totalCompleted} / {MISSIONS.length} миссий</span>
