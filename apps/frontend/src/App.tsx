@@ -28,6 +28,8 @@ import AdminTournamentNew from './pages/admin/AdminTournamentNew'
 import AdminTournamentDetail from './pages/admin/AdminTournamentDetail'
 import AdminUsersPage from './pages/admin/AdminUsersPage'
 import AdminSkinsPage from './pages/admin/AdminSkinsPage'
+import AdminCharactersPage from './pages/admin/AdminCharactersPage'
+import AdminCharacterEditor from './pages/admin/AdminCharacterEditor'
 import ShopPage from './pages/ShopPage'
 import DemoBattlePage from './pages/DemoBattlePage'
 import ForgotPasswordPage from './pages/ForgotPasswordPage'
@@ -73,6 +75,8 @@ export default function App() {
       <Route path="/admin/tournaments/:id" element={<ProtectedRoute><AdminTournamentDetail /></ProtectedRoute>} />
       <Route path="/admin/users" element={<ProtectedRoute><AdminUsersPage /></ProtectedRoute>} />
       <Route path="/admin/skins" element={<ProtectedRoute><AdminSkinsPage /></ProtectedRoute>} />
+      <Route path="/admin/characters" element={<ProtectedRoute><AdminCharactersPage /></ProtectedRoute>} />
+      <Route path="/admin/characters/:characterId" element={<ProtectedRoute><AdminCharacterEditor /></ProtectedRoute>} />
 
       <Route path="/shop" element={<ShopPage />} />
 
