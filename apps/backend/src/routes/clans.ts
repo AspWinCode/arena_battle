@@ -76,6 +76,12 @@ export const clanRoutes: FastifyPluginAsync = async (fastify) => {
 
   // ── Get single clan (public) ─────────────────────────────────────────────────
   fastify.get<{ Params: { id: string } }>('/:id', async (req, reply) => {
+    let userId: string | null = null
+    try {
+      const payload = await req.jwtVerify<{ userId: string; type: string }>()
+      if (payload.type === 'user') userId = payload.userId
+    } catch { /* unauthenticated — ok */ }
+
     const clan = await prisma.clan.findUnique({
       where: { id: req.params.id },
       include: {
@@ -88,7 +94,9 @@ export const clanRoutes: FastifyPluginAsync = async (fastify) => {
       },
     })
     if (!clan) return reply.status(404).send({ error: 'Not found' })
-    return reply.send(clan)
+
+    const myMember = userId ? clan.members.find(m => m.userId === userId) : null
+    return reply.send({ ...clan, myRole: myMember?.role ?? null })
   })
 
   // ── Create clan (auth user) ──────────────────────────────────────────────────

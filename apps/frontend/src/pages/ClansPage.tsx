@@ -51,6 +51,9 @@ export default function ClansPage() {
             <p style={{ margin: '6px 0 0', color: 'var(--text-muted)', fontSize: 14 }}>
               Объединяйся с другими игроками, сражайся в войнах кланов
             </p>
+            <div style={{ marginTop: 10, display: 'inline-flex', alignItems: 'center', gap: 6, background: 'rgba(250,204,21,.08)', border: '1px solid rgba(250,204,21,.25)', borderRadius: 8, padding: '4px 12px', fontSize: 12, fontWeight: 700, color: '#facc15' }}>
+              🏆 Рейтинг кланов по ELO
+            </div>
           </div>
           <div style={{ display: 'flex', gap: 10 }}>
             {myClan ? (
