@@ -59,6 +59,7 @@ export const ACTION_TO_ANIMATION: Record<ActionName, AnimationName> = {
 export type BattleActor = 'p1' | 'p2'
 
 export type BattleEvent =
+  | { actor: BattleActor; type: 'move';    to: 'close' | 'mid' | 'far' }
   | { actor: BattleActor; type: 'action';  action: ActionName }
   | { actor: BattleActor; type: 'damage';  amount: number; isCrit?: boolean }
   | { actor: BattleActor; type: 'heal';    amount: number }
