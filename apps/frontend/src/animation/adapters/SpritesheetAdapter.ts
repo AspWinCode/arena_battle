@@ -192,14 +192,17 @@ export class SpritesheetAdapter {
     const frame = anim.frames[this.frameIndex]
     if (!frame) return
 
-    // Scale the frame height to fill the canvas height (90%), width follows aspect ratio
-    const scale = (canvas.height * 0.9) / frame.h
-    const dw    = frame.w * scale
-    const dh    = frame.h * scale
+    // Scale to fit within canvas, constrained by BOTH width and height
+    const scale = Math.min(
+      (canvas.width  * 0.92) / frame.w,
+      (canvas.height * 0.92) / frame.h,
+    )
+    const dw = frame.w * scale
+    const dh = frame.h * scale
 
-    // Pin character bottom to canvas bottom (with small gap)
+    // Center horizontally, pin to bottom
     const dx = (canvas.width - dw) / 2
-    const dy = canvas.height - dh - 4
+    const dy = canvas.height - dh - 2
 
     // Hit flash
     if (this.hitFlash > 0) {

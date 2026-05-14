@@ -87,8 +87,8 @@ const SpritesheetCharacter = forwardRef<SpritesheetCharacterHandle, Props>(
         {!loaded && <div className={styles.shimmer} />}
         <canvas
           ref={canvasRef}
-          width={260}
-          height={340}
+          width={320}
+          height={360}
           className={styles.canvas}
           style={{ opacity: loaded ? 1 : 0 }}
         />
