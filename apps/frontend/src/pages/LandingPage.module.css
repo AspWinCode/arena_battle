@@ -514,6 +514,11 @@
   object-fit: contain;
   object-position: bottom center;
 }
+/* Portrait images fill the card fully (Dota 2 style) */
+.charCardPortrait {
+  object-fit: cover;
+  object-position: center top;
+}
 
 .charCardFallback {
   width: 100%;
