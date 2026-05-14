@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { api } from '../api/client'
 import { useUserStore } from '../stores/userStore'
 
@@ -20,6 +20,7 @@ interface Clan {
 interface MyClan { id: string; name: string; tag: string }
 
 export default function ClansPage() {
+  const navigate = useNavigate()
   const { token, user } = useUserStore()
   const [clans, setClans]     = useState<Clan[]>([])
   const [myClan, setMyClan]   = useState<MyClan | null | undefined>(undefined) // undefined = not yet loaded
@@ -45,6 +46,7 @@ export default function ClansPage() {
       <div style={{ maxWidth: 860, margin: '0 auto' }}>
 
         {/* Header */}
+        <button onClick={() => navigate(-1)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontSize: 13, color: 'var(--text-muted)', marginBottom: 16, display: 'block' }}>← Назад</button>
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 32, flexWrap: 'wrap', gap: 16 }}>
           <div>
             <h1 style={{ margin: 0, fontSize: 28, fontWeight: 900 }}>⚔️ Кланы</h1>
