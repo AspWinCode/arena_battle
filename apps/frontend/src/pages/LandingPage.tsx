@@ -71,8 +71,8 @@ export default function LandingPage() {
               </h1>
 
               <p className={styles.heroSub}>
-                Пишешь код, но задачи на LeetCode скучны? Здесь ты сражаешься.
-                Напиши стратегию на Python или JavaScript — и твой боец идёт в реальный бой.
+                Выбери бойца и напиши его тактику — блоками, Python, JS, Java или C++.
+                Чем умнее код — тем сильнее боец.
               </p>
 
               <div className={styles.heroCta}>
@@ -89,9 +89,9 @@ export default function LandingPage() {
               <div className={styles.heroStats}>
                 <Stat num="16"  label="персонажей" />
                 <div className={styles.statDiv} />
-                <Stat num="7"   label="действий" />
+                <Stat num="18"  label="действий" />
                 <div className={styles.statDiv} />
-                <Stat num="3"   label="языка" />
+                <Stat num="5"   label="языков" />
                 <div className={styles.statDiv} />
                 <Stat num="∞"   label="тактик" />
               </div>
@@ -195,7 +195,7 @@ export default function LandingPage() {
               { icon: '🧠', title: 'Учись программируя',      accent: '#a855f7', desc: 'Миссии от новичка до профи: блочный редактор → Python → продвинутые алгоритмы. Прогресс через победы.' },
               { icon: '🏆', title: 'Турниры',                 accent: '#d97706', desc: 'Официальные турниры с сеткой bo3/bo5. Обновляй стратегию между раундами — побеждает лучший алгоритм.' },
               { icon: '🎭', title: '16 персонажей',           accent: '#f43f5e', desc: 'У каждого уникальная механика: яд, контратаки, уклонения, бусидо, захват. Стратегия зависит от выбора.' },
-              { icon: '⚡', title: '3 языка',                 accent: '#22c55e', desc: 'JavaScript, Python или блочный редактор. Переключайся по мере роста — прогресс сохраняется.' },
+              { icon: '⚡', title: '5 языков',                 accent: '#22c55e', desc: 'Блоки, JavaScript, Python, Java и C++. Начни с блоков — переходи к коду по мере роста. Прогресс сохраняется.' },
               { icon: '🔁', title: 'Спарринг',                accent: '#60a5fa', desc: 'Тестируй стратегии без соперника. Запускай бои локально, экспериментируй и оттачивай алгоритм.' },
             ].map(f => (
               <div key={f.title} className={styles.featCard} style={{ '--fa': f.accent } as React.CSSProperties}>
@@ -226,7 +226,7 @@ export default function LandingPage() {
           </div>
 
           <div className={styles.actionsRow}>
-            <div className={styles.actionsLabel}>7 действий</div>
+            <div className={styles.actionsLabel}>18 действий</div>
             <div className={styles.actions}>
               {[
                 { icon: '👊', label: 'attack',  desc: '12 урона' },
@@ -318,9 +318,9 @@ export default function LandingPage() {
               Это бесплатно. Напиши первую стратегию и отправь своего бойца на арену прямо сейчас.
             </p>
             <div className={styles.ctaPerks}>
-              <span className={styles.ctaPerk}>Блочный редактор — никакого барьера входа</span>
-              <span className={styles.ctaPerk}>Python и JavaScript уже на старте</span>
-              <span className={styles.ctaPerk}>Реальные бои, турниры, рейтинг</span>
+              <span className={styles.ctaPerk}>Бесплатно навсегда</span>
+              <span className={styles.ctaPerk}>5 языков — от блоков до C++</span>
+              <span className={styles.ctaPerk}>Без установки</span>
             </div>
             <div className={styles.ctaBtns}>
               <Link to="/join" className={`btn btn-primary ${styles.ctaBig}`}>⚔️ Начать бой</Link>
