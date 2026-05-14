@@ -51,7 +51,6 @@ const TABS: { id: Tab; label: string }[] = [
   { id: 'history',      label: '⚔️ История'    },
   { id: 'achievements', label: '🏅 Достижения' },
   { id: 'progress',     label: '🔥 Прогресс'   },
-  { id: 'settings',     label: '⚙️ Настройки' },
 ]
 
 const NAV_ITEMS = [
