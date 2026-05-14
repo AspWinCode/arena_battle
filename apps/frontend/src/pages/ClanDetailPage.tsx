@@ -177,6 +177,14 @@ export default function ClanDetailPage() {
     } catch (e: any) { setError(e.message) }
   }
 
+  const handleDeclineWar = async (warId: string) => {
+    if (!token || !confirm('Отклонить вызов на войну?')) return
+    try {
+      await api.post(`/clans/wars/${warId}/decline`, {}, token)
+      await load()
+    } catch (e: any) { setError(e.message) }
+  }
+
   if (loading) return (
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg)' }}>
       <span style={{ fontSize: 36, animation: 'spin 1s linear infinite' }}>⚙️</span>
@@ -244,6 +252,36 @@ export default function ClanDetailPage() {
             </div>
           </div>
         </div>
+
+        {/* Active war banner */}
+        {wars.filter(w => w.status === 'ACTIVE').map(w => {
+          const weClan1  = w.clan1.id === id
+          const opponent = weClan1 ? w.clan2 : w.clan1
+          const ourScore = weClan1 ? w.clan1Score : w.clan2Score
+          const theirScore = weClan1 ? w.clan2Score : w.clan1Score
+          return (
+            <div key={w.id} onClick={() => setTab('wars')} style={{ background: 'rgba(249,115,22,.08)', border: '1px solid rgba(249,115,22,.4)', borderRadius: 12, padding: '12px 18px', marginBottom: 12, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+              <div style={{ fontWeight: 700, fontSize: 13, color: '#fb923c' }}>
+                ⚔️ Идёт война с [{opponent.tag}] {opponent.name}
+              </div>
+              <div style={{ fontWeight: 900, fontSize: 18, fontVariantNumeric: 'tabular-nums' }}>
+                <span style={{ color: ourScore >= theirScore ? '#4ade80' : '#f87171' }}>{ourScore}</span>
+                <span style={{ color: 'var(--text-muted)' }}> : </span>
+                <span style={{ color: theirScore > ourScore ? '#f87171' : 'var(--text-muted)' }}>{theirScore}</span>
+              </div>
+            </div>
+          )
+        })}
+
+        {/* Pending war invites for our clan */}
+        {wars.filter(w => w.status === 'PENDING' && w.clan2.id === id).map(w => (
+          <div key={w.id} onClick={() => setTab('wars')} style={{ background: 'rgba(250,204,21,.06)', border: '1px solid rgba(250,204,21,.3)', borderRadius: 12, padding: '12px 18px', marginBottom: 12, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+            <div style={{ fontWeight: 700, fontSize: 13, color: '#facc15' }}>
+              ⏳ [{w.clan1.tag}] {w.clan1.name} бросил вам вызов на войну
+            </div>
+            <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>Открыть вкладку Войны →</span>
+          </div>
+        ))}
 
         {error && (
           <div style={{ padding: '10px 14px', background: 'rgba(248,113,113,.1)', border: '1px solid rgba(248,113,113,.3)', borderRadius: 8, fontSize: 13, color: '#f87171', marginBottom: 16 }}>
@@ -364,36 +402,91 @@ export default function ClanDetailPage() {
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                 {wars.map(w => {
-                  const weClan1 = w.clan1.id === id
-                  const ourScore  = weClan1 ? w.clan1Score : w.clan2Score
+                  const weClan1    = w.clan1.id === id
+                  const ourScore   = weClan1 ? w.clan1Score : w.clan2Score
                   const theirScore = weClan1 ? w.clan2Score : w.clan1Score
-                  const opponent  = weClan1 ? w.clan2 : w.clan1
-                  const weWon     = w.winnerId === id
-                  const canAccept = isOfficer && w.clan2.id === id && w.status === 'PENDING'
+                  const opponent   = weClan1 ? w.clan2 : w.clan1
+                  const ourClan    = weClan1 ? w.clan1 : w.clan2
+                  const weWon      = w.winnerId === id
+                  const theyWon    = w.winnerId && w.winnerId !== id
+                  const canAccept  = isOfficer && w.clan2.id === id && w.status === 'PENDING'
+                  const canDecline = canAccept
+                  const total      = ourScore + theirScore
+                  const ourPct     = total === 0 ? 50 : Math.round((ourScore / total) * 100)
+
+                  // Time remaining
+                  const msLeft  = new Date(w.endDate).getTime() - Date.now()
+                  const daysLeft  = Math.floor(msLeft / 86400000)
+                  const hoursLeft = Math.floor((msLeft % 86400000) / 3600000)
+                  const timeLabel = msLeft <= 0 ? 'Завершена'
+                    : daysLeft > 0 ? `${daysLeft}д ${hoursLeft}ч`
+                    : `${hoursLeft}ч`
+
+                  const borderColor = weWon ? 'rgba(74,222,128,.35)'
+                    : theyWon ? 'rgba(248,113,113,.25)'
+                    : w.status === 'ACTIVE' ? 'rgba(249,115,22,.4)'
+                    : 'var(--border)'
 
                   return (
-                    <div key={w.id} style={{ background: 'var(--bg-card)', border: `1px solid ${weWon ? 'rgba(74,222,128,.3)' : w.status === 'ACTIVE' ? 'rgba(249,115,22,.3)' : 'var(--border)'}`, borderRadius: 12, padding: '16px 18px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
+                    <div key={w.id} style={{ background: 'var(--bg-card)', border: `1px solid ${borderColor}`, borderRadius: 14, padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+                      {/* Header row */}
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                          <span style={{ fontSize: 28 }}>{ourClan.avatar}</span>
+                          <span style={{ fontWeight: 900, fontSize: 22, color: 'var(--text-muted)' }}>vs</span>
+                          <span style={{ fontSize: 28 }}>{opponent.avatar}</span>
+                          <div>
+                            <div style={{ fontWeight: 800, fontSize: 15 }}>[{opponent.tag}] {opponent.name}</div>
+                            <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>
+                              <span style={{ marginRight: 8 }}>{WAR_STATUS[w.status]}</span>
+                              {w.status !== 'DONE' && <span>⏱ осталось: {timeLabel}</span>}
+                              {w.status === 'DONE' && <span>до {new Date(w.endDate).toLocaleDateString('ru-RU')}</span>}
+                            </div>
+                          </div>
+                        </div>
+                        {/* Score */}
+                        <div style={{ textAlign: 'center', minWidth: 80 }}>
+                          <div style={{ fontSize: 28, fontWeight: 900, fontVariantNumeric: 'tabular-nums' }}>
+                            <span style={{ color: ourScore > theirScore ? '#4ade80' : ourScore < theirScore ? '#f87171' : 'var(--text)' }}>{ourScore}</span>
+                            <span style={{ color: 'var(--text-muted)', margin: '0 4px' }}>:</span>
+                            <span style={{ color: theirScore > ourScore ? '#f87171' : 'var(--text-muted)' }}>{theirScore}</span>
+                          </div>
+                          {weWon  && <div style={{ fontSize: 11, color: '#4ade80', fontWeight: 800 }}>🏆 Победа!</div>}
+                          {theyWon && <div style={{ fontSize: 11, color: '#f87171', fontWeight: 800 }}>💀 Поражение</div>}
+                          {w.status === 'DONE' && !w.winnerId && <div style={{ fontSize: 11, color: '#facc15', fontWeight: 800 }}>🤝 Ничья</div>}
+                        </div>
+                      </div>
+
+                      {/* Score bar */}
+                      {(w.status === 'ACTIVE' || (w.status === 'DONE' && total > 0)) && (
                         <div>
-                          <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 4 }}>
-                            vs [{opponent.tag}] {opponent.name}
+                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: 'var(--text-muted)', marginBottom: 4 }}>
+                            <span>[{ourClan.tag}]</span>
+                            <span>[{opponent.tag}]</span>
                           </div>
-                          <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
-                            {WAR_STATUS[w.status]} · до {new Date(w.endDate).toLocaleDateString('ru-RU')}
+                          <div style={{ height: 8, background: 'var(--bg-mid)', borderRadius: 99, overflow: 'hidden', display: 'flex' }}>
+                            <div style={{ width: `${ourPct}%`, background: weWon || ourScore > theirScore ? '#4ade80' : ourScore < theirScore ? '#f87171' : '#facc15', borderRadius: 99, transition: 'width .4s ease' }} />
                           </div>
                         </div>
-                        <div style={{ textAlign: 'center' }}>
-                          <div style={{ fontSize: 24, fontWeight: 900, color: ourScore > theirScore ? '#4ade80' : ourScore < theirScore ? '#f87171' : 'var(--text)' }}>
-                            {ourScore} : {theirScore}
-                          </div>
-                          {weWon && <div style={{ fontSize: 12, color: '#4ade80', fontWeight: 700 }}>Победа!</div>}
-                        </div>
-                        {canAccept && (
-                          <button className="btn btn-primary" onClick={() => handleAcceptWar(w.id)} style={{ fontSize: 13 }}>
+                      )}
+
+                      {/* Actions */}
+                      {w.status === 'PENDING' && canAccept && (
+                        <div style={{ display: 'flex', gap: 8 }}>
+                          <button className="btn btn-primary" onClick={() => handleAcceptWar(w.id)} style={{ fontSize: 13, flex: 1 }}>
                             ✅ Принять вызов
                           </button>
-                        )}
-                      </div>
+                          <button className="btn btn-ghost" onClick={() => handleDeclineWar(w.id)} style={{ fontSize: 13, color: '#f87171' }}>
+                            ❌ Отклонить
+                          </button>
+                        </div>
+                      )}
+
+                      {w.status === 'ACTIVE' && isMember && (
+                        <div style={{ fontSize: 12, color: 'var(--text-muted)', background: 'var(--bg-mid)', borderRadius: 8, padding: '8px 12px' }}>
+                          💡 Сражайся с участниками клана <strong>[{opponent.tag}]</strong> — победы идут в счёт войны
+                        </div>
+                      )}
                     </div>
                   )
                 })}

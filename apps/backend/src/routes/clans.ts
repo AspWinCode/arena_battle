@@ -509,6 +509,32 @@ export const clanRoutes: FastifyPluginAsync = async (fastify) => {
         clan2: { select: { id: true, name: true, tag: true, avatar: true } },
       },
     })
-    return reply.send(wars)
+
+    // Auto-complete expired ACTIVE wars
+    const now = new Date()
+    await Promise.all(
+      wars
+        .filter(w => w.status === 'ACTIVE' && new Date(w.endDate) < now)
+        .map(w => {
+          const winnerId = w.clan1Score > w.clan2Score ? w.clan1Id
+            : w.clan2Score > w.clan1Score ? w.clan2Id : null
+          return prisma.clanWar.update({
+            where: { id: w.id },
+            data:  { status: 'DONE', winnerId },
+          })
+        })
+    )
+
+    // Re-fetch updated wars
+    const fresh = await prisma.clanWar.findMany({
+      where: { OR: [{ clan1Id: req.params.id }, { clan2Id: req.params.id }] },
+      orderBy: { createdAt: 'desc' },
+      take: 20,
+      include: {
+        clan1: { select: { id: true, name: true, tag: true, avatar: true } },
+        clan2: { select: { id: true, name: true, tag: true, avatar: true } },
+      },
+    })
+    return reply.send(fresh)
   })
 }

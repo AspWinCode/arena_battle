@@ -432,6 +432,47 @@ export class SessionRoom {
     const deltaP1 = finalWinner === 1 ? deltaA : -deltaA
     const deltaP2 = finalWinner === 2 ? deltaA : -deltaA
     onDeltas(deltaP1, deltaP2)
+
+    // ── Clan war score tracking ───────────────────────────────────────────────
+    try {
+      const [winnerClanMember, loserClanMember] = await Promise.all([
+        prisma.clanMember.findFirst({ where: { userId: winnerId }, select: { clanId: true } }),
+        prisma.clanMember.findFirst({ where: { userId: loserId },  select: { clanId: true } }),
+      ])
+      if (winnerClanMember && loserClanMember && winnerClanMember.clanId !== loserClanMember.clanId) {
+        const activeWar = await prisma.clanWar.findFirst({
+          where: {
+            status: 'ACTIVE',
+            OR: [
+              { clan1Id: winnerClanMember.clanId, clan2Id: loserClanMember.clanId },
+              { clan1Id: loserClanMember.clanId,  clan2Id: winnerClanMember.clanId },
+            ],
+          },
+        })
+        if (activeWar) {
+          const isWinnerClan1 = activeWar.clan1Id === winnerClanMember.clanId
+          const updated = await prisma.clanWar.update({
+            where: { id: activeWar.id },
+            data:  isWinnerClan1 ? { clan1Score: { increment: 1 } } : { clan2Score: { increment: 1 } },
+          })
+          // Auto-complete if endDate passed
+          if (new Date(updated.endDate) < new Date()) {
+            const winnerId = updated.clan1Score > updated.clan2Score ? updated.clan1Id
+              : updated.clan2Score > updated.clan1Score ? updated.clan2Id : null
+            await prisma.clanWar.update({
+              where: { id: activeWar.id },
+              data: { status: 'DONE', winnerId, ...(winnerId ? {
+                clan: winnerId === updated.clan1Id
+                  ? { update: { where: { id: updated.clan1Id }, data: { totalWins: { increment: 1 }, totalWars: { increment: 1 } } } }
+                  : { update: { where: { id: updated.clan2Id }, data: { totalWins: { increment: 1 }, totalWars: { increment: 1 } } } }
+              } : {}) },
+            })
+          }
+        }
+      }
+    } catch (e) {
+      console.error('[room] Clan war score update error:', e)
+    }
   }
 
   private async compilePlayer(player: PlayerConn): Promise<Strategy> {
