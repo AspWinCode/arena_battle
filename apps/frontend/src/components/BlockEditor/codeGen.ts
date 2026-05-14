@@ -7,13 +7,15 @@ export function generateCode(root: BlockInstance | null): string {
 }
 
 export function generateCodeFromScripts(scripts: Script[]): string {
-  if (scripts.length === 0) return ''
+  if (scripts.length === 0) return 'function strategy(ctx) {\n  return \'attack\'; // нет блоков\n}'
 
   // Only process scripts that start with a whenTurn hat — floating blocks are ignored
   const hatRoots = scripts
     .map(script => script.root)
     .filter(root => root?.defId === 'whenTurn')
     .sort((a, b) => (a.y - b.y) || (a.x - b.x))
+
+  if (hatRoots.length === 0) return 'function strategy(ctx) {\n  return \'attack\'; // нет блоков\n}'
 
   const lines: string[] = []
   lines.push('function strategy(ctx) {')
@@ -44,10 +46,6 @@ function sanitizeVarName(name: string): string {
   return name.trim().replace(/^(\d)/, '_$1').replace(/[^\wЀ-ӿ]/g, '_')
 }
 
-function getEntryBlock(root: BlockInstance | null): BlockInstance | null {
-  if (!root) return null
-  return root.defId === 'whenTurn' ? (root.next ?? null) : root
-}
 
 function collectVarNames(inst: BlockInstance | null, acc: Set<string> = new Set()): Set<string> {
   if (!inst) return acc
@@ -76,6 +74,12 @@ function slotValue(sv: SlotValue | undefined): string {
     return generateExpression(v as BlockInstance)
   }
   return JSON.stringify(v)
+}
+
+/** Returns true only when a real block is plugged into the slot (not just a primitive/empty) */
+function slotHasBlock(inst: BlockInstance, slotId: string): boolean {
+  const sv = inst.slots.find(s => s.slotId === slotId)
+  return !!(sv?.value && typeof sv.value === 'object' && 'instanceId' in sv.value)
 }
 
 function generateExpression(inst: BlockInstance): string {
@@ -142,9 +146,20 @@ function generateExpression(inst: BlockInstance): string {
     case 'leq':         return `(${s('a')} <= ${s('b')})`
     case 'equals':      return `(${s('a')} === ${s('b')})`
     case 'notEquals':   return `(${s('a')} !== ${s('b')})`
-    case 'and':         return `(${s('a')} && ${s('b')})`
-    case 'or':          return `(${s('a')} || ${s('b')})`
-    case 'not':         return `!(${s('a')})`
+    case 'and': {
+      const a = slotHasBlock(inst, 'a') ? s('a') : 'false'
+      const b = slotHasBlock(inst, 'b') ? s('b') : 'false'
+      return `(${a} && ${b})`
+    }
+    case 'or': {
+      const a = slotHasBlock(inst, 'a') ? s('a') : 'false'
+      const b = slotHasBlock(inst, 'b') ? s('b') : 'false'
+      return `(${a} || ${b})`
+    }
+    case 'not': {
+      const a = slotHasBlock(inst, 'a') ? s('a') : 'false'
+      return `!(${a})`
+    }
     case 'varReporter': {
       const name = inst.slots.find(sv => sv.slotId === 'name')?.value
       return name && typeof name === 'string' ? sanitizeVarName(name) : '__var'
@@ -185,12 +200,6 @@ function generateBlock(inst: BlockInstance | null, depth: number): string[] {
     case 'doOverclock':      lines.push(`${ind}return 'overclock';`);       break
     case 'whenTurn': break
     case 'stop':     lines.push(`${ind}return 'attack';`); break
-    case 'attack':      lines.push(`${ind}return 'attack';`);  break
-    case 'laser':       lines.push(`${ind}return 'laser';`);   break
-    case 'shield':      lines.push(`${ind}return 'shield';`);  break
-    case 'dodge':       lines.push(`${ind}return 'dodge';`);   break
-    case 'combo':       lines.push(`${ind}return 'special';`); break
-    case 'repair':      lines.push(`${ind}return 'repair';`);  break
     case 'moveForward': break
     case 'moveBackward': break
     case 'setVar': {
@@ -206,12 +215,21 @@ function generateBlock(inst: BlockInstance | null, depth: number): string[] {
       break
     }
     case 'if': {
+      if (!slotHasBlock(inst, 'cond')) {
+        lines.push(...generateBlocks(inst.body ?? [], depth))
+        break
+      }
       lines.push(`${ind}if (${s('cond')}) {`)
       lines.push(...generateBlocks(inst.body ?? [], depth + 1))
       lines.push(`${ind}}`)
       break
     }
     case 'ifElse': {
+      if (!slotHasBlock(inst, 'cond')) {
+        lines.push(...generateBlocks(inst.body ?? [], depth))
+        lines.push(...generateBlocks(inst.elseBody ?? [], depth))
+        break
+      }
       lines.push(`${ind}if (${s('cond')}) {`)
       lines.push(...generateBlocks(inst.body ?? [], depth + 1))
       lines.push(`${ind}} else {`)
@@ -220,7 +238,8 @@ function generateBlock(inst: BlockInstance | null, depth: number): string[] {
       break
     }
     case 'repeat': {
-      lines.push(`${ind}for (let _i = 0; _i < ${s('n')}; _i++) {`)
+      const count = slotHasBlock(inst, 'n') ? s('n') : (s('n') === '0' ? '3' : s('n'))
+      lines.push(`${ind}for (let _i = 0; _i < ${count}; _i++) {`)
       lines.push(...generateBlocks(inst.body ?? [], depth + 1))
       lines.push(`${ind}}`)
       break
