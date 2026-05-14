@@ -115,7 +115,7 @@ export default function LeaderboardPage() {
         <div className={styles.myCard}>
           <div className={styles.myCardLeft}>
             <span className={styles.myAvatar}>{user?.avatar ?? '🧑‍💻'}</span>
-            <div>
+            <div style={{ minWidth: 0, overflow: 'hidden' }}>
               <div className={styles.myName}>{user?.displayName ?? 'Ты'}</div>
               <div className={styles.myMeta} style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
                 {user?.elo != null && <RankBadge elo={user.elo} size="sm" />}
@@ -136,12 +136,6 @@ export default function LeaderboardPage() {
               <span className={styles.myStatVal} style={{ color: '#fbbf24' }}>{store.totalWins}</span>
               <span className={styles.myStatKey}>Побед</span>
             </div>
-            <div className={styles.myStat}>
-              <span className={styles.myStatVal} style={{ color: store.totalBattles > 0 ? (winRate >= 50 ? '#4ade80' : '#f87171') : 'var(--text-muted)' }}>
-                {store.totalBattles > 0 ? `${winRate}%` : '—'}
-              </span>
-              <span className={styles.myStatKey}>Винрейт</span>
-            </div>
           </div>
         </div>
 
@@ -160,7 +154,6 @@ export default function LeaderboardPage() {
               <span className={styles.colXp}>Рейтинг</span>
               <span className={styles.colWins}>Побед</span>
               <span className={styles.colStreak}>Серия</span>
-              <span className={styles.colWr}>Винрейт</span>
             </div>
 
             {leaders.map(p => {
@@ -191,12 +184,6 @@ export default function LeaderboardPage() {
                   <span className={styles.colWins} style={{ color: '#fbbf24' }}>{p.wins}</span>
                   <span className={styles.colStreak}>
                     {p.streak > 0 ? `🔥 ${p.streak}` : '—'}
-                  </span>
-                  <span
-                    className={styles.colWr}
-                    style={{ color: p.winRate >= 60 ? '#4ade80' : p.winRate >= 50 ? '#fbbf24' : '#f87171' }}
-                  >
-                    {p.winRate}%
                   </span>
                 </div>
               )

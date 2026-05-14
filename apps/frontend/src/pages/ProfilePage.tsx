@@ -460,19 +460,16 @@ export default function ProfilePage() {
                     <p className={styles.empty}>Нет данных</p>
                   ) : (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                      {['#', 'Боец', 'Рейтинг', 'Побед', 'Винрейт'].map((h, i) => (
-                        <span key={h} />
-                      ))}
                       {/* header */}
-                      <div style={{ display: 'grid', gridTemplateColumns: '36px 1fr 80px 60px 70px', padding: '6px 10px', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.05em', color: 'var(--text-muted)', borderBottom: '1px solid var(--border)' }}>
-                        <span>#</span><span>Боец</span><span style={{ textAlign: 'right' }}>Рейтинг</span><span style={{ textAlign: 'right' }}>Побед</span><span style={{ textAlign: 'right' }}>Винрейт</span>
+                      <div style={{ display: 'grid', gridTemplateColumns: '36px 1fr 80px 60px', padding: '6px 10px', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.05em', color: 'var(--text-muted)', borderBottom: '1px solid var(--border)' }}>
+                        <span>#</span><span>Боец</span><span style={{ textAlign: 'right' }}>Рейтинг</span><span style={{ textAlign: 'right' }}>Побед</span>
                       </div>
                       {lbEntries.map((p: any, i: number) => {
                         const isMe = p.username === user?.username
                         const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i + 1}`
                         return (
                           <div key={p.username} style={{
-                            display: 'grid', gridTemplateColumns: '36px 1fr 80px 60px 70px',
+                            display: 'grid', gridTemplateColumns: '36px 1fr 80px 60px',
                             padding: '8px 10px', borderRadius: 8, alignItems: 'center', gap: 4,
                             background: isMe ? 'rgba(0,229,255,.06)' : i % 2 === 0 ? 'var(--bg-mid)' : 'transparent',
                             border: isMe ? '1px solid rgba(0,229,255,.2)' : '1px solid transparent',
@@ -491,7 +488,6 @@ export default function ProfilePage() {
                             </span>
                             <span style={{ textAlign: 'right', color: 'var(--lightning)', fontWeight: 800, fontSize: 14 }}>{p.elo ?? 1000}</span>
                             <span style={{ textAlign: 'right', color: '#fbbf24', fontWeight: 700 }}>{p.wins}</span>
-                            <span style={{ textAlign: 'right', color: (p.winRate ?? 0) >= 60 ? '#4ade80' : (p.winRate ?? 0) >= 50 ? '#fbbf24' : '#f87171', fontWeight: 700 }}>{p.winRate ?? 0}%</span>
                           </div>
                         )
                       })}
