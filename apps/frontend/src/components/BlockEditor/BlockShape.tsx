@@ -24,7 +24,7 @@ function PuzzleTop({ color }: { color: string }) {
   return (
     <svg width="100%" height={NOTCH_H} style={{ display: 'block', overflow: 'visible' }}>
       <path
-        d={`M0,${NOTCH_H} Q0,0 ${CORNER_R},0 L30,0 L30,${NOTCH_H} L${30 + NOTCH_W},${NOTCH_H} L${30 + NOTCH_W},0 L9999,0`}
+        d={`M0,${NOTCH_H} Q0,0 ${CORNER_R},0 L30,0 L30,${NOTCH_H} L${30 + NOTCH_W},${NOTCH_H} L${30 + NOTCH_W},0 L9999,0 L9999,${NOTCH_H} Z`}
         fill={color}
         stroke="rgba(0,0,0,.3)"
         strokeWidth={1}
@@ -37,10 +37,11 @@ function PuzzleBottom({ color }: { color: string }) {
   return (
     <svg width="100%" height={NOTCH_H} style={{ display: 'block', overflow: 'visible' }}>
       <path
-        d={`M0,-${NOTCH_H} Q0,0 ${CORNER_R},0 L30,0 L30,-${NOTCH_H} L${30 + NOTCH_W},-${NOTCH_H} L${30 + NOTCH_W},0 L9999,0`}
+        d={`M0,${NOTCH_H} Q0,0 ${CORNER_R},0 L30,0 L30,${NOTCH_H} L${30 + NOTCH_W},${NOTCH_H} L${30 + NOTCH_W},0 L9999,0 L9999,${NOTCH_H} Z`}
         fill={color}
         stroke="rgba(0,0,0,.3)"
         strokeWidth={1}
+        transform={`scale(1,-1) translate(0,-${NOTCH_H})`}
       />
     </svg>
   )
