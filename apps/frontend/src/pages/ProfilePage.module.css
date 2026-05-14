@@ -145,6 +145,44 @@
   flex-shrink: 0;
 }
 
+/* ── Hero character visual ───────────────────────────────────────────── */
+.heroChar {
+  flex-shrink: 0;
+  width: 140px;
+  height: 140px;
+  position: relative;
+}
+
+.heroCharView {
+  width: 140px !important;
+  height: 140px !important;
+}
+
+/* ── My fighter section ──────────────────────────────────────────────── */
+.myFighter {
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+}
+
+.myFighterChar {
+  flex-shrink: 0;
+  width: 180px;
+  height: 180px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.myFighterView {
+  width: 180px !important;
+  height: 180px !important;
+}
+
 /* ── Quick stats ─────────────────────────────────────────────────────── */
 .quickStats {
   max-width: 860px;
@@ -586,7 +624,11 @@
   .quickStats { grid-template-columns: repeat(3, 1fr) !important; }
   .heroInner  { flex-direction: column; align-items: flex-start; }
   .heroActions { flex-direction: row; flex-wrap: wrap; }
+  .heroChar   { display: none; }
   .avatarGrid { grid-template-columns: repeat(6, 1fr); }
   .tabs { overflow-x: auto; padding-bottom: 0; }
   .tab  { padding: 10px 12px; font-size: 12px; }
+  .myFighter  { flex-direction: column; }
+  .myFighterChar { width: 100%; height: 160px; }
+  .myFighterView { width: 100% !important; height: 160px !important; }
 }
