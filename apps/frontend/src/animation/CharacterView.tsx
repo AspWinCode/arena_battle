@@ -40,10 +40,20 @@ async function fetchSkinImages(skinId: string): Promise<PngSkinImages | null> {
   try {
     const res = await fetch(`/api/v1/shop`)
     if (!res.ok) return null
-    const skins: Array<{ id: string; imgIdle: string; imgAttack: string; imgHit: string; imgDeath: string }> = await res.json()
+    const skins: Array<{
+      id: string
+      imgIdle: string; imgAttack: string; imgHit: string; imgDeath: string
+      actions?: Record<string, { fps: number; frames: string[] }>
+    }> = await res.json()
     const skin = skins.find(s => s.id === skinId)
     if (!skin) return null
-    return { imgIdle: skin.imgIdle, imgAttack: skin.imgAttack, imgHit: skin.imgHit, imgDeath: skin.imgDeath }
+    return {
+      imgIdle:   skin.imgIdle,
+      imgAttack: skin.imgAttack,
+      imgHit:    skin.imgHit,
+      imgDeath:  skin.imgDeath,
+      actions:   skin.actions ?? undefined,
+    }
   } catch {
     return null
   }

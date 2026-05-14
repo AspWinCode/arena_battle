@@ -2,11 +2,13 @@
  * Admin routes for skin management + file upload.
  * All routes require an admin JWT (Bearer token).
  *
- * POST   /admin/skins/upload       — upload one PNG, returns { url }
- * GET    /admin/skins               — list all SkinDefs
- * POST   /admin/skins               — create SkinDef
- * PATCH  /admin/skins/:id           — update SkinDef (name, price, inShop, images, …)
- * DELETE /admin/skins/:id           — delete SkinDef
+ * POST   /admin/skins/upload            — upload one PNG, returns { url }
+ * GET    /admin/skins                   — list all SkinDefs
+ * GET    /admin/skins/character/:charId — SkinDefs for one character (or auto-create default)
+ * POST   /admin/skins                   — create SkinDef
+ * PATCH  /admin/skins/:id               — update SkinDef (name, price, inShop, images, …)
+ * PATCH  /admin/skins/:id/action        — update one action's frames+fps inside actions JSON
+ * DELETE /admin/skins/:id               — delete SkinDef
  */
 
 import type { FastifyPluginAsync } from 'fastify'
@@ -57,6 +59,16 @@ const updateSchema = z.object({
   imgAttack:   z.string().max(500).optional(),
   imgHit:      z.string().max(500).optional(),
   imgDeath:    z.string().max(500).optional(),
+  actions:     z.record(z.object({
+    fps:    z.number().int().min(1).max(60),
+    frames: z.array(z.string().max(500)).max(10),
+  })).optional(),
+})
+
+const actionSchema = z.object({
+  action: z.string().min(1).max(40),
+  fps:    z.number().int().min(1).max(60).default(12),
+  frames: z.array(z.string().max(500)).max(10),
 })
 
 export const adminSkinsRoutes: FastifyPluginAsync = async (fastify) => {
@@ -97,6 +109,36 @@ export const adminSkinsRoutes: FastifyPluginAsync = async (fastify) => {
     return reply.send(skins)
   })
 
+  // ── Get / auto-create default skin for a character ──────────────────────────
+  // Returns all SkinDefs for this character. If none exist, creates <charId>_default.
+  fastify.get('/character/:charId', {
+    preHandler: requireAdmin(fastify),
+  }, async (req, reply) => {
+    const { charId } = req.params as { charId: string }
+
+    let skins = await prisma.skinDef.findMany({
+      where: { characterId: charId },
+      orderBy: { createdAt: 'asc' },
+    })
+
+    if (skins.length === 0) {
+      const defaultSkin = await prisma.skinDef.create({
+        data: {
+          id:          `${charId}_default`,
+          characterId: charId,
+          name:        `${charId} (default)`,
+          rarity:      'common',
+          price:       0,
+          inShop:      false,
+          actions:     {},
+        },
+      })
+      skins = [defaultSkin]
+    }
+
+    return reply.send(skins)
+  })
+
   // ── Create skin ─────────────────────────────────────────────────────────────
   fastify.post('/', {
     preHandler: requireAdmin(fastify),
@@ -129,6 +171,33 @@ export const adminSkinsRoutes: FastifyPluginAsync = async (fastify) => {
     }).catch(() => null)
 
     if (!skin) return reply.status(404).send({ error: 'Скин не найден' })
+    return reply.send(skin)
+  })
+
+  // ── Update single action (frames + fps) ────────────────────────────────────
+  // Merges into the existing actions JSON rather than replacing the whole object.
+  fastify.patch('/:id/action', {
+    preHandler: requireAdmin(fastify),
+  }, async (req, reply) => {
+    const { id } = req.params as { id: string }
+    const body = actionSchema.safeParse(req.body)
+    if (!body.success) {
+      return reply.status(400).send({ error: body.error.issues[0]?.message ?? 'Invalid input' })
+    }
+
+    const existing = await prisma.skinDef.findUnique({ where: { id } })
+    if (!existing) return reply.status(404).send({ error: 'Скин не найден' })
+
+    const currentActions = (existing.actions as Record<string, unknown>) ?? {}
+    const updated = {
+      ...currentActions,
+      [body.data.action]: { fps: body.data.fps, frames: body.data.frames },
+    }
+
+    const skin = await prisma.skinDef.update({
+      where: { id },
+      data:  { actions: updated },
+    })
     return reply.send(skin)
   })
 

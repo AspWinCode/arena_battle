@@ -244,6 +244,7 @@ model SkinDef {
   imgAttack   String     @default("")
   imgHit      String     @default("")
   imgDeath    String     @default("")
+  actions     Json       @default("{}")  // { actionName: { fps: number, frames: string[] } }
   createdAt   DateTime   @default(now())
 
   owners      UserSkin[]
