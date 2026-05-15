@@ -83,6 +83,7 @@ export default function SparringPage() {
 
   // Editor mode
   const [editorMode, setEditorMode] = useState<'code' | 'blocks'>('code')
+  const [lang, setLang]             = useState<'js' | 'py' | 'cpp' | 'java'>('js')
 
   // Setup state
   const [selectedBotId, setSelectedBotId]   = useState(SPARRING_BOTS[0].id)
@@ -137,6 +138,10 @@ export default function SparringPage() {
   }, [])
 
   const handleRun = useCallback(() => {
+    if (lang !== 'js') {
+      setCodeError(`Отработка навыков поддерживает только JavaScript. Для ${lang === 'py' ? 'Python' : lang === 'cpp' ? 'C++' : 'Java'} используй боевой режим.`)
+      return
+    }
     const { strategy: playerStrategy, error } = runCodeToStrategy(code)
     if (error) { setCodeError(`Ошибка: ${error}`); return }
     setCodeError('')
@@ -202,7 +207,7 @@ export default function SparringPage() {
     }
     setTurnLog([])
     step()
-  }, [code, selectedBot, format, effectWithStreak])
+  }, [code, lang, selectedBot, format, effectWithStreak])
 
   const unlockedPerkIds = new Set(PERKS.filter(p => p.unlockAt <= completedCount).map(p => p.id))
 
@@ -218,7 +223,7 @@ export default function SparringPage() {
       <div className={styles.layout}>
         {/* ── LEFT: Code editor ─────────────────────────────────── */}
         <div className={styles.leftPane}>
-          {/* Editor mode tabs */}
+          {/* Editor mode / lang tabs */}
           <div className={styles.modeTabs}>
             <button
               className={`${styles.modeTab} ${editorMode === 'code' ? styles.modeTabActive : ''}`}
@@ -228,7 +233,33 @@ export default function SparringPage() {
               className={`${styles.modeTab} ${editorMode === 'blocks' ? styles.modeTabActive : ''}`}
               onClick={() => setEditorMode('blocks')}
             >🧩 Блоки</button>
+
+            {editorMode === 'code' && (
+              <div style={{ marginLeft: 'auto', display: 'flex', gap: 4 }}>
+                {(['js', 'py', 'cpp', 'java'] as const).map(l => (
+                  <button
+                    key={l}
+                    className={`${styles.langTab} ${lang === l ? styles.langTabActive : ''}`}
+                    onClick={() => {
+                      setLang(l)
+                      if (l === 'js') setCode(DEFAULT_CODE)
+                      else if (l === 'py') setCode(PY_TEMPLATE)
+                      else if (l === 'cpp') setCode(CPP_TEMPLATE)
+                      else setCode(JAVA_TEMPLATE)
+                    }}
+                  >
+                    {l === 'js' ? 'JS' : l === 'py' ? 'Python' : l === 'cpp' ? 'C++' : 'Java'}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
+
+          {lang !== 'js' && editorMode === 'code' && (
+            <div className={styles.langNotice}>
+              ⚠️ Отработка навыков поддерживает только JavaScript. {lang === 'py' ? 'Python' : lang === 'cpp' ? 'C++' : 'Java'} доступен в реальных боях (боевой режим).
+            </div>
+          )}
 
           {codeError && <div className={styles.codeError}>{codeError}</div>}
 
@@ -236,7 +267,7 @@ export default function SparringPage() {
             {editorMode === 'code' ? (
               <CodeEditor
                 value={code}
-                language="javascript"
+                language={lang === 'py' ? 'python' : lang === 'cpp' ? 'cpp' : lang === 'java' ? 'java' : 'javascript'}
                 onChange={v => setCode(v ?? '')}
                 readOnly={phase === 'animating'}
               />
@@ -487,16 +518,46 @@ const DIFF_COLORS: Record<number, string> = {
   1: '#4ade80', 2: '#86efac', 3: '#facc15', 4: '#f97316', 5: '#f43f5e',
 }
 
-const DEFAULT_CODE = `// Спарринг — пиши и тестируй стратегию!
-// ctx: { myHp, myStamina, myRage, enemyHp, enemyStamina, enemyRage,
-//        myLastAction, enemyLastAction, cooldowns, myPosition,
-//        enemyPosition, distanceModifier, myRepeatCount, turn }
+const DEFAULT_CODE = `// Доступные данные (ctx):
+//   ctx.myHp, ctx.myStamina, ctx.myRage
+//   ctx.enemyHp, ctx.enemyStamina, ctx.enemyRage
+//   ctx.myLastAction, ctx.enemyLastAction
+//   ctx.cooldowns.heavy, ctx.cooldowns.laser, ...
+//   ctx.turn, ctx.myRepeatCount
 
 function strategy(ctx) {
-  if (ctx.myRage >= 100) return 'special';
-  if (ctx.myHp < 30) return 'repair';
-  if (ctx.enemyLastAction === 'laser') return 'dodge';
-  if (ctx.enemyHp < 25) return 'heavy';
-  if (ctx.cooldowns.heavy === 0 && ctx.myStamina >= 35) return 'heavy';
+  // Напиши свою стратегию здесь
   return 'attack';
+}`
+
+const PY_TEMPLATE = `# Python — доступен только в боевом режиме
+# Здесь ты можешь написать стратегию для изучения синтаксиса:
+#   ctx.my_hp, ctx.my_stamina, ctx.my_rage
+#   ctx.enemy_hp, ctx.enemy_stamina, ctx.enemy_rage
+#   ctx.my_last_action, ctx.enemy_last_action
+#   ctx.cooldowns['heavy'], ctx.cooldowns['laser']
+#   ctx.turn, ctx.my_repeat_count
+
+def strategy(ctx):
+    # Напиши свою стратегию здесь
+    return 'attack'`
+
+const CPP_TEMPLATE = `// C++ — доступен только в боевом режиме
+// ctx.myHp, ctx.myStamina, ctx.myRage
+// ctx.enemyHp, ctx.enemyStamina, ctx.enemyRage
+// ctx.myLastAction, ctx.enemyLastAction, ctx.turn
+
+std::string strategy(const Ctx& ctx) {
+    // Напиши свою стратегию здесь
+    return "attack";
+}`
+
+const JAVA_TEMPLATE = `// Java — доступен только в боевом режиме
+// ctx.myHp, ctx.myStamina, ctx.myRage
+// ctx.enemyHp, ctx.enemyStamina, ctx.enemyRage
+// ctx.myLastAction, ctx.enemyLastAction, ctx.turn
+
+public static String strategy(Ctx ctx) {
+    // Напиши свою стратегию здесь
+    return "attack";
 }`
