@@ -83,69 +83,69 @@ const CTX_GROUPS: { title: string; fields: CtxField[] }[] = [
   {
     title: '🧑‍💻 Ты',
     fields: [
-      { name: 'ctx.myHp',           tip: '❤️ Твои очки жизни (от 0 до 100).\nЕсли меньше 30 — лучше вылечись!\nПример: if (ctx.myHp < 30) return "repair";' },
-      { name: 'ctx.myMaxHp',        tip: '❤️ Сколько HP у тебя максимум.\nОбычно 100, но зависит от персонажа.' },
-      { name: 'ctx.myStamina',      tip: '⚡ Твоя выносливость (от 0 до 100).\nБез неё сильные удары слабее.\n• attack тратит 10\n• heavy тратит 35\n• laser тратит 25\nПример: if (ctx.myStamina < 35) return "attack";' },
-      { name: 'ctx.myRage',         tip: '🔥 Твоя ярость (от 0 до 100).\nКопится когда получаешь удары.\nКогда 100 — жми special, он будет супер мощным!\nПример: if (ctx.myRage >= 100) return "special";' },
-      { name: 'ctx.myLastAction',   tip: '↩️ Что ты делал в прошлом ходу.\nМожет быть "attack", "heavy", "dodge" и т.д.\nПример: if (ctx.myLastAction === "shield") return "attack";' },
-      { name: 'ctx.myRepeatCount',  tip: '🔁 Сколько раз подряд ты делаешь одно и то же.\nПосле 2 повторов — штраф к урону.\nСтарайся чередовать приёмы!\nПример: if (ctx.myRepeatCount >= 2) return "heavy";' },
-      { name: 'ctx.myPosition',     tip: '📍 Твоя позиция на арене.\n"close" — вплотную (удары сильнее)\n"mid"   — середина\n"far"   — далеко (лазер сильнее)' },
+      { name: 'ctx.myHp',           tip: '❤️ Твои очки жизни (0–100).\n\nКогда использовать:\n• HP < 30 → срочно лечись\n• HP < 50 → подумай о защите\n\nПример:\nif (ctx.myHp < 30) return "repair";\nif (ctx.myHp < 50) return "shield";' },
+      { name: 'ctx.myMaxHp',        tip: '❤️ Максимальный HP (зависит от персонажа).\n\nКогда использовать:\nДля расчёта процента здоровья:\nconst pct = ctx.myHp / ctx.myMaxHp;\nif (pct < 0.4) return "repair";' },
+      { name: 'ctx.myStamina',      tip: '⚡ Выносливость (0–100). Тратится на атаки:\n• attack — 10\n• laser  — 20\n• heavy  — 35 (провалится если меньше!)\n\nКогда использовать:\nif (ctx.myStamina < 35) return "attack";\nif (ctx.myStamina >= 35) return "heavy";' },
+      { name: 'ctx.myRage',         tip: '🔥 Ярость (0–100). Копится от полученных ударов.\nПри 100 — special наносит 50 урона!\nБез полной ярости special почти бесполезен.\n\nКогда использовать:\nif (ctx.myRage >= 100) return "special";\n// Иначе не трать special!' },
+      { name: 'ctx.myLastAction',   tip: '↩️ Твоё действие в прошлом ходу.\n\nКогда использовать:\nЧередуй удары — повторения дают штраф!\nif (ctx.myLastAction === "heavy")\n  return "attack"; // смени удар\nif (ctx.myLastAction === "shield")\n  return "attack"; // контратакуй' },
+      { name: 'ctx.myRepeatCount',  tip: '🔁 Сколько раз подряд делаешь одно и то же.\nПосле 2 повторов — урон снижается!\n\nКогда использовать:\nif (ctx.myRepeatCount >= 2) {\n  // обязательно смени действие!\n  return "laser"; \n}' },
+      { name: 'ctx.myPosition',     tip: '📍 Позиция: "close" / "mid" / "far".\n\nКогда использовать:\n• close → attack и heavy сильнее\n• far   → laser сильнее\n\nПример:\nif (ctx.myPosition === "far")\n  return "laser";\nif (ctx.myPosition === "close")\n  return "heavy";' },
     ],
   },
   {
     title: '🤖 Враг',
     fields: [
-      { name: 'ctx.enemyHp',         tip: '💀 Очки жизни врага (от 0 до 100).\nЕсли меньше 25 — добей его тяжёлым ударом!\nПример: if (ctx.enemyHp < 25) return "heavy";' },
-      { name: 'ctx.enemyMaxHp',       tip: '💀 Максимальный HP врага.' },
-      { name: 'ctx.enemyStamina',     tip: '⚡ Выносливость врага.\nЕсли 0 — его удары намного слабее.\nМожно смело атаковать!\nПример: if (ctx.enemyStamina < 20) return "attack";' },
-      { name: 'ctx.enemyRage',        tip: '🔥 Ярость врага.\nЕсли больше 80 — он скоро применит special!\nЛучше защититься.\nПример: if (ctx.enemyRage >= 80) return "shield";' },
-      { name: 'ctx.enemyLastAction',  tip: '👁️ Что враг делал в прошлом ходу.\nСамое важное поле — предсказывай врага!\nПример: if (ctx.enemyLastAction === "laser") return "dodge";' },
-      { name: 'ctx.enemyPosition',    tip: '📍 Позиция врага на арене.\n"close" — рядом\n"mid"   — середина\n"far"   — далеко' },
+      { name: 'ctx.enemyHp',         tip: '💀 HP врага (0–100).\n\nКогда использовать:\n• < 25 → добивай тяжёлым ударом\n• < 10 → используй special если rage=100\n\nПример:\nif (ctx.enemyHp < 25) return "heavy";\nif (ctx.enemyHp < 10 && ctx.myRage >= 100)\n  return "special";' },
+      { name: 'ctx.enemyMaxHp',       tip: '💀 Максимальный HP врага.\n\nКогда использовать:\nДля расчёта насколько враг здоров:\nconst pct = ctx.enemyHp / ctx.enemyMaxHp;\nif (pct < 0.3) return "heavy"; // добивай!' },
+      { name: 'ctx.enemyStamina',     tip: '⚡ Выносливость врага.\n\nКогда использовать:\n• = 0 → его heavy и laser слабее, атакуй!\n• < 20 → хорошее время для агрессии\n\nПример:\nif (ctx.enemyStamina === 0)\n  return "heavy"; // он не ответит сильно\nif (ctx.enemyStamina < 20)\n  return "attack";' },
+      { name: 'ctx.enemyRage',        tip: '🔥 Ярость врага.\n\nКогда использовать:\n• ≥ 80 → он скоро применит special!\n           Защищайся или уклоняйся.\n• < 30 → можно атаковать смело\n\nПример:\nif (ctx.enemyRage >= 80) return "shield";\nif (ctx.enemyRage >= 80) return "dodge";' },
+      { name: 'ctx.enemyLastAction',  tip: '👁️ Что враг делал в прошлом ходу.\nСАМОЕ ВАЖНОЕ ПОЛЕ! Предсказывай врага.\n\nКогда использовать:\nif (ctx.enemyLastAction === "heavy")\n  return "dodge"; // он снова ударит?\nif (ctx.enemyLastAction === "laser")\n  return "dodge"; // уклонись!\nif (ctx.enemyLastAction === "shield")\n  return "laser"; // пробей щит!' },
+      { name: 'ctx.enemyPosition',    tip: '📍 Позиция врага: "close"/"mid"/"far".\n\nКогда использовать:\n• far  → используй laser против него\n• close → атакуй attack или heavy\n\nПример:\nif (ctx.enemyPosition === "far")\n  return "laser";\nif (ctx.enemyPosition === "close")\n  return "heavy";' },
     ],
   },
   {
     title: '⏱️ Перезарядка',
     fields: [
-      { name: 'ctx.cooldowns.heavy',   tip: '⏱️ Сколько ходов нельзя использовать heavy.\n0 — можно использовать прямо сейчас!\nПример: if (ctx.cooldowns.heavy === 0) return "heavy";' },
-      { name: 'ctx.cooldowns.laser',   tip: '⏱️ Сколько ходов нельзя использовать laser.\n0 — готов к использованию.' },
-      { name: 'ctx.cooldowns.shield',  tip: '⏱️ Сколько ходов нельзя использовать shield.\n0 — готов к использованию.' },
-      { name: 'ctx.cooldowns.dodge',   tip: '⏱️ Сколько ходов нельзя использовать dodge.\n0 — готов к использованию.' },
-      { name: 'ctx.cooldowns.repair',  tip: '⏱️ Сколько ходов нельзя использовать repair.\n0 — готов к использованию.' },
-      { name: 'ctx.cooldowns.special', tip: '⏱️ Сколько ходов нельзя использовать special.\n0 — готов к использованию.' },
+      { name: 'ctx.cooldowns.heavy',   tip: '⏱️ Ходов до следующего heavy.\n0 = можно использовать прямо сейчас.\n\nКогда использовать:\nif (ctx.cooldowns.heavy === 0\n    && ctx.myStamina >= 35\n    && ctx.enemyHp < 50)\n  return "heavy"; // всё готово — бей!' },
+      { name: 'ctx.cooldowns.laser',   tip: '⏱️ Ходов до следующего laser.\n0 = готов. Кулдаун — 3 хода после использования.\n\nКогда использовать:\nif (ctx.cooldowns.laser === 0\n    && ctx.myPosition === "far")\n  return "laser";' },
+      { name: 'ctx.cooldowns.shield',  tip: '⏱️ Ходов до следующего shield.\n0 = готов к использованию.\n\nКогда использовать:\nif (ctx.cooldowns.shield === 0\n    && ctx.enemyRage >= 80)\n  return "shield"; // блокируй special!' },
+      { name: 'ctx.cooldowns.dodge',   tip: '⏱️ Ходов до следующего dodge.\n0 = готов к использованию.\n\nКогда использовать:\nif (ctx.cooldowns.dodge === 0\n    && ctx.enemyLastAction === "attack")\n  return "dodge"; // уклонись!' },
+      { name: 'ctx.cooldowns.repair',  tip: '⏱️ Ходов до следующего repair.\n0 = готов. У repair обычно нет кулдауна.\n\nКогда использовать:\nif (ctx.cooldowns.repair === 0\n    && ctx.myHp < 35)\n  return "repair";' },
+      { name: 'ctx.cooldowns.special', tip: '⏱️ Ходов до следующего special.\n0 = готов. Не трать special без полной ярости!\n\nКогда использовать:\nif (ctx.cooldowns.special === 0\n    && ctx.myRage >= 100)\n  return "special"; // убойный удар!' },
     ],
   },
   {
     title: '🎮 Бой',
     fields: [
-      { name: 'ctx.turn',              tip: '🔢 Номер текущего хода (от 1 до 20).\nЕсли у обоих есть HP — после 20 ходов ничья.\nПример: if (ctx.turn > 15) return "heavy"; // давай дожимай!' },
-      { name: 'ctx.distanceModifier',  tip: '📏 Бонус к урону от расстояния.\nОбычно около 1.0 — чаще всего можно игнорировать.' },
+      { name: 'ctx.turn',              tip: '🔢 Номер текущего хода (1–20).\nПосле 20 ходов — ничья если оба живы!\n\nКогда использовать:\n// В конце торопись добить!\nif (ctx.turn > 15 && ctx.enemyHp < 40)\n  return "heavy";\n// В начале можно копить ярость\nif (ctx.turn < 5) return "attack";' },
+      { name: 'ctx.distanceModifier',  tip: '📏 Множитель урона от позиции (обычно ~1.0).\n\nКогда использовать:\nЧаще всего можно игнорировать.\nПолезно для точных расчётов урона:\nconst dmg = 12 * ctx.distanceModifier;' },
     ],
   },
   {
     title: '📜 История ходов',
     fields: [
-      { name: 'ctx.myHistory',        tip: '📋 Список всех твоих ударов за раунд.\nНапример ["attack","attack","heavy"]\nПример: ctx.myHistory.length — сколько ходов сыграно.' },
-      { name: 'ctx.enemyHistory',     tip: '📋 Список всех ударов врага.\nМожно найти его любимый приём!\nПример: ctx.enemyHistory.filter(a => a === "heavy").length' },
-      { name: 'ctx.damageLog',        tip: '💥 Сколько урона ты нанёс на каждом ходу.\nНапример [12, 0, 18, 0]' },
-      { name: 'ctx.damageTakenLog',   tip: '🩸 Сколько урона ты получил на каждом ходу.' },
-      { name: 'ctx.myHpLog',          tip: '❤️ Твой HP после каждого хода.\nНапример [100, 88, 88, 70]' },
-      { name: 'ctx.enemyHpLog',       tip: '💀 HP врага после каждого хода.' },
+      { name: 'ctx.myHistory',        tip: '📋 Массив твоих действий за раунд.\nПример: ["attack","attack","heavy"]\n\nКогда использовать:\n// Проверь не повторяешься ли ты\nconst last3 = ctx.myHistory.slice(-3);\nconst allSame = last3.every(a => a === last3[0]);\nif (allSame) return "laser"; // смени тактику' },
+      { name: 'ctx.enemyHistory',     tip: '📋 Массив всех ударов врага.\n\nКогда использовать:\n// Найди его любимый удар\nconst heavyCount = ctx.enemyHistory\n  .filter(a => a === "heavy").length;\nif (heavyCount > 3) return "shield";\n// Если часто атакует — защищайся!' },
+      { name: 'ctx.damageLog',        tip: '💥 Урон, нанесённый тобой на каждом ходу.\nПример: [12, 0, 28, 0, 20]\n\nКогда использовать:\n// Проверь насколько эффективна тактика\nconst avgDmg = ctx.damageLog\n  .reduce((s,d) => s+d, 0) / ctx.damageLog.length;\nif (avgDmg < 8) return "heavy"; // атакуй сильнее' },
+      { name: 'ctx.damageTakenLog',   tip: '🩸 Урон, полученный тобой на каждом ходу.\nПример: [0, 28, 0, 12]\n\nКогда использовать:\n// Если часто получаешь — меняй тактику\nconst lastHit = ctx.damageTakenLog.slice(-1)[0];\nif (lastHit > 20) return "dodge"; // уклонись!' },
+      { name: 'ctx.myHpLog',          tip: '❤️ Твой HP после каждого хода.\nПример: [100, 88, 88, 60]\n\nКогда использовать:\n// Отследи динамику своего HP\nconst hpDrop = ctx.myHpLog[0] - ctx.myHp;\nif (hpDrop > 40) return "shield"; // теряешь много!' },
+      { name: 'ctx.enemyHpLog',       tip: '💀 HP врага после каждого хода.\nПример: [100, 80, 80, 52]\n\nКогда использовать:\n// Проверь как быстро снижается HP врага\nconst dropRate = (ctx.enemyHpLog[0] - ctx.enemyHp)\n  / ctx.enemyHpLog.length;\nif (dropRate < 5) return "heavy"; // нападай сильнее' },
     ],
   },
   {
     title: '📊 Статистика врага',
     fields: [
-      { name: 'ctx.enemyFrequency',   tip: '📊 Как часто враг использует каждый удар.\nНапример: { attack: 5, heavy: 2 }\nПример: if (ctx.enemyFrequency["heavy"] > 3) return "shield";' },
-      { name: 'ctx.enemyPhase',       tip: '🎯 Стадия боя врага по его HP.\n"early" — у него много HP\n"mid"   — половина\n"late"  — мало, будет отчаянным!' },
-      { name: 'ctx.enemyTrend',       tip: '📈 Стиль игры врага прямо сейчас.\n"aggressive" — атакует без остановки\n"defensive"  — в основном защищается\n"mixed"      — чередует' },
+      { name: 'ctx.enemyFrequency',   tip: '📊 Сколько раз враг использовал каждый удар.\nПример: { attack: 5, heavy: 2, laser: 1 }\n\nКогда использовать:\n// Найди его любимую атаку — заблокируй!\nif (ctx.enemyFrequency["heavy"] > 3)\n  return "shield"; // он любит heavy\nif (ctx.enemyFrequency["laser"] > 2)\n  return "dodge";  // он часто стреляет' },
+      { name: 'ctx.enemyPhase',       tip: '🎯 Стадия боя врага по его HP.\n"early" — много HP, осторожен\n"mid"   — средне, непредсказуем\n"late"  — мало HP, отчаянный!\n\nКогда использовать:\nif (ctx.enemyPhase === "late")\n  return "heavy"; // добивай!\nif (ctx.enemyPhase === "early")\n  return "attack"; // не рискуй' },
+      { name: 'ctx.enemyTrend',       tip: '📈 Текущий стиль игры врага.\n"aggressive" — атакует без остановки\n"defensive"  — в основном защищается\n"mixed"      — чередует\n\nКогда использовать:\nif (ctx.enemyTrend === "aggressive")\n  return "shield"; // он атакует — блокируй\nif (ctx.enemyTrend === "defensive")\n  return "laser";  // пробивай щит лазером' },
     ],
   },
   {
     title: '🧠 Для продвинутых',
     fields: [
-      { name: 'ctx.simulate(a,b)',    tip: '🔮 Предсказывает что случится если ты сделаешь удар "a", а враг — "b".\nВозвращает: { myHpAfter, enemyHpAfter }\nПример:\nconst r = ctx.simulate("heavy","shield");\nif (r.enemyHpAfter < 10) return "heavy";' },
-      { name: 'ctx.bestAction()',     tip: '🏆 Автоматически считает лучший удар.\nПросто вызови — и получи совет!\nПример: return ctx.bestAction();' },
-      { name: 'ctx.predict(n)',       tip: '🔮 Угадывает следующий удар врага.\nВозвращает строку, например "heavy".\nПример:\nif (ctx.predict(1) === "laser") return "dodge";' },
+      { name: 'ctx.simulate(a,b)',    tip: '🔮 Предсказывает итог хода заранее.\na — твой удар, b — удар врага.\nВозвращает: { myHpAfter, enemyHpAfter }\n\nКогда использовать:\n// Проверь добьёт ли heavy:\nconst r = ctx.simulate("heavy","attack");\nif (r.enemyHpAfter <= 0) return "heavy";\n// Иначе найди лучший вариант' },
+      { name: 'ctx.bestAction()',     tip: '🏆 Автоматически выбирает лучший удар.\nАнализирует всё и возвращает оптимальное действие.\n\nКогда использовать:\n// Замени всю стратегию одной строкой:\nreturn ctx.bestAction();\n// Или используй как запасной вариант:\nreturn myLogic() || ctx.bestAction();' },
+      { name: 'ctx.predict(n)',       tip: '🔮 Предсказывает следующий удар врага.\nn=1 — следующий ход, n=2 — через два хода.\n\nКогда использовать:\n// Предугадай и контратакуй!\nconst next = ctx.predict(1);\nif (next === "heavy") return "dodge";\nif (next === "laser") return "dodge";\nif (next === "shield") return "laser";' },
     ],
   },
 ]
@@ -434,9 +434,17 @@ export default function LearningBattlePage() {
               <div className={styles.refSection}>
                 <div className={styles.refTitle}>⚔️ Действия</div>
                 <div className={styles.chipGrid}>
-                  {(['attack', 'heavy', 'laser', 'shield', 'dodge', 'repair', 'special'] as const).map(fn => (
-                    <span key={fn} className={`${styles.apiChip} ${styles.actionChip}`}>
-                      {ACTION_ICON[fn]} {fn}
+                  {([
+                    { fn: 'attack',  ru: 'Удар',      tip: '👊 12 урона, 10 стамины. Нет кулдауна.\n\nЛучше всего когда:\n• нет лучшего варианта\n• нужно сохранить стамину\n• хочешь накопить ярость\n\nПример:\nreturn "attack"; // надёжный базовый удар' },
+                    { fn: 'heavy',   ru: 'Тяжёлый',   tip: '💥 28 урона, 35 стамины, КД 2 хода.\nПромахнётся если стамина < 35!\n\nЛучше всего когда:\n• стамина ≥ 35\n• враг не защищается\n• HP врага < 40 — добивай!\n\nПример:\nif (ctx.myStamina >= 35\n    && ctx.enemyHp < 40)\n  return "heavy";' },
+                    { fn: 'laser',   ru: 'Лазер',     tip: '⚡ 20 урона, 20 стамины, КД 3 хода.\nРаботает с любой дистанции.\nDodge блокирует его в 50% случаев.\n\nЛучше всего когда:\n• враг ставит shield (лазер пробивает!)\n• ты далеко (far) — бонус к урону\n• кулдаун = 0\n\nПример:\nif (ctx.cooldowns.laser === 0\n    && ctx.enemyLastAction === "shield")\n  return "laser";' },
+                    { fn: 'shield',  ru: 'Щит',       tip: '🛡️ Блокирует 60% входящего урона.\nВосстанавливает стамину.\n\nЛучше всего когда:\n• ждёшь heavy или special от врага\n• ярость врага ≥ 80\n• твоя стамина низкая — восстановишь\n\nПример:\nif (ctx.enemyRage >= 80) return "shield";\nif (ctx.enemyLastAction === "heavy")\n  return "shield";' },
+                    { fn: 'dodge',   ru: 'Уклон',     tip: '💨 100% уклон от ближних атак.\n50% уклон от лазера.\nВосстанавливает стамину.\n\nЛучше всего когда:\n• враг часто бьёт attack/heavy\n• предсказываешь его удар\n\nПример:\nif (ctx.enemyLastAction === "attack")\n  return "dodge"; // скорее всего ударит снова\nif (ctx.predict(1) === "heavy")\n  return "dodge";' },
+                    { fn: 'repair',  ru: 'Лечение',   tip: '💊 +20 HP. Нет кулдауна.\nТеряешь ход — враг бьёт бесплатно!\n\nЛучше всего когда:\n• HP < 30–35 — срочно лечись\n• враг поставил щит — он не атакует\n\nПример:\nif (ctx.myHp < 30) return "repair";\n// НЕ лечись при высоком HP — трата хода!' },
+                    { fn: 'special', ru: 'Спецудар',  tip: '☄️ 50 урона! Требует ярость = 100.\nБез полной ярости — слабый удар.\n\nЛучше всего когда:\n• myRage = 100 — обязательно!\n• enemyHp < 55 — может добить сразу\n\nПример:\nif (ctx.myRage >= 100) return "special";\n// НИКОГДА не используй без 100 rage!' },
+                  ] as const).map(({ fn, ru, tip }) => (
+                    <span key={fn} className={`${styles.apiChip} ${styles.actionChip}`} data-tip={tip}>
+                      {ACTION_ICON[fn]} {ru}
                     </span>
                   ))}
                 </div>
