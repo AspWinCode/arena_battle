@@ -72,7 +72,7 @@ export async function buildServer() {
   await server.register(fastifyWebsocket)
 
   await server.register(fastifyMultipart, {
-    limits: { fileSize: 5 * 1024 * 1024 }, // 5 MB
+    limits: { fileSize: 20 * 1024 * 1024 }, // 20 MB — layer PNGs can be large
   })
 
   // Serve uploaded skin images
