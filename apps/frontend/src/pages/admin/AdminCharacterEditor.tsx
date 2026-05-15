@@ -79,13 +79,14 @@ interface SkinDef {
 }
 
 interface Layer {
-  id:        string
-  name:      string
-  src:       string     // local objectURL for canvas preview
-  serverUrl: string     // server URL after upload (empty = uploading)
-  uploading: boolean
-  visible:   boolean
-  img:       HTMLImageElement
+  id:          string
+  name:        string
+  src:         string     // local objectURL for canvas preview
+  serverUrl:   string     // server URL after upload (empty = uploading or failed)
+  uploading:   boolean
+  uploadError: boolean    // true if upload failed
+  visible:     boolean
+  img:         HTMLImageElement
 }
 
 // ── Main component ─────────────────────────────────────────────────────────────
@@ -197,7 +198,7 @@ export default function AdminCharacterEditor() {
     const img = new Image()
     img.onload = () => {
       setLayers(prev => [...prev, {
-        id, name: file.name, src: localSrc, serverUrl: '', uploading: true, visible: true, img,
+        id, name: file.name, src: localSrc, serverUrl: '', uploading: true, uploadError: false, visible: true, img,
       }])
     }
     img.src = localSrc
@@ -215,7 +216,7 @@ export default function AdminCharacterEditor() {
         setLayers(prev => prev.map(l => l.id === id ? { ...l, serverUrl: url, uploading: false } : l))
       })
       .catch(() => {
-        setLayers(prev => prev.map(l => l.id === id ? { ...l, uploading: false } : l))
+        setLayers(prev => prev.map(l => l.id === id ? { ...l, uploading: false, uploadError: true } : l))
       })
   }, [token])
 
@@ -271,12 +272,13 @@ export default function AdminCharacterEditor() {
       img.crossOrigin = 'anonymous'
       img.onload = () => {
         result[i] = {
-          id:        crypto.randomUUID(),
-          name:      meta.name,
-          src:       meta.url,
-          serverUrl: meta.url,
-          uploading: false,
-          visible:   meta.visible,
+          id:          crypto.randomUUID(),
+          name:        meta.name,
+          src:         meta.url,
+          serverUrl:   meta.url,
+          uploading:   false,
+          uploadError: false,
+          visible:     meta.visible,
           img,
         }
         if (++done === frameLayers.length) setLayers([...result])
@@ -357,9 +359,14 @@ export default function AdminCharacterEditor() {
       if (!upRes.ok) throw new Error('Upload failed')
       const { url } = await upRes.json()
 
+      // Guard: every layer must have a server URL (upload completed successfully)
+      const missingUrl = layers.find(l => !l.serverUrl)
+      if (missingUrl) {
+        throw new Error(`Слой «${missingUrl.name}» не загружен на сервер. Удалите его и добавьте снова.`)
+      }
+
       // Build layer metadata from the current layer stack
       const layerMetas: LayerMeta[] = layers
-        .filter(l => l.serverUrl)
         .map(l => ({ url: l.serverUrl, name: l.name, visible: l.visible }))
 
       // Replace the frame being edited, or append a new one
@@ -612,8 +619,9 @@ export default function AdminCharacterEditor() {
                     >
                       <span className={styles.layerDrag} title="Перетащить">⠿</span>
                       <img src={layer.src} alt="" className={styles.layerThumb} />
-                      <span className={styles.layerName} title={layer.name}>
+                      <span className={`${styles.layerName} ${layer.uploadError ? styles.layerNameError : ''}`} title={layer.name}>
                         {layer.uploading ? <span className={styles.layerUploading}>⏳</span> : null}
+                        {layer.uploadError ? <span className={styles.layerUploadErr} title="Ошибка загрузки — удалите слой и добавьте снова">⚠️</span> : null}
                         {layer.name}
                       </span>
                       <button
@@ -663,6 +671,7 @@ export default function AdminCharacterEditor() {
                     layers.length === 0 ||
                     flatteningCanvas ||
                     layers.some(l => l.uploading) ||
+                    layers.some(l => l.uploadError) ||
                     (editingFrameIdx === null && actionDef.frames.length >= 10)
                   }
                   onClick={saveFrame}
@@ -682,7 +691,8 @@ export default function AdminCharacterEditor() {
                     disabled={
                       layers.length === 0 ||
                       flatteningCanvas ||
-                      layers.some(l => l.uploading)
+                      layers.some(l => l.uploading) ||
+                      layers.some(l => l.uploadError)
                     }
                     onClick={saveFrameAndNext}
                     title="Сохранить кадр и начать следующий"

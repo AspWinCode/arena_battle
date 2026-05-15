@@ -465,6 +465,15 @@
   font-size: 12px;
 }
 
+.layerUploadErr {
+  margin-right: 4px;
+  font-size: 12px;
+}
+
+.layerNameError {
+  color: #f87171;
+}
+
 .layerClearBtn {
   background: none;
   border: none;
