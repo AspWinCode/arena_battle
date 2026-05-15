@@ -211,7 +211,7 @@ export default function SparringPage() {
       {/* Header */}
       <div className={styles.header}>
         <Link to="/learn" className={styles.back}>← Обучение</Link>
-        <h1 className={styles.title}>🥊 Спарринг</h1>
+        <h1 className={styles.title}>🥊 Отработка навыков</h1>
         <span className={styles.subtitle}>Тренируйся против ботов без ограничений</span>
       </div>
 

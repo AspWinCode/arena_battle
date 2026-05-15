@@ -310,7 +310,7 @@ export default function LearningBattlePage() {
       {/* Header */}
       <div className={styles.header}>
         <div className={styles.headerLeft}>
-          <Link to="/learn" className={styles.back}>← Миссии</Link>
+          <button className={styles.back} onClick={() => navigate(-1)}>← Назад</button>
           <div className={styles.missionInfo}>
             <span className={styles.missionNum}>Миссия {mission.order}</span>
             <h2 className={styles.missionTitle}>{mission.title}</h2>

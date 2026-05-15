@@ -57,7 +57,7 @@ const TABS: { id: Tab; label: string }[] = [
 const NAV_ITEMS = [
   { to: '/join',        icon: '⚔️', label: 'В бой',      desc: 'Войти по коду сессии' },
   { to: '/learn',       icon: '🎓', label: 'Обучение',   desc: 'Уроки и практика'     },
-  { to: '/sparring',    icon: '🥊', label: 'Спарринг',   desc: 'Тренировочный бой'    },
+  { to: '/sparring',    icon: '🥊', label: 'Отработка навыков', desc: 'Тренировочный бой' },
   { to: '/daily',       icon: '📅', label: 'Задания',    desc: 'Ежедневные задачи'    },
   { to: '/tournaments', icon: '🏟', label: 'Турниры',    desc: 'Соревнования'         },
   { to: '/clans',       icon: '🛡', label: 'Кланы',      desc: 'Найти команду'        },
@@ -371,7 +371,7 @@ export default function ProfilePage() {
                   </div>
                   <div className={styles.achSection}>
                     <div className={styles.achSectionLabel}>
-                      Достижения спарринга
+                      Достижения отработки навыков
                       <span className={styles.achCount}>{unlockedAch.length}/{ACHIEVEMENTS.length}</span>
                     </div>
                     <div className={styles.achievementsGrid}>
@@ -391,7 +391,7 @@ export default function ProfilePage() {
                       })}
                     </div>
                     {unlockedAch.length === 0 && (
-                      <p className={styles.empty}>Сыграй в Спарринге → <Link to="/sparring">Открыть спарринг</Link></p>
+                      <p className={styles.empty}>Попробуй отработку навыков → <Link to="/sparring">Открыть</Link></p>
                     )}
                   </div>
                 </div>

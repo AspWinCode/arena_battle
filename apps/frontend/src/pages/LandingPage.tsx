@@ -36,7 +36,7 @@ export default function LandingPage() {
                     : <span style={{ marginRight: 4 }}>{user.avatar}</span>}
                   {user.displayName}
                 </span>
-                <Link to="/profile" className={`btn btn-primary ${styles.navBtn}`}>В игру</Link>
+                <Link to="/profile" className={`btn btn-primary ${styles.navBtn}`}>Профиль</Link>
               </>
             ) : (
               <>
@@ -78,7 +78,7 @@ export default function LandingPage() {
               </p>
 
               <div className={styles.heroCta}>
-                <Link to="/join" className={`btn btn-primary ${styles.ctaMain}`}>⚔️ Начать бой</Link>
+                <Link to="/register" className={`btn btn-primary ${styles.ctaMain}`}>⚔️ Начать бой</Link>
                 <Link to="/demo" className={styles.demoLink}>Попробовать демо →</Link>
               </div>
 
@@ -199,7 +199,7 @@ export default function LandingPage() {
               { icon: '🏆', title: 'Турниры',                 accent: '#d97706', desc: 'Официальные турниры с сеткой bo3/bo5. Обновляй стратегию между раундами — побеждает лучший алгоритм.' },
               { icon: '🎭', title: '16 персонажей',           accent: '#f43f5e', desc: 'У каждого уникальная механика: яд, контратаки, уклонения, бусидо, захват. Стратегия зависит от выбора.' },
               { icon: '⚡', title: '5 языков',                 accent: '#22c55e', desc: 'Блоки, JavaScript, Python, Java и C++. Начни с блоков — переходи к коду по мере роста. Прогресс сохраняется.' },
-              { icon: '🔁', title: 'Спарринг',                accent: '#60a5fa', desc: 'Тестируй стратегии без соперника. Запускай бои локально, экспериментируй и оттачивай алгоритм.' },
+              { icon: '🔁', title: 'Отработка навыков',        accent: '#60a5fa', desc: 'Тестируй стратегии без соперника. Запускай бои локально, экспериментируй и оттачивай алгоритм.' },
             ].map(f => (
               <div key={f.title} className={styles.featCard} style={{ '--fa': f.accent } as React.CSSProperties}>
                 <div className={styles.featIcon}>{f.icon}</div>

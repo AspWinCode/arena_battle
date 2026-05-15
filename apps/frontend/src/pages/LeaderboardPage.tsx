@@ -90,7 +90,7 @@ export default function LeaderboardPage() {
 
       <div className={styles.content}>
         {/* Header */}
-        <Link to="/" className={styles.back}>← Главная</Link>
+        <button className={styles.back} onClick={() => window.history.back()}>← Назад</button>
         <div className={styles.headerRow}>
           <h1 className={styles.title}>
             🏆 Таблица лидеров
@@ -105,9 +105,6 @@ export default function LeaderboardPage() {
               </span>
             )}
           </h1>
-          <Link to="/daily" className="btn btn-ghost" style={{ fontSize: 13 }}>
-            📅 Мои задания
-          </Link>
         </div>
         <p className={styles.subtitle}>Лучшие бойцы арены</p>
 
@@ -194,7 +191,7 @@ export default function LeaderboardPage() {
         {/* Navigation */}
         <div style={{ display: 'flex', gap: 12 }}>
           <Link to="/sparring" className="btn btn-primary" style={{ flex: 1 }}>
-            🥊 Спарринг
+            🥊 Отработка навыков
           </Link>
           <Link to="/learn" className="btn btn-ghost" style={{ flex: 1 }}>
             🎓 Обучение
