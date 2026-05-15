@@ -59,8 +59,14 @@ export async function buildServer() {
   })
 
   await server.register(fastifyRateLimit, {
-    max: 100,
+    max: 300,
     timeWindow: '1 minute',
+    // Admin routes and static asset routes get a much higher limit
+    keyGenerator: (req) => req.ip,
+    skip: (req) =>
+      req.url.startsWith('/api/v1/admin') ||
+      req.url.startsWith('/api/v1/uploads') ||
+      req.url === '/health',
   })
 
   await server.register(fastifyWebsocket)
