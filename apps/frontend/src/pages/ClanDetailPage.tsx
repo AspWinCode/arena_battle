@@ -46,19 +46,24 @@ export default function ClanDetailPage() {
   const { token, user }  = useUserStore()
   const navigate         = useNavigate()
 
-  const [clan, setClan]           = useState<Clan | null>(null)
-  const [messages, setMessages]   = useState<ChatMessage[]>([])
-  const [wars, setWars]           = useState<ClanWar[]>([])
-  const [loading, setLoading]     = useState(true)
-  const [tab, setTab]             = useState<'members' | 'chat' | 'wars'>('members')
-  const [chatInput, setChatInput] = useState('')
-  const [sending, setSending]     = useState(false)
-  const [acting, setActing]       = useState(false)
-  const [error, setError]         = useState('')
-  const [warTarget, setWarTarget] = useState('')
-  const [warDays, setWarDays]     = useState(3)
-  const chatEndRef                = useRef<HTMLDivElement>(null)
-  const pollRef                   = useRef<ReturnType<typeof setInterval> | null>(null)
+  const [clan, setClan]               = useState<Clan | null>(null)
+  const [messages, setMessages]       = useState<ChatMessage[]>([])
+  const [wars, setWars]               = useState<ClanWar[]>([])
+  const [loading, setLoading]         = useState(true)
+  const [tab, setTab]                 = useState<'members' | 'chat' | 'wars' | 'settings'>('members')
+  const [chatInput, setChatInput]     = useState('')
+  const [sending, setSending]         = useState(false)
+  const [acting, setActing]           = useState(false)
+  const [error, setError]             = useState('')
+  const [warTarget, setWarTarget]     = useState('')
+  const [warDays, setWarDays]         = useState(3)
+  // Settings state
+  const [settingsAvatar, setSettingsAvatar] = useState('')
+  const [settingsDesc, setSettingsDesc]     = useState('')
+  const [settingsSaved, setSettingsSaved]   = useState(false)
+  const [settingsError, setSettingsError]   = useState('')
+  const chatEndRef                    = useRef<HTMLDivElement>(null)
+  const pollRef                       = useRef<ReturnType<typeof setInterval> | null>(null)
 
   const load = async () => {
     if (!id) return
@@ -69,6 +74,8 @@ export default function ClanDetailPage() {
       ])
       setClan(clanData)
       setWars(warsData)
+      setSettingsAvatar(clanData.avatar)
+      setSettingsDesc(clanData.description ?? '')
     } catch (e: any) {
       setError(e.message)
     } finally {
@@ -165,6 +172,32 @@ export default function ClanDetailPage() {
       setWarTarget('')
       await load()
       setTab('wars')
+    } catch (e: any) { setError(e.message) }
+    finally { setActing(false) }
+  }
+
+  const handleSaveSettings = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!token || !id) return
+    setActing(true)
+    setSettingsError('')
+    setSettingsSaved(false)
+    try {
+      await api.patch(`/clans/${id}`, { avatar: settingsAvatar, description: settingsDesc }, token)
+      await load()
+      setSettingsSaved(true)
+      setTimeout(() => setSettingsSaved(false), 2000)
+    } catch (e: any) { setSettingsError(e.message) }
+    finally { setActing(false) }
+  }
+
+  const handleDeleteClan = async () => {
+    if (!token || !id) return
+    if (!confirm('Удалить клан? Это действие необратимо — все участники будут исключены.')) return
+    setActing(true)
+    try {
+      await api.delete(`/clans/${id}`, token)
+      navigate('/clans')
     } catch (e: any) { setError(e.message) }
     finally { setActing(false) }
   }
@@ -291,7 +324,12 @@ export default function ClanDetailPage() {
 
         {/* ── Tabs ─────────────────────────────────────────────────────────────── */}
         <div style={{ display: 'flex', gap: 4, marginBottom: 20, background: 'var(--bg-mid)', border: '1px solid var(--border)', borderRadius: 12, padding: 4 }}>
-          {([['members', `👥 Участники (${clan._count.members})`], ['wars', `⚔️ Войны (${wars.length})`], ...(isMember ? [['chat', '💬 Чат']] : [])] as [string, string][]).map(([t, label]) => (
+          {([
+            ['members', `👥 Участники (${clan._count.members})`],
+            ['wars', `⚔️ Войны (${wars.length})`],
+            ...(isMember ? [['chat', '💬 Чат']] : []),
+            ...(isOwner ? [['settings', '⚙️ Настройки']] : []),
+          ] as [string, string][]).map(([t, label]) => (
             <button
               key={t}
               onClick={() => setTab(t as typeof tab)}
@@ -546,7 +584,108 @@ export default function ClanDetailPage() {
           </div>
         )}
 
+        {/* ── Settings tab (owner only) ─────────────────────────────────────── */}
+        {tab === 'settings' && isOwner && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+
+            {/* Edit clan info */}
+            <form onSubmit={handleSaveSettings} style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 14, padding: '20px 22px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+              <div style={{ fontSize: 14, fontWeight: 800 }}>✏️ Редактировать клан</div>
+
+              {/* Avatar picker */}
+              <div>
+                <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 8 }}>Аватар</div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                  {CLAN_AVATARS.map(a => (
+                    <button
+                      key={a} type="button"
+                      onClick={() => setSettingsAvatar(a)}
+                      style={{
+                        width: 44, height: 44, fontSize: 24,
+                        border: `2px solid ${settingsAvatar === a ? 'var(--accent)' : 'var(--border)'}`,
+                        borderRadius: 10, background: settingsAvatar === a ? 'rgba(0,229,255,.1)' : 'var(--bg-mid)',
+                        cursor: 'pointer', transition: 'all .15s',
+                      }}
+                    >{a}</button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Description */}
+              <div>
+                <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 6 }}>Описание</div>
+                <textarea
+                  className="input"
+                  maxLength={500} rows={3}
+                  placeholder="О чём ваш клан?"
+                  value={settingsDesc}
+                  onChange={e => setSettingsDesc(e.target.value)}
+                  style={{ resize: 'vertical', width: '100%', boxSizing: 'border-box' }}
+                />
+              </div>
+
+              {settingsError && (
+                <div style={{ padding: '8px 12px', background: 'rgba(248,113,113,.1)', border: '1px solid rgba(248,113,113,.3)', borderRadius: 8, fontSize: 13, color: '#f87171' }}>
+                  {settingsError}
+                </div>
+              )}
+
+              <button type="submit" className="btn btn-primary" disabled={acting} style={{ alignSelf: 'flex-start' }}>
+                {acting ? '⏳ Сохраняем...' : settingsSaved ? '✅ Сохранено!' : '💾 Сохранить изменения'}
+              </button>
+            </form>
+
+            {/* VK Share */}
+            <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 14, padding: '20px 22px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <div style={{ fontSize: 14, fontWeight: 800 }}>📣 Поделиться кланом</div>
+              <p style={{ margin: 0, fontSize: 13, color: 'var(--text-muted)' }}>
+                Пригласи друзей и союзников в клан <strong style={{ color: 'var(--text)' }}>[{clan.tag}] {clan.name}</strong>
+              </p>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                <a
+                  href={`https://vk.com/share.php?url=${encodeURIComponent(`https://arenabattle.tirskix.space/clans/${id}`)}&title=${encodeURIComponent(`Вступай в клан [${clan.tag}] ${clan.name} на Arena Battle!`)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn btn-primary"
+                  style={{ background: '#0077FF', borderColor: '#0077FF', fontSize: 13, textDecoration: 'none' }}
+                >
+                  🔵 Поделиться ВКонтакте
+                </a>
+                <button
+                  className="btn btn-ghost"
+                  style={{ fontSize: 13 }}
+                  onClick={() => {
+                    navigator.clipboard.writeText(`https://arenabattle.tirskix.space/clans/${id}`)
+                      .then(() => alert('Ссылка скопирована!'))
+                  }}
+                >
+                  🔗 Скопировать ссылку
+                </button>
+              </div>
+            </div>
+
+            {/* Danger zone */}
+            <div style={{ background: 'var(--bg-card)', border: '1px solid rgba(248,113,113,.3)', borderRadius: 14, padding: '20px 22px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <div style={{ fontSize: 14, fontWeight: 800, color: '#f87171' }}>⚠️ Опасная зона</div>
+              <p style={{ margin: 0, fontSize: 13, color: 'var(--text-muted)' }}>
+                Удаление клана необратимо — все участники будут исключены, история войн удалена.
+              </p>
+              <button
+                className="btn"
+                onClick={handleDeleteClan}
+                disabled={acting}
+                style={{ alignSelf: 'flex-start', background: 'rgba(248,113,113,.1)', border: '1px solid rgba(248,113,113,.4)', color: '#f87171', fontSize: 13 }}
+              >
+                🗑️ Удалить клан
+              </button>
+            </div>
+
+          </div>
+        )}
+
       </div>
     </div>
   )
 }
+
+const CLAN_AVATARS = ['⚔️','🛡️','🔥','💀','🐉','🦅','🌊','⚡','🦁','🐺','🌑','🗡️','🏹','🧿']
