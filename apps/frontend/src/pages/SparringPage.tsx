@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useMemo } from 'react'
+import { useState, useRef, useCallback, useMemo, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import {
   SPARRING_BOTS, PERKS, mergeEffects,
@@ -83,14 +83,22 @@ export default function SparringPage() {
 
   // Editor mode
   const [editorMode, setEditorMode] = useState<'code' | 'blocks'>('code')
-  const [lang, setLang]             = useState<'js' | 'py' | 'cpp' | 'java'>('js')
+  const [lang, setLang]             = useState<'js' | 'py' | 'cpp' | 'java'>(() => {
+    return (localStorage.getItem('sparring-lang') as 'js' | 'py' | 'cpp' | 'java') ?? 'js'
+  })
 
   // Setup state
   const [selectedBotId, setSelectedBotId]   = useState(SPARRING_BOTS[0].id)
   const [selectedPerkIds, setSelectedPerkIds] = useState<string[]>([])
   const [format, setFormat]                  = useState<'bo1' | 'bo3' | 'bo5'>('bo1')
-  const [code, setCode]                      = useState(DEFAULT_CODE)
+  const [code, setCode]                      = useState(() => {
+    return localStorage.getItem('sparring-code') ?? DEFAULT_CODE
+  })
   const [codeError, setCodeError]            = useState('')
+
+  // Persist code + lang to localStorage
+  useEffect(() => { localStorage.setItem('sparring-code', code) }, [code])
+  useEffect(() => { localStorage.setItem('sparring-lang', lang) }, [lang])
 
   // Battle state
   const [phase, setPhase]           = useState<Phase>('setup')

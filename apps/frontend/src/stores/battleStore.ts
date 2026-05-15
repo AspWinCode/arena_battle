@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { persist } from 'zustand/middleware'
 import type {
   ServerMessage, TurnResult, RoundResult,
   LobbyPlayer, SkinId, SessionLevel, Lang,
@@ -92,7 +93,9 @@ const initialState = {
   eloDelta: null,
 }
 
-export const useBattleStore = create<BattleState>((set) => ({
+export const useBattleStore = create<BattleState>()(
+  persist(
+    (set) => ({
   ...initialState,
 
   setSession: (sessionId, slot, sessionLevel, allowedSkins, wsToken, myName, mySkin) =>
@@ -217,4 +220,11 @@ export const useBattleStore = create<BattleState>((set) => ({
   },
 
   reset: () => set(initialState),
-}))
+    }),
+    {
+      name: 'battle-code',
+      // Only persist code + lang — everything else resets per session
+      partialize: (state) => ({ code: state.code, lang: state.lang }),
+    }
+  )
+)
