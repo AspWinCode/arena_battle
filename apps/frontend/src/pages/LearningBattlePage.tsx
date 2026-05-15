@@ -153,11 +153,14 @@ const CTX_GROUPS: { title: string; fields: CtxField[] }[] = [
 type Phase = 'coding' | 'animating' | 'result'
 type EditorMode = 'blocks' | 'code'
 
+interface TipState { text: string; top: number; left: number }
+
 export default function LearningBattlePage() {
   const { missionId } = useParams<{ missionId: string }>()
   const navigate = useNavigate()
   const { completesMission, incrementAttempt } = useLearnStore()
   const recordBattle = useDailyStore(s => s.recordBattle)
+  const [floatingTip, setFloatingTip] = useState<TipState | null>(null)
 
   const mission = MISSIONS.find(m => m.id === missionId)
 
@@ -281,8 +284,21 @@ export default function LearningBattlePage() {
 
   const nextMission = MISSIONS.find(m => m.order === mission.order + 1)
 
+  const showTip = (e: React.MouseEvent, text: string) => {
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
+    const left = Math.max(8, rect.left - 272)
+    const top  = Math.min(rect.top, window.innerHeight - 320)
+    setFloatingTip({ text, top, left })
+  }
+  const hideTip = () => setFloatingTip(null)
+
   return (
     <div className={styles.root}>
+      {floatingTip && (
+        <div className={styles.floatingTip} style={{ top: floatingTip.top, left: floatingTip.left }}>
+          {floatingTip.text}
+        </div>
+      )}
       {showTutorial && !tutorialDone && (
         <TutorialOverlay
           steps={mission.tutorial}
@@ -423,7 +439,8 @@ export default function LearningBattlePage() {
                   <div className={styles.refTitle}>{group.title}</div>
                   <div className={styles.chipGrid}>
                     {group.fields.map(f => (
-                      <span key={f.name} className={styles.apiChip} data-tip={f.tip}>
+                      <span key={f.name} className={styles.apiChip}
+                        onMouseEnter={e => showTip(e, f.tip)} onMouseLeave={hideTip}>
                         {f.name}
                       </span>
                     ))}
@@ -443,7 +460,8 @@ export default function LearningBattlePage() {
                     { fn: 'repair',  ru: 'Лечение',   tip: '💊 +20 HP. Нет кулдауна.\nТеряешь ход — враг бьёт бесплатно!\n\nЛучше всего когда:\n• HP < 30–35 — срочно лечись\n• враг поставил щит — он не атакует\n\nПример:\nif (ctx.myHp < 30) return "repair";\n// НЕ лечись при высоком HP — трата хода!' },
                     { fn: 'special', ru: 'Спецудар',  tip: '☄️ 50 урона! Требует ярость = 100.\nБез полной ярости — слабый удар.\n\nЛучше всего когда:\n• myRage = 100 — обязательно!\n• enemyHp < 55 — может добить сразу\n\nПример:\nif (ctx.myRage >= 100) return "special";\n// НИКОГДА не используй без 100 rage!' },
                   ] as const).map(({ fn, ru, tip }) => (
-                    <span key={fn} className={`${styles.apiChip} ${styles.actionChip}`} data-tip={tip}>
+                    <span key={fn} className={`${styles.apiChip} ${styles.actionChip}`}
+                      onMouseEnter={e => showTip(e, tip)} onMouseLeave={hideTip}>
                       {ACTION_ICON[fn]} {ru}
                     </span>
                   ))}

@@ -211,12 +211,10 @@
 }
 .apiChip:hover { border-color: var(--accent); }
 
-.apiChip[data-tip]::after {
-  content: attr(data-tip);
-  position: absolute;
-  bottom: calc(100% + 6px);
-  right: 0;
-  left: auto;
+/* floating tooltip rendered via React (position: fixed) */
+.floatingTip {
+  position: fixed;
+  z-index: 9999;
   background: #0f172a;
   color: #e2e8f0;
   border: 1px solid #38bdf8;
@@ -226,15 +224,10 @@
   font-family: -apple-system, BlinkMacSystemFont, sans-serif;
   white-space: pre-wrap;
   width: 260px;
-  text-align: left;
   line-height: 1.6;
-  z-index: 9999;
   pointer-events: none;
-  opacity: 0;
-  transition: opacity .15s;
   box-shadow: 0 8px 24px rgba(0,0,0,.8);
 }
-.apiChip[data-tip]:hover::after { opacity: 1; }
 
 .actionChip { color: #facc15; }
 
