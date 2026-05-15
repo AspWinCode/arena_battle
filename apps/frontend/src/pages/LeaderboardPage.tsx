@@ -111,7 +111,10 @@ export default function LeaderboardPage() {
         {/* User's own stats card */}
         <div className={styles.myCard}>
           <div className={styles.myCardLeft}>
-            <span className={styles.myAvatar}>{user?.avatar ?? '🧑‍💻'}</span>
+            {user?.avatar?.startsWith('data:') || user?.avatar?.startsWith('/')
+              ? <img src={user.avatar} className={styles.myAvatar} style={{ borderRadius: 'var(--radius)', objectFit: 'cover' }} alt="" />
+              : <span className={styles.myAvatar}>{user?.avatar ?? '🧑‍💻'}</span>
+            }
             <div style={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
               <div className={styles.myName}>{user?.displayName ?? 'Ты'}</div>
               <div className={styles.myMeta} style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>

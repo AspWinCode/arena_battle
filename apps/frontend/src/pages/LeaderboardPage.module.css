@@ -44,6 +44,7 @@
   border: none;
   cursor: pointer;
   padding: 0;
+  align-self: flex-start;
 }
 .back:hover { color: var(--text); }
 .back:hover { color: var(--text); }
