@@ -308,6 +308,22 @@ export default function AdminCharacterEditor() {
     onDragEnd()
   }
 
+  // ── Start composing a new (empty) frame ─────────────────────────────────────
+
+  const startNewFrame = useCallback(() => {
+    setLayers(prev => {
+      prev.forEach(l => { if (l.src.startsWith('blob:')) URL.revokeObjectURL(l.src) })
+      return []
+    })
+    setEditingFrameIdx(null)
+    setNoLayerData(false)
+    const canvas = canvasRef.current
+    if (canvas) {
+      const ctx = canvas.getContext('2d')!
+      ctx.clearRect(0, 0, CANVAS_SIZE, CANVAS_SIZE)
+    }
+  }, [])
+
   // ── Flatten & save frame ─────────────────────────────────────────────────────
 
   const saveFrame = useCallback(async () => {
@@ -389,6 +405,12 @@ export default function AdminCharacterEditor() {
       setSaving(false)
     }
   }, [activeSkin, selectedAction, token])
+
+  // Save current frame, then immediately switch to composing the next one
+  const saveFrameAndNext = useCallback(async () => {
+    await saveFrame()
+    startNewFrame()
+  }, [saveFrame, startNewFrame])
 
   const deleteFrame = async (frameIdx: number) => {
     const newFrames = actionDef.frames.filter((_, i) => i !== frameIdx)
@@ -494,9 +516,14 @@ export default function AdminCharacterEditor() {
                 </div>
               ))}
               {actionDef.frames.length < 10 && (
-                <div className={styles.frameTilePlus}>
-                  +{10 - actionDef.frames.length} слотов
-                </div>
+                <button
+                  className={`${styles.frameTilePlus} ${editingFrameIdx === null ? styles.frameTilePlusActive : ''}`}
+                  onClick={startNewFrame}
+                  title="Новый кадр"
+                >
+                  <span className={styles.frameTilePlusIcon}>+</span>
+                  <span className={styles.frameTilePlusLabel}>{10 - actionDef.frames.length} свободно</span>
+                </button>
               )}
             </div>
 
@@ -648,6 +675,19 @@ export default function AdminCharacterEditor() {
                     ? `✏️ Заменить кадр ${editingFrameIdx + 1}`
                     : '💾 Сохранить кадр'}
                 </button>
+                {actionDef.frames.length < 10 && (
+                  <button
+                    className="btn btn-ghost"
+                    style={{ fontSize: 13 }}
+                    disabled={
+                      layers.length === 0 ||
+                      flatteningCanvas ||
+                      layers.some(l => l.uploading)
+                    }
+                    onClick={saveFrameAndNext}
+                    title="Сохранить кадр и начать следующий"
+                  >→</button>
+                )}
                 {editingFrameIdx !== null && (
                   <button
                     className="btn btn-ghost"
