@@ -184,18 +184,24 @@ export const useBattleStore = create<BattleState>((set) => ({
         break
 
       case 'round_end':
-        set((s) => ({
-          completedRounds: [...s.completedRounds, {
-            round: msg.payload.round,
-            winner: msg.payload.winner,
+        set((s) => {
+          const newScore: [number, number] = [s.score[0], s.score[1]]
+          if (msg.payload.winner === 1) newScore[0]++
+          else if (msg.payload.winner === 2) newScore[1]++
+          return {
+            completedRounds: [...s.completedRounds, {
+              round: msg.payload.round,
+              winner: msg.payload.winner,
+              p1Hp: msg.payload.p1Hp,
+              p2Hp: msg.payload.p2Hp,
+              reason: msg.payload.reason,
+              turns: s.turns,
+            }],
             p1Hp: msg.payload.p1Hp,
             p2Hp: msg.payload.p2Hp,
-            reason: msg.payload.reason,
-            turns: s.turns,
-          }],
-          p1Hp: msg.payload.p1Hp,
-          p2Hp: msg.payload.p2Hp,
-        }))
+            score: newScore,
+          }
+        })
         break
 
       case 'match_end':

@@ -11,58 +11,38 @@ const LANG_LABELS: Record<Lang, string> = {
 }
 
 const DEFAULT_TEMPLATES: Record<string, string> = {
-  js: `// JavaScript strategy — вызывается каждый ход
-// ctx: { myHp, myStamina, myRage, enemyHp, enemyStamina, enemyRage,
-//        myLastAction, enemyLastAction, cooldowns, myPosition,
-//        enemyPosition, distanceModifier, myRepeatCount, turn }
-// Верни строку: 'attack'|'heavy'|'laser'|'shield'|'dodge'|'repair'|'special'
+  js: `// Доступные данные (ctx):
+//   ctx.myHp, ctx.myStamina, ctx.myRage
+//   ctx.enemyHp, ctx.enemyStamina, ctx.enemyRage
+//   ctx.myLastAction, ctx.enemyLastAction
+//   ctx.cooldowns.heavy, ctx.cooldowns.laser, ...
+//   ctx.turn, ctx.myRepeatCount
 
 function strategy(ctx) {
-  if (ctx.myRage >= 100) return 'special';
-  if (ctx.myHp < 30) return 'repair';
-  if (ctx.enemyLastAction === 'laser') return 'dodge';
-  if (ctx.enemyHp < 25) return 'heavy';
-  if (ctx.cooldowns.heavy === 0 && ctx.myStamina >= 35) return 'heavy';
+  // Напиши свою стратегию здесь
   return 'attack';
 }`,
 
-  py: `# Python strategy — вызывается каждый ход
-# ctx.my_hp, ctx.my_stamina, ctx.my_rage
-# ctx.enemy_hp, ctx.enemy_stamina, ctx.enemy_rage
-# ctx.my_last_action, ctx.enemy_last_action
-# ctx.cooldowns  — dict: 'heavy', 'laser', 'shield', 'dodge', 'repair', 'special'
-# ctx.my_position, ctx.enemy_position  ('close'|'mid'|'far')
-# ctx.distance_modifier, ctx.my_repeat_count, ctx.turn
-# Верни строку: 'attack'|'heavy'|'laser'|'shield'|'dodge'|'repair'|'special'
+  py: `# Доступные данные (ctx):
+#   ctx.my_hp, ctx.my_stamina, ctx.my_rage
+#   ctx.enemy_hp, ctx.enemy_stamina, ctx.enemy_rage
+#   ctx.my_last_action, ctx.enemy_last_action
+#   ctx.cooldowns['heavy'], ctx.cooldowns['laser'], ...
+#   ctx.turn, ctx.my_repeat_count
 
 def strategy(ctx):
-    if ctx.my_rage >= 100:
-        return 'special'
-    if ctx.my_hp < 30:
-        return 'repair'
-    if ctx.enemy_last_action == 'laser':
-        return 'dodge'
-    if ctx.enemy_hp < 25:
-        return 'heavy'
-    if ctx.cooldowns['heavy'] == 0 and ctx.my_stamina >= 35:
-        return 'heavy'
+    # Напиши свою стратегию здесь
     return 'attack'`,
 
   cpp: `// C++ strategy (coming soon)
 // Return one of: attack heavy laser shield dodge repair special
 std::string strategy(const Ctx& ctx) {
-    if (ctx.myRage >= 100) return "special";
-    if (ctx.myHp < 30) return "repair";
-    if (ctx.enemyLastAction == "laser") return "dodge";
     return "attack";
 }`,
 
   java: `// Java strategy (coming soon)
 // Return one of: attack heavy laser shield dodge repair special
 public static String strategy(Ctx ctx) {
-    if (ctx.myRage >= 100) return "special";
-    if (ctx.myHp < 30) return "repair";
-    if ("laser".equals(ctx.enemyLastAction)) return "dodge";
     return "attack";
 }`,
 }
