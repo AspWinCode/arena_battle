@@ -145,31 +145,13 @@ export default function SparringPage() {
     setCodeError('')
   }, [])
 
-  const handleRun = useCallback(() => {
-    if (lang !== 'js') {
-      setCodeError(`Отработка навыков поддерживает только JavaScript. Для ${lang === 'py' ? 'Python' : lang === 'cpp' ? 'C++' : 'Java'} используй боевой режим.`)
-      return
-    }
-    const { strategy: playerStrategy, error } = runCodeToStrategy(code)
-    if (error) { setCodeError(`Ошибка: ${error}`); return }
-    setCodeError('')
-
-    // Apply the player's chosen character skin to their strategy
-    const playerSkin = (user?.preferredSkin ?? 'robot') as 'robot' | 'gladiator' | 'boxer' | 'cosmonaut'
-    playerStrategy.character = playerSkin
-
-    const result = runLocalMatch(
-      playerStrategy,
-      selectedBot.strategy,
-      format,
-      effectWithStreak,
-    )
+  // Shared post-match logic: animate turns and record stats
+  const animateAndRecord = useCallback((result: { winner: 0|1|2; score: [number,number]; rounds: RoundResult[] }) => {
     setRounds(result.rounds)
     setWinner(result.winner)
     setScore(result.score)
     setPhase('animating')
 
-    // Animate turns
     const allTurns: TurnResult[] = []
     for (const r of result.rounds) allTurns.push(...r.turns)
 
@@ -177,7 +159,6 @@ export default function SparringPage() {
     const step = () => {
       if (idx >= allTurns.length) {
         setPhase('result')
-        // Record battle for daily tasks & streak
         const allT = allTurns
         const won  = result.winner === 1
         const lastTurn = allT[allT.length - 1]
@@ -195,9 +176,7 @@ export default function SparringPage() {
           usedRepair:   allT.some(t => t.p1Action === 'repair'),
         }
         recordBattle(battleRec)
-        // Persist streak/XP to backend if logged in
         if (token) syncStatsToBackend(useDailyStore.getState(), token)
-        // Check achievements (extended record)
         checkAchievements({
           ...battleRec,
           finalHp:      lastTurn ? lastTurn.p1HpAfter : 0,
@@ -215,7 +194,55 @@ export default function SparringPage() {
     }
     setTurnLog([])
     step()
-  }, [code, lang, selectedBot, format, effectWithStreak])
+  }, [recordBattle, token, checkAchievements, currentStreak])
+
+  const handleRun = useCallback(async () => {
+    setCodeError('')
+
+    // JavaScript: run entirely client-side
+    if (lang === 'js') {
+      const { strategy: playerStrategy, error } = runCodeToStrategy(code)
+      if (error) { setCodeError(`Ошибка: ${error}`); return }
+      const playerSkin = (user?.preferredSkin ?? 'robot') as 'robot' | 'gladiator' | 'boxer' | 'cosmonaut'
+      playerStrategy.character = playerSkin
+      const result = runLocalMatch(playerStrategy, selectedBot.strategy, format, effectWithStreak)
+      animateAndRecord(result)
+      return
+    }
+
+    // Python / C++ / Java: run on backend sandbox
+    setPhase('animating') // show loading state
+    try {
+      const API = import.meta.env.VITE_API_URL ?? '/api/v1'
+      const resp = await fetch(`${API}/sparring/run`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({
+          code,
+          lang,
+          botId: selectedBotId,
+          format,
+          perkIds: selectedPerkIds,
+          streakRageBonus: effectWithStreak.bonusRage ?? 0,
+          preferredSkin: user?.preferredSkin ?? 'robot',
+        }),
+      })
+      if (!resp.ok) {
+        const body = await resp.json().catch(() => ({})) as { error?: string }
+        setCodeError(body.error ?? `Ошибка сервера (${resp.status})`)
+        setPhase('setup')
+        return
+      }
+      const result = await resp.json() as { winner: 0|1|2; score: [number,number]; rounds: RoundResult[] }
+      animateAndRecord(result)
+    } catch (err) {
+      setCodeError(`Ошибка соединения: ${err instanceof Error ? err.message : String(err)}`)
+      setPhase('setup')
+    }
+  }, [code, lang, selectedBot, selectedBotId, selectedPerkIds, format, effectWithStreak, user, token, animateAndRecord])
 
   const unlockedPerkIds = new Set(PERKS.filter(p => p.unlockAt <= completedCount).map(p => p.id))
 
@@ -265,7 +292,7 @@ export default function SparringPage() {
 
           {lang !== 'js' && editorMode === 'code' && (
             <div className={styles.langNotice}>
-              ⚠️ Отработка навыков поддерживает только JavaScript. {lang === 'py' ? 'Python' : lang === 'cpp' ? 'C++' : 'Java'} доступен в реальных боях (боевой режим).
+              🌐 {lang === 'py' ? 'Python' : lang === 'cpp' ? 'C++' : 'Java'} — код запускается на сервере. Время компиляции ~2–5 сек.
             </div>
           )}
 
@@ -538,8 +565,7 @@ function strategy(ctx) {
   return 'attack';
 }`
 
-const PY_TEMPLATE = `# Python — доступен только в боевом режиме
-# Здесь ты можешь написать стратегию для изучения синтаксиса:
+const PY_TEMPLATE = `# Python — доступные данные (ctx):
 #   ctx.my_hp, ctx.my_stamina, ctx.my_rage
 #   ctx.enemy_hp, ctx.enemy_stamina, ctx.enemy_rage
 #   ctx.my_last_action, ctx.enemy_last_action
@@ -550,20 +576,22 @@ def strategy(ctx):
     # Напиши свою стратегию здесь
     return 'attack'`
 
-const CPP_TEMPLATE = `// C++ — доступен только в боевом режиме
+const CPP_TEMPLATE = `// C++ — доступные данные (ctx):
 // ctx.myHp, ctx.myStamina, ctx.myRage
 // ctx.enemyHp, ctx.enemyStamina, ctx.enemyRage
 // ctx.myLastAction, ctx.enemyLastAction, ctx.turn
+// ctx.cooldowns.heavy, ctx.cooldowns.laser
 
 std::string strategy(const Ctx& ctx) {
     // Напиши свою стратегию здесь
     return "attack";
 }`
 
-const JAVA_TEMPLATE = `// Java — доступен только в боевом режиме
+const JAVA_TEMPLATE = `// Java — доступные данные (ctx):
 // ctx.myHp, ctx.myStamina, ctx.myRage
 // ctx.enemyHp, ctx.enemyStamina, ctx.enemyRage
 // ctx.myLastAction, ctx.enemyLastAction, ctx.turn
+// ctx.cooldowns.heavy, ctx.cooldowns.laser
 
 public static String strategy(Ctx ctx) {
     // Напиши свою стратегию здесь
