@@ -112,9 +112,9 @@ export default function LandingPage() {
                   </div>
                 </div>
                 <div className={styles.fighters}>
-                  <FighterPreview name="Скорпион" skin="🦂" skinId="scorpion" skinImg={thumbs['scorpion']} hp={78} maxHp={90}  />
+                  <FighterPreview name="Скорпион" skin="🦂" skinImg={thumbs['scorpion']} hp={78} maxHp={90}  />
                   <div className={styles.vsChip}>VS</div>
-                  <FighterPreview name="Ниндзя"   skin="🥷" skinId="ninja"    skinImg={thumbs['ninja']}    hp={31} maxHp={75} flip />
+                  <FighterPreview name="Ниндзя"   skin="🥷" skinImg={thumbs['ninja']}    hp={31} maxHp={75} flip />
                 </div>
                 <div className={styles.logWrap}>
                   <LogRow turn={9} p1="🦂 Удар"     p2="💨 Уклон" note="Захват! P2 −10HP" hot />
