@@ -191,6 +191,35 @@ export default function AdminCharacterEditor() {
 
   // ── Layer helpers ─────────────────────────────────────────────────────────────
 
+  // Retry uploading a layer that previously failed.
+  const retryLayerUpload = useCallback((layerId: string, src: string, name: string) => {
+    setLayers(prev => prev.map(l =>
+      l.id === layerId ? { ...l, uploading: true, uploadError: false } : l
+    ))
+    fetch(src)
+      .then(r => r.blob())
+      .then(blob => {
+        const fd = new FormData()
+        fd.append('file', blob, name)
+        return fetch(`${API}/admin/skins/upload`, {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}` },
+          body: fd,
+        })
+      })
+      .then(r => r.ok ? r.json() : Promise.reject())
+      .then(({ url }: { url: string }) => {
+        setLayers(prev => prev.map(l =>
+          l.id === layerId ? { ...l, serverUrl: url, uploading: false, uploadError: false } : l
+        ))
+      })
+      .catch(() => {
+        setLayers(prev => prev.map(l =>
+          l.id === layerId ? { ...l, uploading: false, uploadError: true } : l
+        ))
+      })
+  }, [token])
+
   // Upload a layer PNG to the server immediately on add, so we can persist metadata later.
   const addLayerFromFile = useCallback((file: File) => {
     const localSrc = URL.createObjectURL(file)
@@ -621,9 +650,16 @@ export default function AdminCharacterEditor() {
                       <img src={layer.src} alt="" className={styles.layerThumb} />
                       <span className={`${styles.layerName} ${layer.uploadError ? styles.layerNameError : ''}`} title={layer.name}>
                         {layer.uploading ? <span className={styles.layerUploading}>⏳</span> : null}
-                        {layer.uploadError ? <span className={styles.layerUploadErr} title="Ошибка загрузки — удалите слой и добавьте снова">⚠️</span> : null}
+                        {layer.uploadError ? <span className={styles.layerUploadErr} title="Ошибка загрузки">⚠️</span> : null}
                         {layer.name}
                       </span>
+                      {layer.uploadError && (
+                        <button
+                          className={styles.layerRetry}
+                          onClick={() => retryLayerUpload(layer.id, layer.src, layer.name)}
+                          title="Повторить загрузку"
+                        >🔄</button>
+                      )}
                       <button
                         className={styles.layerVis}
                         onClick={() => toggleLayerVisibility(layer.id)}
@@ -657,55 +693,61 @@ export default function AdminCharacterEditor() {
                   style={{ display: 'none' }}
                   onChange={handleLayerFiles}
                 />
+                {/* Row 1: add layer */}
                 <button
                   className="btn btn-ghost"
-                  style={{ fontSize: 13, flex: 1 }}
+                  style={{ fontSize: 13, width: '100%' }}
                   onClick={() => fileInputRef.current?.click()}
                 >
                   📁 Добавить слой
                 </button>
-                <button
-                  className="btn btn-primary"
-                  style={{ fontSize: 13, flex: 1 }}
-                  disabled={
-                    layers.length === 0 ||
-                    flatteningCanvas ||
-                    layers.some(l => l.uploading) ||
-                    layers.some(l => l.uploadError) ||
-                    (editingFrameIdx === null && actionDef.frames.length >= 10)
-                  }
-                  onClick={saveFrame}
-                >
-                  {flatteningCanvas
-                    ? 'Сохранение...'
-                    : layers.some(l => l.uploading)
-                    ? '⏳ Загрузка...'
-                    : editingFrameIdx !== null
-                    ? `✏️ Заменить кадр ${editingFrameIdx + 1}`
-                    : '💾 Сохранить кадр'}
-                </button>
-                {actionDef.frames.length < 10 && (
+                {/* Row 2: save controls */}
+                <div className={styles.layerSaveRow}>
                   <button
-                    className="btn btn-ghost"
-                    style={{ fontSize: 13 }}
+                    className="btn btn-primary"
+                    style={{ fontSize: 13, flex: 1, minWidth: 0 }}
                     disabled={
                       layers.length === 0 ||
                       flatteningCanvas ||
                       layers.some(l => l.uploading) ||
-                      layers.some(l => l.uploadError)
+                      layers.some(l => l.uploadError) ||
+                      (editingFrameIdx === null && actionDef.frames.length >= 10)
                     }
-                    onClick={saveFrameAndNext}
-                    title="Сохранить кадр и начать следующий"
-                  >→</button>
-                )}
-                {editingFrameIdx !== null && (
-                  <button
-                    className="btn btn-ghost"
-                    style={{ fontSize: 12 }}
-                    onClick={() => { setEditingFrameIdx(null); setLayers([]) }}
-                    title="Отменить редактирование"
-                  >✕</button>
-                )}
+                    onClick={saveFrame}
+                  >
+                    {flatteningCanvas
+                      ? 'Сохранение...'
+                      : layers.some(l => l.uploading)
+                      ? '⏳ Загрузка...'
+                      : layers.some(l => l.uploadError)
+                      ? '⚠️ Повторите загрузку слоёв'
+                      : editingFrameIdx !== null
+                      ? `✏️ Заменить кадр ${editingFrameIdx + 1}`
+                      : '💾 Сохранить кадр'}
+                  </button>
+                  {actionDef.frames.length < 10 && (
+                    <button
+                      className="btn btn-ghost"
+                      style={{ fontSize: 13, flexShrink: 0 }}
+                      disabled={
+                        layers.length === 0 ||
+                        flatteningCanvas ||
+                        layers.some(l => l.uploading) ||
+                        layers.some(l => l.uploadError)
+                      }
+                      onClick={saveFrameAndNext}
+                      title="Сохранить кадр и начать следующий"
+                    >→</button>
+                  )}
+                  {editingFrameIdx !== null && (
+                    <button
+                      className="btn btn-ghost"
+                      style={{ fontSize: 12, flexShrink: 0 }}
+                      onClick={() => { setEditingFrameIdx(null); setLayers([]) }}
+                      title="Отменить редактирование"
+                    >✕</button>
+                  )}
+                </div>
               </div>
               {actionDef.frames.length >= 10 && (
                 <div className={styles.maxFrames}>Максимум 10 кадров достигнут</div>
