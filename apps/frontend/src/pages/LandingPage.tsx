@@ -88,21 +88,6 @@ export default function LandingPage() {
                 <span>1 240 зарегистрированы</span>
               </div>
 
-              <div className={styles.langCards}>
-                {([
-                  { icon: '🧩', lang: 'Блоки',  who: 'Школьники 10–13 лет' },
-                  { icon: '🐍', lang: 'Python', who: 'Начинающие программисты' },
-                  { icon: '⚡', lang: 'JS',     who: 'Веб-разработчики' },
-                  { icon: '☕', lang: 'Java',   who: 'Студенты университетов' },
-                  { icon: '⚙️', lang: 'C++',   who: 'Олимпиадники' },
-                ] as const).map(l => (
-                  <div key={l.lang} className={styles.langCard}>
-                    <span className={styles.langCardIcon}>{l.icon}</span>
-                    <span className={styles.langCardName}>{l.lang}</span>
-                    <span className={styles.langCardWho}>{l.who}</span>
-                  </div>
-                ))}
-              </div>
 
               <div className={styles.heroStats}>
                 <Stat num="16"  label="персонажей" />
@@ -326,36 +311,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── #21 Твой путь ───────────────────────────────────────────── */}
-      <section className={styles.path}>
-        <div className={styles.container}>
-          <div className={styles.sectionLabel}>Прогрессия</div>
-          <h2 className={styles.sectionTitle}>Твой путь в программировании</h2>
-          <div className={styles.pathSteps}>
-            {[
-              { icon: '🧩', label: 'Блоки',      desc: 'Собираешь логику из блоков без единой строки кода' },
-              { icon: '🐍', label: 'Python',     desc: 'Первый настоящий язык — лаконичный и понятный' },
-              { icon: '⚡', label: 'JavaScript', desc: 'Язык веба — стратегии прямо в браузере' },
-              { icon: '☕', label: 'Java / C++', desc: 'Университетский уровень и олимпиадные алгоритмы' },
-              { icon: '🏆', label: 'Турниры',    desc: 'Официальные сезоны, рейтинг, лучший алгоритм побеждает' },
-              { icon: '🧠', label: 'Алгоритмы',  desc: 'Продвинутые стратегии, анализ боёв, машинное обучение' },
-            ].map((s, i, arr) => (
-              <div key={s.label} className={styles.pathStep}>
-                <div className={styles.pathDot}>
-                  <span className={styles.pathIcon}>{s.icon}</span>
-                  {i < arr.length - 1 && <div className={styles.pathLine} />}
-                </div>
-                <div className={styles.pathInfo}>
-                  <div className={styles.pathLabel}>{s.label}</div>
-                  <div className={styles.pathDesc}>{s.desc}</div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── #22 Отзывы ──────────────────────────────────────────────── */}
+      {/* ── Отзывы ──────────────────────────────────────────────────── */}
       <section className={styles.testimonials}>
         <div className={styles.container}>
           <div className={styles.sectionLabel}>Отзывы</div>
@@ -363,16 +319,16 @@ export default function LandingPage() {
           <div className={styles.testiGrid}>
             {[
               {
-                avatar: '🧒', name: 'Артём К.',  role: '7 класс',
+                avatar: '🧒', name: 'Артём К.',    role: '7 класс',
                 text: 'Начал с блоков, теперь пишу на Python. Первый раз в жизни программирование было интересным — потому что хочется победить!',
               },
               {
-                avatar: '👨‍💻', name: 'Дмитрий Л.', role: 'Студент, 2 курс',
-                text: 'Отличная практика алгоритмов. Намного веселее, чем LeetCode — видишь как твой код реально дерётся.',
+                avatar: '👦', name: 'Никита Р.',   role: '9 класс',
+                text: 'Выиграл свой первый турнир! Моя стратегия на JavaScript оказалась лучше чем у всех в классе. Теперь учу алгоритмы по-настоящему.',
               },
               {
-                avatar: '👩‍🏫', name: 'Елена В.',   role: 'Учитель информатики',
-                text: 'Использую как дополнение к урокам. Дети сами просят порешать — им важен результат в виде победы, а не оценки.',
+                avatar: '👧', name: 'Соня М.',     role: '8 класс',
+                text: 'Сначала казалось сложным, но блочный редактор помог разобраться. Уже три миссии пройдено и пишу на Python!',
               },
             ].map(t => (
               <div key={t.name} className={styles.testiCard}>
@@ -390,37 +346,8 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── #23 Топ-5 рейтинг ───────────────────────────────────────── */}
+      {/* ── Топ-5 рейтинг ───────────────────────────────────────────── */}
       <TopPlayers />
-
-      {/* ── #24 Для учителей ────────────────────────────────────────── */}
-      <section className={styles.teachers}>
-        <div className={styles.container}>
-          <div className={styles.teachersInner}>
-            <div className={styles.teachersLeft}>
-              <div className={styles.sectionLabel}>Для взрослых</div>
-              <h2 className={styles.teachersTitle}>Для учителей и родителей</h2>
-              <p className={styles.teachersDesc}>
-                CodeFighters — безопасная образовательная платформа. Никакой рекламы, никакого общения с незнакомцами.
-              </p>
-            </div>
-            <div className={styles.teachersList}>
-              {[
-                { icon: '🎯', text: 'Логическое мышление через реальные задачи' },
-                { icon: '📈', text: 'Видимый прогресс: от блоков до Python и C++' },
-                { icon: '🔒', text: 'Возрастная безопасность — контент 10+' },
-                { icon: '📊', text: 'Статистика побед и ошибок для анализа' },
-                { icon: '🏫', text: 'Можно использовать как часть урока информатики' },
-              ].map(i => (
-                <div key={i.text} className={styles.teachersItem}>
-                  <span className={styles.teachersIcon}>{i.icon}</span>
-                  <span>{i.text}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
 
       {/* ── CTA ─────────────────────────────────────────────────────── */}
       <section className={styles.ctaSection}>
