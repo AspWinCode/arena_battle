@@ -112,9 +112,9 @@ export default function LandingPage() {
                   </div>
                 </div>
                 <div className={styles.fighters}>
-                  <FighterPreview name="Скорпион" skin="🦂" hp={78} maxHp={90}  />
+                  <FighterPreview name="Скорпион" skin="🦂" skinId="scorpion" skinImg={thumbs['scorpion']} hp={78} maxHp={90}  />
                   <div className={styles.vsChip}>VS</div>
-                  <FighterPreview name="Ниндзя"   skin="🥷" hp={31} maxHp={75} flip />
+                  <FighterPreview name="Ниндзя"   skin="🥷" skinId="ninja"    skinImg={thumbs['ninja']}    hp={31} maxHp={75} flip />
                 </div>
                 <div className={styles.logWrap}>
                   <LogRow turn={9} p1="🦂 Удар"     p2="💨 Уклон" note="Захват! P2 −10HP" hot />
@@ -405,14 +405,22 @@ function Stat({ num, label }: { num: string; label: string }) {
   )
 }
 
-function FighterPreview({ name, skin, hp, maxHp, flip }: {
-  name: string; skin: string; hp: number; maxHp: number; flip?: boolean
+function FighterPreview({ name, skin, skinImg, hp, maxHp, flip }: {
+  name: string; skin: string; skinImg?: string; hp: number; maxHp: number; flip?: boolean
 }) {
   const pct = (hp / maxHp) * 100
   const color = pct > 50 ? '#4ade80' : pct > 25 ? '#facc15' : '#f87171'
   return (
     <div className={styles.fighter} style={{ alignItems: flip ? 'flex-end' : 'flex-start' }}>
-      <span className={styles.fighterSkin}>{skin}</span>
+      {skinImg
+        ? <img
+            src={skinImg}
+            alt={name}
+            className={styles.fighterSkinImg}
+            style={{ transform: flip ? 'scaleX(-1)' : undefined }}
+          />
+        : <span className={styles.fighterSkin}>{skin}</span>
+      }
       <span className={styles.fighterName}>{name}</span>
       <div className={styles.hpTrack}>
         <div className={styles.hpFill} style={{ width: `${pct}%`, background: color }} />
