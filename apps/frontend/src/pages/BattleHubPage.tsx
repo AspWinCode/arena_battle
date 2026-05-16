@@ -437,7 +437,7 @@ export default function BattleHubPage() {
             <span className={styles.cardIcon}>🔗</span>
             <div>
               <div className={styles.cardTitle}>Создать комнату</div>
-              <div className={styles.cardDesc}>Получи код и отправь другу — без матчмейкинга</div>
+              <div className={styles.cardDesc}>Получи код и отправь другу</div>
             </div>
           </div>
 
