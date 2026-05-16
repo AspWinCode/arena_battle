@@ -1,6 +1,7 @@
 import { Link, useNavigate } from 'react-router-dom'
 import { MISSIONS, SKIN_ICON } from '@robocode/shared'
 import { useLearnStore } from '../stores/learnStore'
+import TheorySection from './learn/TheorySection'
 import styles from './LearnPage.module.css'
 
 const DIFF_LABEL = ['', 'Легко', 'Легко', 'Средне', 'Сложно', 'Босс']
@@ -34,6 +35,12 @@ export default function LearnPage() {
             className={styles.progressFill}
             style={{ width: `${(totalCompleted / MISSIONS.length) * 100}%` }}
           />
+        </div>
+
+        <TheorySection />
+
+        <div className={styles.sectionHead}>
+          <h2 className={styles.sectionTitle}>🎯 Миссии</h2>
         </div>
 
         <div className={styles.grid}>

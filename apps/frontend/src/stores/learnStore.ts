@@ -9,8 +9,10 @@ interface MissionProgress {
 
 interface LearnState {
   progress: Record<string, MissionProgress>
+  theoryProgress: Record<string, boolean>
   completesMission: (id: string, stars: number) => void
   incrementAttempt: (id: string) => void
+  markTheoryRead: (lessonId: string) => void
   resetProgress: () => void
 }
 
@@ -18,6 +20,7 @@ export const useLearnStore = create<LearnState>()(
   persist(
     (set) => ({
       progress: {},
+      theoryProgress: {},
 
       completesMission: (id, stars) =>
         set(s => ({
@@ -44,7 +47,12 @@ export const useLearnStore = create<LearnState>()(
           },
         })),
 
-      resetProgress: () => set({ progress: {} }),
+      markTheoryRead: (lessonId) =>
+        set(s => ({
+          theoryProgress: { ...s.theoryProgress, [lessonId]: true },
+        })),
+
+      resetProgress: () => set({ progress: {}, theoryProgress: {} }),
     }),
     { name: 'robocode-learn-progress' }
   )
