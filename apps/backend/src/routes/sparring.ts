@@ -6,18 +6,19 @@ import { runMatch } from '../engine/battle-engine.js'
 
 // ── Perk effect applied to player strategy ────────────────────────────────────
 
-function buildPerkOverlay(perkIds: string[], streakRageBonus: number): Partial<import('@robocode/shared').Strategy> {
+function buildPerkOverlay(perkIds: string[], streakRageBonus: number): Record<string, number> {
   const perks = PERKS.filter(p => perkIds.includes(p.id))
   const fx = perks.length > 0 ? mergeEffects(perks) : {}
   const totalRageBonus = (fx.bonusRage ?? 0) + streakRageBonus
-  return {
-    ...(fx.bonusHp    ? { bonusHp:     fx.bonusHp }    : {}),
-    ...(fx.bonusStam  ? { bonusStam:   fx.bonusStam }  : {}),
-    ...(fx.dmgMult    ? { dmgMult:     fx.dmgMult }    : {}),
-    ...(fx.repairBonus ? { repairBonus: fx.repairBonus } : {}),
-    ...(fx.shieldBonus ? { shieldBonus: fx.shieldBonus } : {}),
-    ...(totalRageBonus > 0 ? { bonusRage: totalRageBonus } : {}),
-  }
+  const out: Record<string, number> = {}
+  if (fx.bonusHp)             out.bonusHp = fx.bonusHp
+  if (fx.bonusStamina)        out.bonusStamina = fx.bonusStamina
+  if (fx.heavyThreshold)      out.heavyThreshold = fx.heavyThreshold
+  if (fx.shieldAbsorb)        out.shieldAbsorb = fx.shieldAbsorb
+  if (fx.laserCooldownReduce) out.laserCooldownReduce = fx.laserCooldownReduce
+  if (fx.heavyCooldownReduce) out.heavyCooldownReduce = fx.heavyCooldownReduce
+  if (totalRageBonus > 0)     out.bonusRage = totalRageBonus
+  return out
 }
 
 // ── Route ─────────────────────────────────────────────────────────────────────
@@ -72,7 +73,7 @@ export const sparringRoutes: FastifyPluginAsync = async (app) => {
     // Apply skin + perks + streak rage bonus
     const skin = (preferredSkin ?? 'robot') as import('@robocode/shared').SkinId
     const overlay = buildPerkOverlay(perkIds, streakRageBonus)
-    playerStrategy = { ...playerStrategy, character: skin, ...overlay }
+    playerStrategy = { ...playerStrategy, character: skin, ...overlay } as import('@robocode/shared').Strategy
 
     // Run match
     try {
