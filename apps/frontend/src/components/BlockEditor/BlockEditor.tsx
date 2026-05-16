@@ -12,7 +12,12 @@ const uid = () => `b${_nextId++}`
 // ── Action limit ──────────────────────────────────────────────────────────────
 const ACTION_BLOCK_IDS = new Set([
   'doAttack','doHeavy','doLaser','doShield','doDodge','doRepair','doSpecial','doRandom',
+  'doCombo','doOvercharge','doReflect','doAdaptiveShield','doTrap','doHack',
+  'doSacrifice','doReboot','doTransfer','doAnalyze','doOverclock',
 ])
+// Blocks that generate an early `return` in the strategy function.
+// If anything is chained AFTER them at the same depth, it will never run.
+const RETURNING_BLOCK_IDS = new Set<string>([...ACTION_BLOCK_IDS, 'stop'])
 const MAX_ACTIONS = 4
 
 function countUniqueActions(scripts: Script[]): Set<string> {
@@ -591,6 +596,8 @@ function renderStack(
 ): React.ReactNode {
   const def = BLOCK_DEF_MAP.get(inst.defId)
   if (!def) return null
+  // Mark this block as "unreachable cause" if it always returns and has more blocks chained after.
+  const isUnreachable = RETURNING_BLOCK_IDS.has(inst.defId) && !!inst.next
   return (
     <div
       key={inst.instanceId}
@@ -604,6 +611,7 @@ function renderStack(
         onBlockContextMenu={onRightClick}
         variables={variables}
         isSnapTarget={snapTargetId === inst.instanceId}
+        isUnreachable={isUnreachable}
         activeSlotTargetKey={slotDropTargetKey}
       />
       {inst.next && renderStack(inst.next, scriptId, onSlotChange, onRightClick, variables, onBlockMouseDown, snapTargetId, slotDropTargetKey)}

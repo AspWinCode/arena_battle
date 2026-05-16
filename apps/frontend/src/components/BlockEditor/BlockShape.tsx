@@ -12,6 +12,7 @@ interface Props {
   depth?: number
   isDragging?: boolean
   isSnapTarget?: boolean
+  isUnreachable?: boolean
   activeSlotTargetKey?: string | null
   variables?: string[]
 }
@@ -47,14 +48,14 @@ function PuzzleBottom({ color }: { color: string }) {
 }
 
 export default function BlockShape({
-  inst, def, onSlotChange, onDropOnSlot, onBlockMouseDown, onBlockContextMenu, depth = 0, isDragging, isSnapTarget, activeSlotTargetKey, variables = [],
+  inst, def, onSlotChange, onDropOnSlot, onBlockMouseDown, onBlockContextMenu, depth = 0, isDragging, isSnapTarget, isUnreachable, activeSlotTargetKey, variables = [],
 }: Props) {
   const color = def.color ?? '#7c3aed'
   const darkerColor = darken(color, 20)
 
   return (
     <div
-      className={`${styles.block} ${styles[`type-${def.type}`]} ${isSnapTarget ? styles.snapTarget : ''}`}
+      className={`${styles.block} ${styles[`type-${def.type}`]} ${isSnapTarget ? styles.snapTarget : ''} ${isUnreachable ? styles.unreachable : ''}`}
       style={{ '--block-color': color, '--block-darker': darkerColor } as React.CSSProperties}
       onMouseDown={onBlockMouseDown ? e => onBlockMouseDown(e, inst) : undefined}
       onContextMenu={onBlockContextMenu ? e => onBlockContextMenu(e, inst) : undefined}

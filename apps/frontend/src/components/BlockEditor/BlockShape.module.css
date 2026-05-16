@@ -151,10 +151,10 @@
 .slotDropdown option { background: #1a1a35; color: #fff; }
 
 .slotBoolean {
-  min-width: 34px;
-  min-height: 18px;
-  clip-path: polygon(8px 0%, calc(100% - 8px) 0%, 100% 50%, calc(100% - 8px) 100%, 8px 100%, 0% 50%);
-  background: rgba(255,255,255,.18);
+  min-width: 72px;
+  min-height: 26px;
+  clip-path: polygon(10px 0%, calc(100% - 10px) 0%, 100% 50%, calc(100% - 10px) 100%, 10px 100%, 0% 50%);
+  background: rgba(0,0,0,.28);
   border-radius: 2px;
   display: flex;
   align-items: center;
@@ -162,27 +162,48 @@
 }
 
 .slotBooleanFilled { color: #fff; font-size: 10px; }
-.slotBooleanEmpty  { display: block; width: 22px; height: 10px; }
+.slotBooleanEmpty  {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 60px;
+  height: 18px;
+  color: rgba(255,255,255,.55);
+  font-size: 11px;
+  font-weight: 700;
+}
+.slotBooleanEmpty::before { content: '?'; }
 
 .slotReporter {
-  min-width: 30px;
-  min-height: 20px;
-  background: rgba(255,255,255,.18);
+  min-width: 64px;
+  min-height: 24px;
+  background: rgba(0,0,0,.28);
   border-radius: 999px;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 10px;
   color: #fff;
-  padding: 0 6px;
+  padding: 0 8px;
 }
 
-.slotReporterEmpty { display: block; width: 22px; height: 10px; }
+.slotReporterEmpty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 50px;
+  height: 16px;
+  color: rgba(255,255,255,.5);
+  font-size: 11px;
+  font-weight: 700;
+}
+.slotReporterEmpty::before { content: '?'; }
 
 .slotNest {
   position: relative;
-  padding: 2px 4px;
-  border: 1.5px dashed rgba(255,255,255,.2);
+  padding: 3px 5px;
+  border: 1.5px dashed rgba(255,255,255,.28);
+  border-radius: 4px;
   transition: border-color .12s ease, box-shadow .12s ease, background-color .12s ease;
 }
 
@@ -242,4 +263,31 @@
 /* ── Snap highlight ───────────────────────────────────────────── */
 .snapTarget {
   filter: drop-shadow(0 0 10px rgba(255,255,255,.95)) drop-shadow(0 0 4px #fff);
+}
+
+/* ── Unreachable warning (action block with blocks after it) ─── */
+.unreachable {
+  position: relative;
+}
+.unreachable::after {
+  content: '⚠ блок ниже не выполнится — этот вернёт результат сразу';
+  position: absolute;
+  left: 50%;
+  top: 100%;
+  transform: translateX(-50%);
+  margin-top: 4px;
+  white-space: nowrap;
+  font-size: 10px;
+  font-weight: 700;
+  color: #ffd166;
+  background: rgba(20, 14, 0, .92);
+  padding: 3px 8px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 209, 102, .5);
+  pointer-events: none;
+  z-index: 5;
+}
+.unreachable .body {
+  outline: 2px solid rgba(255, 209, 102, .9);
+  outline-offset: -2px;
 }

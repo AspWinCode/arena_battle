@@ -168,6 +168,12 @@ function generateExpression(inst: BlockInstance): string {
   }
 }
 
+const RETURNING_BLOCK_IDS = new Set([
+  'doAttack','doHeavy','doLaser','doShield','doDodge','doRepair','doSpecial','doRandom',
+  'doCombo','doOvercharge','doReflect','doAdaptiveShield','doTrap','doHack',
+  'doSacrifice','doReboot','doTransfer','doAnalyze','doOverclock','stop',
+])
+
 function generateBlock(inst: BlockInstance | null, depth: number): string[] {
   if (!inst) return []
 
@@ -250,6 +256,11 @@ function generateBlock(inst: BlockInstance | null, depth: number): string[] {
       lines.push(`${ind}}`)
       break
     }
+  }
+
+  // Warn in generated code if this block always returns but has chained successors
+  if (RETURNING_BLOCK_IDS.has(inst.defId) && inst.next) {
+    lines.push(`${ind}// ⚠ блок выше всегда возвращает результат — код ниже не выполнится`)
   }
 
   lines.push(...generateBlock(inst.next ?? null, depth))
