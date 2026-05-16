@@ -318,4 +318,26 @@ export const userProfileRoutes: FastifyPluginAsync = async (fastify) => {
 
     return reply.send(result)
   })
+
+  // Search players by username/displayName prefix
+  fastify.get<{ Querystring: { q: string } }>('/search', async (req, reply) => {
+    const q = (req.query.q ?? '').trim()
+    if (q.length < 2) return reply.send([])
+
+    const users = await prisma.user.findMany({
+      where: {
+        OR: [
+          { username:    { contains: q, mode: 'insensitive' } },
+          { displayName: { contains: q, mode: 'insensitive' } },
+        ],
+      },
+      select: {
+        id: true, username: true, displayName: true, avatar: true, elo: true, totalBattles: true,
+      },
+      take: 10,
+      orderBy: { elo: 'desc' },
+    })
+
+    return reply.send(users)
+  })
 }

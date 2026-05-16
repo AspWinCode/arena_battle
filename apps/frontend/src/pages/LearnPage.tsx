@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { MISSIONS, SKIN_ICON } from '@robocode/shared'
 import { useLearnStore } from '../stores/learnStore'
 import styles from './LearnPage.module.css'
@@ -7,6 +7,7 @@ const DIFF_LABEL = ['', 'Легко', 'Легко', 'Средне', 'Сложн�
 const DIFF_COLOR = ['', '#4ade80', '#4ade80', '#facc15', '#f97316', '#f43f5e']
 
 export default function LearnPage() {
+  const navigate = useNavigate()
   const progress = useLearnStore(s => s.progress)
 
   const totalCompleted = MISSIONS.filter(m => progress[m.id]?.completed).length
@@ -20,7 +21,7 @@ export default function LearnPage() {
 
       <div className={styles.content}>
         <div className={styles.header}>
-          <Link to="/profile" className={styles.back}>← Назад</Link>
+          <button className={styles.back} onClick={() => navigate(-1)}>← Назад</button>
           <div className={styles.titleRow}>
             <h1 className={styles.title}>🎓 Режим обучения</h1>
             <span className={styles.progress}>{totalCompleted} / {MISSIONS.length} миссий</span>

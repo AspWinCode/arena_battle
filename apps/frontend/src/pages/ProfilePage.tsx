@@ -1,12 +1,11 @@
-import { useEffect, useState, useRef, useCallback } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { api } from '../api/client'
 import { useUserStore } from '../stores/userStore'
-import { useBattleStore } from '../stores/battleStore'
 import { useDailyStore } from '../stores/dailyStore'
 import { useAchievementsStore, ACHIEVEMENTS } from '../stores/achievementsStore'
-import { SKIN_ICON, CHARACTER_STATS, ALL_SKIN_IDS } from '@robocode/shared'
-import type { SkinId, JoinSessionResponse } from '@robocode/shared'
+import { SKIN_ICON, CHARACTER_STATS } from '@robocode/shared'
+import type { SkinId } from '@robocode/shared'
 import CharacterCard from '../components/CharacterCard/CharacterCard'
 import CharacterView from '../animation/CharacterView'
 import RankBadge from '../components/RankBadge'
@@ -55,9 +54,9 @@ const TABS: { id: Tab; label: string }[] = [
 ]
 
 const NAV_ITEMS = [
-  { to: '/join',        icon: '⚔️', label: 'В бой',      desc: 'Войти по коду сессии' },
+  { to: '/play',        icon: '⚔️', label: 'В бой',      desc: 'Матчмейкинг и вызовы' },
   { to: '/learn',       icon: '🎓', label: 'Обучение',   desc: 'Уроки и практика'     },
-  { to: '/sparring',    icon: '🥊', label: 'Спарринг',   desc: 'Тренировочный бой'    },
+  { to: '/sparring',    icon: '🥊', label: 'Отработка навыков', desc: 'Тренировочный бой' },
   { to: '/daily',       icon: '📅', label: 'Задания',    desc: 'Ежедневные задачи'    },
   { to: '/tournaments', icon: '🏟', label: 'Турниры',    desc: 'Соревнования'         },
   { to: '/clans',       icon: '🛡', label: 'Кланы',      desc: 'Найти команду'        },
@@ -67,7 +66,6 @@ const NAV_ITEMS = [
 export default function ProfilePage() {
   const navigate   = useNavigate()
   const { user, token, updateUser, logout } = useUserStore()
-  const setSession = useBattleStore(s => s.setSession)
   const daily      = useDailyStore()
   const unlockedAch = useAchievementsStore(s => s.unlocked)
 
@@ -79,14 +77,6 @@ export default function ProfilePage() {
   const [eloLoading, setEloLoading] = useState(false)
   const [lbEntries, setLbEntries]   = useState<any[]>([])
   const [lbLoaded,  setLbLoaded]    = useState(false)
-
-  // Matchmaking state
-  const [inQueue,   setInQueue]   = useState(false)
-  const [queueSecs, setQueueSecs] = useState(0)
-  const [queueSize, setQueueSize] = useState(0)
-  const [mmError,   setMmError]   = useState('')
-  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
-  useEffect(() => () => { if (pollRef.current) clearInterval(pollRef.current) }, [])
 
   // Settings
   const [editBio,    setEditBio]    = useState('')
@@ -128,47 +118,6 @@ export default function ProfilePage() {
       .then(d => { setLbEntries(d); setLbLoaded(true) })
       .catch(() => setLbLoaded(true))
   }, [tab, lbLoaded])
-
-  const handleJoinQueue = useCallback(async () => {
-    if (!user || !token || !data) return
-    setMmError('')
-    try {
-      await api.post('/matchmaking/queue', {
-        name: data.user.displayName, skin: data.user.preferredSkin,
-        lang: data.user.preferredLang ?? 'auto'
-      }, token)
-      setInQueue(true); setQueueSecs(0)
-      pollRef.current = setInterval(async () => {
-        try {
-          const st = await api.get<{
-            inQueue: boolean; matched: boolean
-            sessionId?: string; playerCode?: string
-            waitSeconds?: number; queueSize?: number
-          }>('/matchmaking/queue/status', token!)
-          if (st.matched && st.sessionId && st.playerCode) {
-            clearInterval(pollRef.current!); setInQueue(false)
-            const res = await api.post<JoinSessionResponse>('/session/join', {
-              sessionCode: st.playerCode, name: data.user.displayName, skin: data.user.preferredSkin,
-            }, token!)
-            setSession(res.sessionId, res.playerSlot, 'code', ALL_SKIN_IDS, res.wsToken, data.user.displayName, data.user.preferredSkin as SkinId)
-            navigate(`/battle/${res.sessionId}`)
-          } else if (st.inQueue) {
-            setQueueSecs(st.waitSeconds ?? 0); setQueueSize(st.queueSize ?? 0)
-          } else {
-            clearInterval(pollRef.current!); setInQueue(false)
-          }
-        } catch { /* ignore poll errors */ }
-      }, 2000)
-    } catch (e) {
-      setMmError(e instanceof Error ? e.message : 'Ошибка матчмейкинга')
-    }
-  }, [user, token, data, navigate, setSession])
-
-  const handleLeaveQueue = useCallback(async () => {
-    if (pollRef.current) clearInterval(pollRef.current)
-    setInQueue(false)
-    if (token) api.delete('/matchmaking/queue', token).catch(() => {})
-  }, [token])
 
   const processImageFile = (file: File): Promise<string> =>
     new Promise((resolve, reject) => {
@@ -268,35 +217,6 @@ export default function ProfilePage() {
         {/* ── LEFT COLUMN ───────────────────────────────────────────────── */}
         <div className={styles.dashLeft}>
 
-          {/* Matchmaking */}
-          <div className={styles.mmCard}>
-            {!inQueue ? (
-              <>
-                <div className={styles.mmHeader}>
-                  <span className={styles.mmTitle}>⚡ Авто-матчмейкинг</span>
-                  {u.elo != null && <RankBadge elo={u.elo} size="sm" />}
-                </div>
-                <p className={styles.mmDesc}>Система подберёт соперника по рейтингу автоматически — без кода сессии.</p>
-                {mmError && <div className={styles.mmErr}>{mmError}</div>}
-                <button className={styles.mmBtn} onClick={handleJoinQueue}>
-                  ⚡ НАЙТИ ПРОТИВНИКА
-                </button>
-              </>
-            ) : (
-              <div className={styles.queueWait}>
-                <div className={styles.queueSpinner}>⚡</div>
-                <div className={styles.queueTitle}>Поиск соперника...</div>
-                <div className={styles.queueMeta}>
-                  {Math.floor(queueSecs / 60) > 0
-                    ? `${Math.floor(queueSecs / 60)}м ${queueSecs % 60}с`
-                    : `${queueSecs}с`}
-                  {queueSize > 1 && <span style={{ color: 'var(--text-muted)', marginLeft: 8 }}>· {queueSize} в очереди</span>}
-                </div>
-                <button className="btn btn-ghost" style={{ fontSize: 12, marginTop: 8 }} onClick={handleLeaveQueue}>Отмена</button>
-              </div>
-            )}
-          </div>
-
           {/* Nav grid */}
           <div className={styles.navGrid}>
             {NAV_ITEMS.map(n => (
@@ -332,7 +252,7 @@ export default function ProfilePage() {
                   }
                   <div className={styles.historyList} style={{ marginTop: eloHistory.length ? 16 : 0 }}>
                     {recentSessions.length === 0 && (
-                      <p className={styles.empty}>Ты ещё не сыграл ни одного матча. <Link to="/join">В бой! →</Link></p>
+                      <p className={styles.empty}>Ты ещё не сыграл ни одного матча. <Link to="/play">В бой! →</Link></p>
                     )}
                     {recentSessions.map(s => (
                       <div key={s.sessionId} className={`${styles.historyRow} ${s.won ? styles.historyWon : styles.historyLost}`}>
@@ -371,7 +291,7 @@ export default function ProfilePage() {
                   </div>
                   <div className={styles.achSection}>
                     <div className={styles.achSectionLabel}>
-                      Достижения спарринга
+                      Достижения отработки навыков
                       <span className={styles.achCount}>{unlockedAch.length}/{ACHIEVEMENTS.length}</span>
                     </div>
                     <div className={styles.achievementsGrid}>
@@ -391,7 +311,7 @@ export default function ProfilePage() {
                       })}
                     </div>
                     {unlockedAch.length === 0 && (
-                      <p className={styles.empty}>Сыграй в Спарринге → <Link to="/sparring">Открыть спарринг</Link></p>
+                      <p className={styles.empty}>Попробуй отработку навыков → <Link to="/sparring">Открыть</Link></p>
                     )}
                   </div>
                 </div>

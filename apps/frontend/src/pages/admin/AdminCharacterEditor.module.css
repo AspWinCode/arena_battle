@@ -243,6 +243,7 @@
 
 .frameTilePlus {
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   width: 64px;
@@ -254,6 +255,30 @@
   text-align: center;
   line-height: 1.3;
   padding: 4px;
+  background: none;
+  cursor: pointer;
+  gap: 2px;
+  transition: border-color 0.12s, color 0.12s, background 0.12s;
+}
+.frameTilePlus:hover {
+  border-color: #6366f1;
+  color: #6366f1;
+  background: rgba(99, 102, 241, 0.06);
+}
+.frameTilePlusActive {
+  border-color: #6366f1 !important;
+  color: #6366f1 !important;
+  background: rgba(99, 102, 241, 0.10) !important;
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.25);
+}
+.frameTilePlusIcon {
+  font-size: 22px;
+  line-height: 1;
+  font-weight: 300;
+}
+.frameTilePlusLabel {
+  font-size: 9px;
+  line-height: 1.2;
 }
 
 /* ── FPS row ─────────────────────────────────────────────────────────────── */
@@ -440,6 +465,31 @@
   font-size: 12px;
 }
 
+.layerUploadErr {
+  margin-right: 4px;
+  font-size: 12px;
+}
+
+.layerNameError {
+  color: #f87171;
+}
+
+.layerRetry {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  padding: 2px 4px;
+  line-height: 1;
+  opacity: 0.8;
+  transition: opacity 0.1s, transform 0.1s;
+  flex-shrink: 0;
+}
+.layerRetry:hover {
+  opacity: 1;
+  transform: rotate(180deg);
+}
+
 .layerClearBtn {
   background: none;
   border: none;
@@ -467,7 +517,14 @@
   padding: 10px 12px;
   border-top: 1px solid var(--border);
   display: flex;
-  gap: 8px;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.layerSaveRow {
+  display: flex;
+  gap: 6px;
+  min-width: 0;
 }
 
 .maxFrames {

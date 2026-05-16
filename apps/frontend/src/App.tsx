@@ -1,6 +1,7 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
 import LandingPage from './pages/LandingPage'
 import JoinPage from './pages/JoinPage'
+import BattleHubPage from './pages/BattleHubPage'
 import BattlePage from './pages/BattlePage'
 import LearnPage from './pages/LearnPage'
 import LearningBattlePage from './pages/LearningBattlePage'
@@ -43,6 +44,7 @@ export default function App() {
     <Routes>
       <Route path="/" element={<LandingPage />} />
       <Route path="/join" element={<JoinPage />} />
+      <Route path="/play" element={<BattleHubPage />} />
       <Route path="/demo"              element={<DemoBattlePage />} />
       <Route path="/battle/:sessionId" element={<BattlePage />} />
       <Route path="/learn" element={<LearnPage />} />

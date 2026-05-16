@@ -90,7 +90,7 @@ export default function LeaderboardPage() {
 
       <div className={styles.content}>
         {/* Header */}
-        <Link to="/" className={styles.back}>← Главная</Link>
+        <button className={styles.back} onClick={() => window.history.back()}>← Назад</button>
         <div className={styles.headerRow}>
           <h1 className={styles.title}>
             🏆 Таблица лидеров
@@ -105,16 +105,16 @@ export default function LeaderboardPage() {
               </span>
             )}
           </h1>
-          <Link to="/daily" className="btn btn-ghost" style={{ fontSize: 13 }}>
-            📅 Мои задания
-          </Link>
         </div>
         <p className={styles.subtitle}>Лучшие бойцы арены</p>
 
         {/* User's own stats card */}
         <div className={styles.myCard}>
           <div className={styles.myCardLeft}>
-            <span className={styles.myAvatar}>{user?.avatar ?? '🧑‍💻'}</span>
+            {user?.avatar?.startsWith('data:') || user?.avatar?.startsWith('/')
+              ? <img src={user.avatar} className={styles.myAvatar} style={{ borderRadius: 'var(--radius)', objectFit: 'cover' }} alt="" />
+              : <span className={styles.myAvatar}>{user?.avatar ?? '🧑‍💻'}</span>
+            }
             <div style={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
               <div className={styles.myName}>{user?.displayName ?? 'Ты'}</div>
               <div className={styles.myMeta} style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
@@ -194,7 +194,7 @@ export default function LeaderboardPage() {
         {/* Navigation */}
         <div style={{ display: 'flex', gap: 12 }}>
           <Link to="/sparring" className="btn btn-primary" style={{ flex: 1 }}>
-            🥊 Спарринг
+            🥊 Отработка навыков
           </Link>
           <Link to="/learn" className="btn btn-ghost" style={{ flex: 1 }}>
             🎓 Обучение

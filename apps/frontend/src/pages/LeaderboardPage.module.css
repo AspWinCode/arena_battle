@@ -40,7 +40,13 @@
   font-size: 13px;
   color: var(--text-muted);
   text-decoration: none;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  align-self: flex-start;
 }
+.back:hover { color: var(--text); }
 .back:hover { color: var(--text); }
 
 .headerRow {

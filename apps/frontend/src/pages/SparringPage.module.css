@@ -21,6 +21,10 @@
   color: var(--text-muted);
   text-decoration: none;
   white-space: nowrap;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
 }
 .back:hover { color: var(--text); }
 .title {
@@ -441,4 +445,29 @@
 .modeTabActive {
   color: var(--accent);
   border-bottom-color: var(--accent);
+}
+
+.langTab {
+  padding: 3px 10px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all .15s;
+  align-self: center;
+  margin-bottom: 4px;
+}
+.langTab:hover { border-color: var(--accent); color: var(--accent); }
+.langTabActive { background: var(--accent) !important; border-color: var(--accent) !important; color: #000 !important; }
+
+.langNotice {
+  font-size: 12px;
+  color: #facc15;
+  background: rgba(250,204,21,.08);
+  border-bottom: 1px solid rgba(250,204,21,.2);
+  padding: 6px 12px;
+  flex-shrink: 0;
 }

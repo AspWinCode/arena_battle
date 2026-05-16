@@ -26,6 +26,7 @@ import { adminSkinsRoutes } from './routes/adminSkins.js'
 import { shopRoutes } from './routes/shop.js'
 import { skinsPublicRoutes } from './routes/skinsPublic.js'
 import { learnRoutes } from './routes/learn.js'
+import { sparringRoutes } from './routes/sparring.js'
 import { wsRoutes } from './ws/index.js'
 import { checkAndGeneratePendingBrackets, spawnRecurringInstances } from './tournament/tournament-service.js'
 
@@ -59,14 +60,20 @@ export async function buildServer() {
   })
 
   await server.register(fastifyRateLimit, {
-    max: 100,
+    max: 300,
     timeWindow: '1 minute',
+    // Admin routes and static asset routes get a much higher limit
+    keyGenerator: (req) => req.ip,
+    skip: (req) =>
+      req.url.startsWith('/api/v1/admin') ||
+      req.url.startsWith('/api/v1/uploads') ||
+      req.url === '/health',
   })
 
   await server.register(fastifyWebsocket)
 
   await server.register(fastifyMultipart, {
-    limits: { fileSize: 5 * 1024 * 1024 }, // 5 MB
+    limits: { fileSize: 20 * 1024 * 1024 }, // 20 MB — layer PNGs can be large
   })
 
   // Serve uploaded skin images
@@ -104,6 +111,7 @@ export async function buildServer() {
   await server.register(shopRoutes,         { prefix: '/api/v1/shop' })
   await server.register(skinsPublicRoutes,  { prefix: '/api/v1/skins' })
   await server.register(learnRoutes,        { prefix: '/api/v1/learn' })
+  await server.register(sparringRoutes,     { prefix: '/api/v1/sparring' })
   await server.register(wsRoutes,           { prefix: '/ws' })
 
   server.get('/health', async () => ({ status: 'ok', ts: Date.now() }))

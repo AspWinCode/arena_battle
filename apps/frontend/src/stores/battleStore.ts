@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { persist } from 'zustand/middleware'
 import type {
   ServerMessage, TurnResult, RoundResult,
   LobbyPlayer, SkinId, SessionLevel, Lang,
@@ -92,7 +93,9 @@ const initialState = {
   eloDelta: null,
 }
 
-export const useBattleStore = create<BattleState>((set) => ({
+export const useBattleStore = create<BattleState>()(
+  persist(
+    (set) => ({
   ...initialState,
 
   setSession: (sessionId, slot, sessionLevel, allowedSkins, wsToken, myName, mySkin) =>
@@ -184,18 +187,24 @@ export const useBattleStore = create<BattleState>((set) => ({
         break
 
       case 'round_end':
-        set((s) => ({
-          completedRounds: [...s.completedRounds, {
-            round: msg.payload.round,
-            winner: msg.payload.winner,
+        set((s) => {
+          const newScore: [number, number] = [s.score[0], s.score[1]]
+          if (msg.payload.winner === 1) newScore[0]++
+          else if (msg.payload.winner === 2) newScore[1]++
+          return {
+            completedRounds: [...s.completedRounds, {
+              round: msg.payload.round,
+              winner: msg.payload.winner,
+              p1Hp: msg.payload.p1Hp,
+              p2Hp: msg.payload.p2Hp,
+              reason: msg.payload.reason,
+              turns: s.turns,
+            }],
             p1Hp: msg.payload.p1Hp,
             p2Hp: msg.payload.p2Hp,
-            reason: msg.payload.reason,
-            turns: s.turns,
-          }],
-          p1Hp: msg.payload.p1Hp,
-          p2Hp: msg.payload.p2Hp,
-        }))
+            score: newScore,
+          }
+        })
         break
 
       case 'match_end':
@@ -211,4 +220,11 @@ export const useBattleStore = create<BattleState>((set) => ({
   },
 
   reset: () => set(initialState),
-}))
+    }),
+    {
+      name: 'battle-code',
+      // Only persist code + lang — everything else resets per session
+      partialize: (state) => ({ code: state.code, lang: state.lang }),
+    }
+  )
+)

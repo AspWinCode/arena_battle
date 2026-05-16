@@ -209,7 +209,7 @@ export default function DailyPage() {
         {/* Navigation to play */}
         <div className={styles.playLinks}>
           <Link to="/sparring" className="btn btn-primary" style={{ flex: 1 }}>
-            🥊 Спарринг
+            🥊 Отработка навыков
           </Link>
           <Link to="/learn" className="btn btn-ghost" style={{ flex: 1 }}>
             🎓 Обучение

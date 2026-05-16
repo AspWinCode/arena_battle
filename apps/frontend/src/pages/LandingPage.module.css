@@ -354,6 +354,12 @@
 }
 .fighter     { display: flex; flex-direction: column; gap: 5px; flex: 1; align-items: flex-start; }
 .fighterSkin { font-size: 30px; }
+.fighterSkinImg {
+  width: 64px;
+  height: 64px;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 8px rgba(0,0,0,.6));
+}
 .fighterName { font-size: 12px; font-weight: 700; }
 .hpTrack     { width: 100%; height: 5px; background: rgba(255,255,255,.07); border-radius: 99px; overflow: hidden; }
 .hpFill      { height: 100%; border-radius: 99px; transition: width .3s; }

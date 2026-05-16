@@ -23,50 +23,45 @@ const LANG_LABELS: Record<string, string> = {
   js: 'JavaScript', py: 'Python', cpp: 'C++', java: 'Java',
 }
 
+// Minimal skeleton templates — kids write their own logic
 const LANG_TEMPLATES: Record<string, string> = {
-  js: `// strategy(ctx) вызывается каждый ход
-// Верни: 'attack'|'heavy'|'laser'|'shield'|'dodge'|'repair'|'special'
+  js: `// Доступные данные (ctx):
+//   ctx.myHp, ctx.myStamina, ctx.myRage
+//   ctx.enemyHp, ctx.enemyStamina, ctx.enemyRage
+//   ctx.myLastAction, ctx.enemyLastAction
+//   ctx.cooldowns.heavy, ctx.cooldowns.laser
 
 function strategy(ctx) {
-  if (ctx.myRage >= 100) return 'special';
-  if (ctx.myHp < 30) return 'repair';
-  if (ctx.enemyLastAction === 'laser') return 'dodge';
-  if (ctx.enemyHp < 25) return 'heavy';
+  // Напиши свою стратегию здесь
+
   return 'attack';
 }`,
-  py: `# strategy(ctx) вызывается каждый ход
-# Верни строку: 'attack'|'heavy'|'laser'|'shield'|'dodge'|'repair'|'special'
+  py: `# Доступные данные (ctx):
+#   ctx.my_hp, ctx.my_stamina, ctx.my_rage
+#   ctx.enemy_hp, ctx.enemy_stamina, ctx.enemy_rage
+#   ctx.my_last_action, ctx.enemy_last_action
+#   ctx.cooldowns['heavy'], ctx.cooldowns['laser']
 
 def strategy(ctx):
-    if ctx.my_rage >= 100:
-        return 'special'
-    if ctx.my_hp < 30:
-        return 'repair'
-    if ctx.enemy_last_action == 'laser':
-        return 'dodge'
-    if ctx.enemy_hp < 25:
-        return 'heavy'
+    # Напиши свою стратегию здесь
+
     return 'attack'`,
-  cpp: `// strategy вызывается каждый ход
-// Верни строку: attack heavy laser shield dodge repair special
+  cpp: `// Доступные данные (ctx):
+// ctx.myHp, ctx.myStamina, ctx.myRage
+// ctx.enemyHp, ctx.enemyStamina, ctx.enemyRage
 
 #include <string>
 std::string strategy(Ctx ctx) {
-    if (ctx.my_rage >= 100) return "special";
-    if (ctx.my_hp < 30) return "repair";
-    if (ctx.enemy_last_action == "laser") return "dodge";
-    if (ctx.enemy_hp < 25) return "heavy";
+    // Напиши свою стратегию здесь
     return "attack";
 }`,
-  java: `// strategy вызывается каждый ход
-// Верни строку: attack heavy laser shield dodge repair special
+  java: `// Доступные данные (ctx):
+// ctx.myHp, ctx.myStamina, ctx.myRage
+// ctx.enemyHp, ctx.enemyStamina, ctx.enemyRage
 
 public class Strategy {
     public static String strategy(Ctx ctx) {
-        if (ctx.myRage >= 100) return "special";
-        if (ctx.myHp < 30) return "repair";
-        if (ctx.enemyLastAction.equals("laser")) return "dodge";
-        if (ctx.enemyHp < 25) return "heavy";
+        // Напиши свою стратегию здесь
         return "attack";
     }
 }`,
@@ -166,7 +161,8 @@ export default function LearningBattlePage() {
 
   const [editorMode, setEditorMode] = useState<EditorMode>('code')
   const [lang, setLang] = useState<Lang>('js')
-  const [code, setCode] = useState(mission?.starterCode ?? '')
+  const [code, setCode] = useState(LANG_TEMPLATES.js)
+  const [hintLoaded, setHintLoaded] = useState(false)
   const [blocksCode, setBlocksCode] = useState('')
   const [phase, setPhase] = useState<Phase>('coding')
   const [codeError, setCodeError] = useState('')
@@ -270,7 +266,16 @@ export default function LearningBattlePage() {
 
   const handleLangChange = (newLang: Lang) => {
     setLang(newLang)
-    setCode(LANG_TEMPLATES[newLang] ?? '')
+    setCode(LANG_TEMPLATES[newLang] ?? LANG_TEMPLATES.js)
+    setHintLoaded(false)
+  }
+
+  const handleLoadHint = () => {
+    if (mission?.starterCode) {
+      setCode(mission.starterCode)
+      setLang('js')
+      setHintLoaded(true)
+    }
   }
 
   if (!mission) {
@@ -310,7 +315,7 @@ export default function LearningBattlePage() {
       {/* Header */}
       <div className={styles.header}>
         <div className={styles.headerLeft}>
-          <Link to="/learn" className={styles.back}>← Миссии</Link>
+          <button className={styles.back} onClick={() => navigate(-1)}>← Назад</button>
           <div className={styles.missionInfo}>
             <span className={styles.missionNum}>Миссия {mission.order}</span>
             <h2 className={styles.missionTitle}>{mission.title}</h2>
@@ -387,9 +392,26 @@ export default function LearningBattlePage() {
 
           <div className={styles.editorActions}>
             {phase === 'coding' && (
-              <button className="btn btn-primary" onClick={handleRun} style={{ fontSize: 14 }}>
-                ▶ Запустить бой
-              </button>
+              <>
+                <button className="btn btn-primary" onClick={handleRun} style={{ fontSize: 14 }}>
+                  ▶ Запустить бой
+                </button>
+                {mission?.starterCode && !hintLoaded && (
+                  <button
+                    className="btn btn-ghost"
+                    onClick={handleLoadHint}
+                    style={{ fontSize: 12 }}
+                    title="Загрузить подсказку с примером кода для этой миссии"
+                  >
+                    💡 Подсказка
+                  </button>
+                )}
+                {hintLoaded && (
+                  <span style={{ fontSize: 11, color: 'var(--text-muted)', alignSelf: 'center' }}>
+                    💡 Пример загружен — измени его!
+                  </span>
+                )}
+              </>
             )}
             {phase === 'animating' && (
               <button className="btn btn-ghost" onClick={handleReset} style={{ fontSize: 13 }}>

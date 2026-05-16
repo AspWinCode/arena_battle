@@ -43,7 +43,12 @@
   text-decoration: none;
   display: inline-block;
   margin-bottom: 16px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
 }
+.back:hover { color: var(--text); }
 .back:hover { color: var(--accent); }
 
 .titleRow {

@@ -36,7 +36,7 @@ export default function LandingPage() {
                     : <span style={{ marginRight: 4 }}>{user.avatar}</span>}
                   {user.displayName}
                 </span>
-                <Link to="/profile" className={`btn btn-primary ${styles.navBtn}`}>В игру</Link>
+                <Link to="/profile" className={`btn btn-primary ${styles.navBtn}`}>Профиль</Link>
               </>
             ) : (
               <>
@@ -78,7 +78,7 @@ export default function LandingPage() {
               </p>
 
               <div className={styles.heroCta}>
-                <Link to="/join" className={`btn btn-primary ${styles.ctaMain}`}>⚔️ Начать бой</Link>
+                <Link to="/register" className={`btn btn-primary ${styles.ctaMain}`}>⚔️ Начать бой</Link>
                 <Link to="/demo" className={styles.demoLink}>Попробовать демо →</Link>
               </div>
 
@@ -112,9 +112,9 @@ export default function LandingPage() {
                   </div>
                 </div>
                 <div className={styles.fighters}>
-                  <FighterPreview name="Скорпион" skin="🦂" hp={78} maxHp={90}  />
+                  <FighterPreview name="Скорпион" skin="🦂" skinImg={thumbs['scorpion']} hp={78} maxHp={90}  />
                   <div className={styles.vsChip}>VS</div>
-                  <FighterPreview name="Ниндзя"   skin="🥷" hp={31} maxHp={75} flip />
+                  <FighterPreview name="Ниндзя"   skin="🥷" skinImg={thumbs['ninja']}    hp={31} maxHp={75} flip />
                 </div>
                 <div className={styles.logWrap}>
                   <LogRow turn={9} p1="🦂 Удар"     p2="💨 Уклон" note="Захват! P2 −10HP" hot />
@@ -199,7 +199,7 @@ export default function LandingPage() {
               { icon: '🏆', title: 'Турниры',                 accent: '#d97706', desc: 'Официальные турниры с сеткой bo3/bo5. Обновляй стратегию между раундами — побеждает лучший алгоритм.' },
               { icon: '🎭', title: '16 персонажей',           accent: '#f43f5e', desc: 'У каждого уникальная механика: яд, контратаки, уклонения, бусидо, захват. Стратегия зависит от выбора.' },
               { icon: '⚡', title: '5 языков',                 accent: '#22c55e', desc: 'Блоки, JavaScript, Python, Java и C++. Начни с блоков — переходи к коду по мере роста. Прогресс сохраняется.' },
-              { icon: '🔁', title: 'Спарринг',                accent: '#60a5fa', desc: 'Тестируй стратегии без соперника. Запускай бои локально, экспериментируй и оттачивай алгоритм.' },
+              { icon: '🔁', title: 'Отработка навыков',        accent: '#60a5fa', desc: 'Тестируй стратегии без соперника. Запускай бои локально, экспериментируй и оттачивай алгоритм.' },
             ].map(f => (
               <div key={f.title} className={styles.featCard} style={{ '--fa': f.accent } as React.CSSProperties}>
                 <div className={styles.featIcon}>{f.icon}</div>
@@ -405,14 +405,22 @@ function Stat({ num, label }: { num: string; label: string }) {
   )
 }
 
-function FighterPreview({ name, skin, hp, maxHp, flip }: {
-  name: string; skin: string; hp: number; maxHp: number; flip?: boolean
+function FighterPreview({ name, skin, skinImg, hp, maxHp, flip }: {
+  name: string; skin: string; skinImg?: string; hp: number; maxHp: number; flip?: boolean
 }) {
   const pct = (hp / maxHp) * 100
   const color = pct > 50 ? '#4ade80' : pct > 25 ? '#facc15' : '#f87171'
   return (
     <div className={styles.fighter} style={{ alignItems: flip ? 'flex-end' : 'flex-start' }}>
-      <span className={styles.fighterSkin}>{skin}</span>
+      {skinImg
+        ? <img
+            src={skinImg}
+            alt={name}
+            className={styles.fighterSkinImg}
+            style={{ transform: flip ? 'scaleX(-1)' : undefined }}
+          />
+        : <span className={styles.fighterSkin}>{skin}</span>
+      }
       <span className={styles.fighterName}>{name}</span>
       <div className={styles.hpTrack}>
         <div className={styles.hpFill} style={{ width: `${pct}%`, background: color }} />
