@@ -272,6 +272,89 @@
   padding: 8px 12px;
 }
 
+/* ── Format picker ────────────────────────────────────────────────────────── */
+.formatRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.formatBtn {
+  background: var(--bg-mid);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 700;
+  padding: 5px 12px;
+  cursor: pointer;
+  transition: border-color .12s, color .12s;
+}
+.formatBtn:hover { border-color: var(--primary); color: var(--text); }
+.formatBtnActive {
+  border-color: var(--primary);
+  color: var(--primary);
+  background: rgba(99,102,241,.1);
+}
+
+.formatHint {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-left: 4px;
+}
+
+/* ── Duel room ────────────────────────────────────────────────────────────── */
+.duelRoom {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.duelInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.duelLabel {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--text-muted);
+  font-weight: 700;
+}
+
+.duelCode {
+  font-family: monospace;
+  font-size: 26px;
+  font-weight: 900;
+  letter-spacing: .12em;
+  color: var(--text);
+}
+
+.duelDivider {
+  color: var(--border);
+  text-align: center;
+  font-size: 20px;
+}
+
+.duelActions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-top: 4px;
+}
+
+.duelHint {
+  font-size: 12px;
+  color: var(--text-muted);
+  background: var(--bg-mid);
+  border-radius: var(--radius);
+  padding: 8px 12px;
+  line-height: 1.5;
+}
+
 /* ── Session code (collapsed) ─────────────────────────────────────────────── */
 .codeSection {
   background: var(--bg-card);

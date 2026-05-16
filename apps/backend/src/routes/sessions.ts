@@ -198,4 +198,78 @@ export const sessionRoutes: FastifyPluginAsync = async (fastify) => {
 
     return response
   })
+
+  // Create duel session (user-facing — no admin required)
+  // Returns: { sessionId, myCode, friendCode }
+  // Caller automatically becomes Player 1 via /join
+  fastify.post('/create-duel', {
+    config: { rateLimit: { max: 10, timeWindow: '1 minute' } },
+  }, async (request, reply) => {
+    // Optional user auth
+    let userId: string | undefined
+    let displayName = 'Игрок'
+    let preferredSkin = 'robot'
+    const authHeader = request.headers.authorization
+    if (authHeader?.startsWith('Bearer ')) {
+      try {
+        const payload = fastify.jwt.verify<{ userId?: string; type?: string; name?: string; skin?: string }>(
+          authHeader.slice(7)
+        )
+        if (payload.userId && payload.type === 'user') {
+          userId = payload.userId
+          const u = await prisma.user.findUnique({
+            where: { id: userId },
+            select: { displayName: true, preferredSkin: true },
+          })
+          if (u) { displayName = u.displayName; preferredSkin = u.preferredSkin }
+        }
+      } catch { /* unauthenticated */ }
+    }
+
+    const body = (request.body ?? {}) as { format?: string; lang?: string }
+    const format = (['bo1','bo3','bo5'] as const).find(f => f === body.format) ?? 'bo3'
+    const lang   = (['js','py','cpp','java','auto'] as const).find(l => l === body.lang) ?? null
+
+    let code1: string, code2: string
+    do { code1 = generateCode() } while (await prisma.session.findUnique({ where: { code1 } }))
+    do { code2 = generateCode() } while (code2 === code1 || await prisma.session.findUnique({ where: { code2 } }))
+
+    const session = await prisma.session.create({
+      data: {
+        adminId:      null,
+        name:         `⚔️ Дуэль`,
+        level:        'CODE',
+        lang,
+        format,
+        timeLimit:    10,
+        allowedSkins: [...ALL_SKIN_IDS],
+        code1,
+        code2,
+      },
+    })
+
+    // Auto-join creator as Player 1
+    await prisma.player.create({
+      data: {
+        sessionId: session.id,
+        slot:      1,
+        name:      displayName,
+        skin:      preferredSkin as typeof ALL_SKIN_IDS[number],
+        ...(userId ? { userId } : {}),
+      },
+    })
+
+    const wsToken = fastify.jwt.sign(
+      { sessionId: session.id, slot: 1, name: displayName, skin: preferredSkin, ...(userId ? { userId } : {}) },
+      { expiresIn: '2h' }
+    )
+
+    return reply.status(201).send({
+      sessionId:  session.id,
+      myCode:     code1,      // creator joins with this
+      friendCode: code2,      // share this with friend
+      wsToken,
+      playerSlot: 1,
+    })
+  })
 }

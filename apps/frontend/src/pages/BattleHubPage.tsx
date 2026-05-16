@@ -230,6 +230,37 @@ export default function BattleHubPage() {
     finally { setDecliningId(null) }
   }
 
+  // ── Create duel ──────────────────────────────────────────────────────────
+  interface DuelRoom { sessionId: string; myCode: string; friendCode: string; wsToken: string }
+  const [duel,        setDuel]        = useState<DuelRoom | null>(null)
+  const [duelFormat,  setDuelFormat]  = useState<'bo1'|'bo3'|'bo5'>('bo3')
+  const [duelLoading, setDuelLoading] = useState(false)
+  const [duelError,   setDuelError]   = useState('')
+  const [copied,      setCopied]      = useState(false)
+
+  const handleCreateDuel = async () => {
+    setDuelLoading(true); setDuelError('')
+    try {
+      const res = await api.post<DuelRoom>('/session/create-duel', { format: duelFormat }, token ?? undefined)
+      setDuel(res)
+    } catch (e) {
+      setDuelError(e instanceof Error ? e.message : 'Ошибка создания')
+    } finally { setDuelLoading(false) }
+  }
+
+  const handleEnterDuel = () => {
+    if (!duel || !user) return
+    setSession(duel.sessionId, 1, 'code', ALL_SKIN_IDS, duel.wsToken, user.displayName, (user.preferredSkin ?? 'robot') as SkinId)
+    navigate(`/battle/${duel.sessionId}`)
+  }
+
+  const handleCopyFriendCode = () => {
+    if (!duel) return
+    navigator.clipboard.writeText(duel.friendCode).then(() => {
+      setCopied(true); setTimeout(() => setCopied(false), 2000)
+    })
+  }
+
   // ── Session code join ────────────────────────────────────────────────────
   const [code,       setCode]       = useState('')
   const [codeLoading, setCodeLoading] = useState(false)
@@ -400,7 +431,79 @@ export default function BattleHubPage() {
           </div>
         </div>
 
-        {/* ── Session code (secondary) ───────────────── */}
+        {/* ── Create duel room ──────────────────────────── */}
+        <div className={styles.card} style={{ marginTop: 0 }}>
+          <div className={styles.cardHeader}>
+            <span className={styles.cardIcon}>🔗</span>
+            <div>
+              <div className={styles.cardTitle}>Создать комнату</div>
+              <div className={styles.cardDesc}>Получи код и отправь другу — без матчмейкинга</div>
+            </div>
+          </div>
+
+          {!duel ? (
+            <>
+              {/* Format picker */}
+              <div className={styles.formatRow}>
+                {(['bo1','bo3','bo5'] as const).map(f => (
+                  <button
+                    key={f}
+                    className={`${styles.formatBtn} ${duelFormat === f ? styles.formatBtnActive : ''}`}
+                    onClick={() => setDuelFormat(f)}
+                  >
+                    {f === 'bo1' ? 'BO1' : f === 'bo3' ? 'BO3' : 'BO5'}
+                  </button>
+                ))}
+                <span className={styles.formatHint}>
+                  {duelFormat === 'bo1' ? '1 раунд' : duelFormat === 'bo3' ? 'До 2 побед' : 'До 3 побед'}
+                </span>
+              </div>
+              {duelError && <div className={styles.errMsg}>{duelError}</div>}
+              <button
+                className="btn btn-primary"
+                style={{ width: '100%', fontWeight: 700 }}
+                onClick={handleCreateDuel}
+                disabled={duelLoading}
+              >
+                {duelLoading ? '…' : '🔗 Создать комнату'}
+              </button>
+            </>
+          ) : (
+            <div className={styles.duelRoom}>
+              <div className={styles.duelInfo}>
+                <span className={styles.duelLabel}>Твой код</span>
+                <span className={styles.duelCode}>{duel.myCode}</span>
+              </div>
+              <div className={styles.duelDivider}>·</div>
+              <div className={styles.duelInfo}>
+                <span className={styles.duelLabel}>Код для друга</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span className={styles.duelCode} style={{ color: '#fbbf24' }}>{duel.friendCode}</span>
+                  <button
+                    className="btn btn-ghost"
+                    style={{ fontSize: 12, padding: '4px 10px' }}
+                    onClick={handleCopyFriendCode}
+                  >
+                    {copied ? '✓ Скопировано' : '📋 Копировать'}
+                  </button>
+                </div>
+              </div>
+              <div className={styles.duelActions}>
+                <button className="btn btn-primary" style={{ flex: 1 }} onClick={handleEnterDuel}>
+                  ⚔️ Войти в бой
+                </button>
+                <button className="btn btn-ghost" style={{ fontSize: 13 }} onClick={() => setDuel(null)}>
+                  Отмена
+                </button>
+              </div>
+              <div className={styles.duelHint}>
+                Друг вводит код <strong>{duel.friendCode}</strong> на странице «В бой → Войти по коду»
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* ── Session code join (secondary) ─────────────── */}
         <details className={styles.codeSection}>
           <summary className={styles.codeSummary}>🔑 Войти по коду сессии</summary>
           <form className={styles.codeForm} onSubmit={handleCodeJoin}>
