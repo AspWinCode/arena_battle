@@ -290,11 +290,6 @@ export default function SparringPage() {
             )}
           </div>
 
-          {lang !== 'js' && editorMode === 'code' && (
-            <div className={styles.langNotice}>
-              🌐 {lang === 'py' ? 'Python' : lang === 'cpp' ? 'C++' : 'Java'} — код запускается на сервере. Время компиляции ~2–5 сек.
-            </div>
-          )}
 
           {codeError && <div className={styles.codeError}>{codeError}</div>}
 
