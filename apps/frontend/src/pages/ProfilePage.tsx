@@ -55,7 +55,7 @@ const TABS: { id: Tab; label: string }[] = [
 ]
 
 const NAV_ITEMS = [
-  { to: '/join',        icon: '⚔️', label: 'В бой',      desc: 'Войти по коду сессии' },
+  { to: '/play',        icon: '⚔️', label: 'В бой',      desc: 'Матчмейкинг и вызовы' },
   { to: '/learn',       icon: '🎓', label: 'Обучение',   desc: 'Уроки и практика'     },
   { to: '/sparring',    icon: '🥊', label: 'Отработка навыков', desc: 'Тренировочный бой' },
   { to: '/daily',       icon: '📅', label: 'Задания',    desc: 'Ежедневные задачи'    },
@@ -332,7 +332,7 @@ export default function ProfilePage() {
                   }
                   <div className={styles.historyList} style={{ marginTop: eloHistory.length ? 16 : 0 }}>
                     {recentSessions.length === 0 && (
-                      <p className={styles.empty}>Ты ещё не сыграл ни одного матча. <Link to="/join">В бой! →</Link></p>
+                      <p className={styles.empty}>Ты ещё не сыграл ни одного матча. <Link to="/play">В бой! →</Link></p>
                     )}
                     {recentSessions.map(s => (
                       <div key={s.sessionId} className={`${styles.historyRow} ${s.won ? styles.historyWon : styles.historyLost}`}>
