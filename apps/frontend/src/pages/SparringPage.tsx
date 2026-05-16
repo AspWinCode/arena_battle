@@ -250,7 +250,7 @@ export default function SparringPage() {
     <div className={styles.root}>
       {/* Header */}
       <div className={styles.header}>
-        <Link to="/learn" className={styles.back}>← Обучение</Link>
+        <button className={styles.back} onClick={() => window.history.back()}>← Назад</button>
         <h1 className={styles.title}>🥊 Отработка навыков</h1>
         <span className={styles.subtitle}>Тренируйся против ботов без ограничений</span>
       </div>
