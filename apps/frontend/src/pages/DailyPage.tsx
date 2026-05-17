@@ -1,12 +1,15 @@
 import { useEffect } from 'react'
-import { Link } from 'react-router-dom'
-import { useDailyStore, TASK_POOL, pickDailyTasks, todayStr } from '../stores/dailyStore'
+import {
+  useDailyStore, TASK_POOL, pickDailyTasks, pickWeeklyTask,
+  todayStr, LEAGUES, getLeague, getStreakMultiplier,
+} from '../stores/dailyStore'
 import styles from './DailyPage.module.css'
 
 // ── Streak flame component ────────────────────────────────────────────────────
 
 function StreakFlame({ streak }: { streak: number }) {
   const size = streak === 0 ? 'cold' : streak < 3 ? 'warm' : streak < 7 ? 'hot' : 'blazing'
+  const mult = getStreakMultiplier(streak)
   return (
     <div className={`${styles.flame} ${styles[`flame_${size}`]}`}>
       <div className={styles.flameIcon}>
@@ -16,28 +19,84 @@ function StreakFlame({ streak }: { streak: number }) {
       <div className={styles.flameLabel}>
         {streak === 0 ? 'Серия прервана' : streak === 1 ? '1 победа' : `${streak} побед подряд`}
       </div>
+      {mult > 1 && (
+        <div className={styles.multBadge}>×{mult} XP</div>
+      )}
+    </div>
+  )
+}
+
+// ── League card ───────────────────────────────────────────────────────────────
+
+function LeagueCard({ totalXp }: { totalXp: number }) {
+  const { current, next, pct } = getLeague(totalXp)
+  return (
+    <div className={styles.leagueCard} style={{ borderColor: `${current.color}55` }}>
+      <div className={styles.leagueIcon} style={{ background: `${current.color}22` }}>
+        {current.icon}
+      </div>
+      <div className={styles.leagueBody}>
+        <div className={styles.leagueName} style={{ color: current.color }}>
+          Лига: {current.name}
+        </div>
+        <div className={styles.leagueXp}>{totalXp} XP всего</div>
+        <div className={styles.leagueTrack}>
+          <div
+            className={styles.leagueFill}
+            style={{ width: `${pct}%`, background: `linear-gradient(90deg, ${current.color}, ${next?.color ?? current.color})` }}
+          />
+        </div>
+        <div className={styles.leagueFootRow}>
+          {next ? (
+            <span>До {next.icon} {next.name}: {next.minXp - totalXp} XP</span>
+          ) : (
+            <span style={{ color: current.color }}>🏆 Максимальная лига!</span>
+          )}
+        </div>
+      </div>
+      <div className={styles.leagueLadder}>
+        {LEAGUES.map(l => (
+          <div
+            key={l.id}
+            className={`${styles.ladderStep} ${totalXp >= l.minXp ? styles.ladderReached : ''}`}
+            title={`${l.name} (${l.minXp}+ XP)`}
+            style={{ borderColor: totalXp >= l.minXp ? l.color : undefined }}
+          >
+            <span style={{ fontSize: 18 }}>{l.icon}</span>
+          </div>
+        ))}
+      </div>
     </div>
   )
 }
 
 // ── Task card ─────────────────────────────────────────────────────────────────
 
-function TaskCard({ taskId, progress, completed, claimed, onClaim }: {
+function TaskCard({ taskId, progress, completed, claimed, onClaim, multiplier, pool, accent }: {
   taskId: string
   progress: number
   completed: boolean
   claimed: boolean
   onClaim: () => void
+  multiplier: number
+  pool: typeof TASK_POOL
+  accent?: string
 }) {
-  const def = TASK_POOL.find(t => t.id === taskId)
+  const def = pool.find(t => t.id === taskId)
   if (!def) return null
 
   const pct = Math.min(100, Math.round((progress / def.target) * 100))
+  const finalXp = Math.round(def.xp * multiplier)
 
   return (
-    <div className={`${styles.taskCard} ${completed ? styles.taskDone : ''} ${claimed ? styles.taskClaimed : ''}`}>
+    <div
+      className={`${styles.taskCard} ${completed ? styles.taskDone : ''} ${claimed ? styles.taskClaimed : ''}`}
+      style={accent ? { borderColor: `${accent}55` } : undefined}
+    >
       <div className={styles.taskLeft}>
-        <div className={styles.taskIcon}>{def.icon}</div>
+        <div className={styles.taskIcon} style={accent ? { background: `${accent}22` } : undefined}>
+          {def.icon}
+        </div>
       </div>
 
       <div className={styles.taskBody}>
@@ -58,7 +117,10 @@ function TaskCard({ taskId, progress, completed, claimed, onClaim }: {
       </div>
 
       <div className={styles.taskRight}>
-        <div className={styles.taskXp}>+{def.xp} XP</div>
+        <div className={styles.taskXp}>
+          {multiplier > 1 && <span className={styles.taskXpBase}>{def.xp}</span>}
+          <span>+{finalXp} XP</span>
+        </div>
         {!completed && (
           <div className={styles.taskStatus}>{pct}%</div>
         )}
@@ -92,9 +154,11 @@ function StatPill({ icon, value, label, color }: {
 // ── Main ──────────────────────────────────────────────────────────────────────
 
 export default function DailyPage() {
-  const store       = useDailyStore()
-  const refreshDay  = useDailyStore(s => s.refreshDay)
-  const claimTask   = useDailyStore(s => s.claimTask)
+  const store         = useDailyStore()
+  const refreshDay    = useDailyStore(s => s.refreshDay)
+  const claimTask     = useDailyStore(s => s.claimTask)
+  const claimWeekly   = useDailyStore(s => s.claimWeekly)
+  const claimDayBonus = useDailyStore(s => s.claimDayBonus)
 
   useEffect(() => { refreshDay() }, [refreshDay])
 
@@ -105,12 +169,14 @@ export default function DailyPage() {
     ? Math.round((store.totalWins / store.totalBattles) * 100)
     : 0
 
+  const multiplier  = getStreakMultiplier(store.currentStreak)
   const allClaimed  = tasks.length > 0 && tasks.every(t => t.claimed)
-  const totalDayXp  = taskDefs.reduce((s, d) => s + d.xp, 0)
+  const totalDayXp  = taskDefs.reduce((s, d) => s + Math.round(d.xp * multiplier), 0)
+  const dayBonusXp  = Math.round(taskDefs.reduce((s, d) => s + d.xp, 0) * 0.5)
 
-  // Streak milestone badges
-  const milestones = [3, 7, 14, 30]
-  const nextMilestone = milestones.find(m => m > store.currentStreak)
+  const weeklyDef   = pickWeeklyTask(store.week)
+  const weeklyProg  = store.weeklyProgress
+  const weeklyXp    = Math.round(weeklyDef.xp * multiplier)
 
   return (
     <div className={styles.root}>
@@ -119,7 +185,7 @@ export default function DailyPage() {
       <div className={styles.content}>
         {/* Header */}
         <div className={styles.header}>
-          <Link to="/join" className={styles.back}>← На главную</Link>
+          <button className={styles.back} onClick={() => window.history.back()}>← Назад</button>
           <div className={styles.headerRow}>
             <h1 className={styles.title}>📅 Ежедневные задания</h1>
             <div className={styles.todayXp}>
@@ -128,6 +194,9 @@ export default function DailyPage() {
             </div>
           </div>
         </div>
+
+        {/* League */}
+        <LeagueCard totalXp={store.totalXp} />
 
         {/* Streak card */}
         <div className={styles.streakCard}>
@@ -150,25 +219,26 @@ export default function DailyPage() {
             </div>
           </div>
 
-          {/* Milestone progress */}
-          {nextMilestone && store.currentStreak > 0 && (
-            <div className={styles.milestone}>
-              <div className={styles.milestoneTrack}>
+          {/* Streak multiplier ladder */}
+          <div className={styles.multLadder}>
+            {[
+              { from: 3,  mult: 1.5 },
+              { from: 7,  mult: 2   },
+              { from: 14, mult: 3   },
+            ].map(m => {
+              const active = store.currentStreak >= m.from
+              return (
                 <div
-                  className={styles.milestoneFill}
-                  style={{ width: `${(store.currentStreak / nextMilestone) * 100}%` }}
-                />
-              </div>
-              <span className={styles.milestoneLabel}>
-                🎯 До серии {nextMilestone}: {nextMilestone - store.currentStreak} побед
-              </span>
-            </div>
-          )}
-          {store.currentStreak >= 30 && (
-            <div className={styles.milestoneLabel} style={{ color: '#fbbf24', textAlign: 'center' }}>
-              🏆 Ты достиг максимальной серии! Легенда!
-            </div>
-          )}
+                  key={m.from}
+                  className={`${styles.multStep} ${active ? styles.multStepActive : ''}`}
+                  title={`Серия ${m.from}+ → ×${m.mult} XP за задания`}
+                >
+                  <span className={styles.multStepNum}>{m.from}+</span>
+                  <span className={styles.multStepVal}>×{m.mult}</span>
+                </div>
+              )
+            })}
+          </div>
         </div>
 
         {/* Daily tasks */}
@@ -189,10 +259,61 @@ export default function DailyPage() {
                   key={tp.taskId}
                   {...tp}
                   onClaim={() => claimTask(tp.taskId)}
+                  multiplier={multiplier}
+                  pool={TASK_POOL}
                 />
               ))}
             </div>
           )}
+
+          {/* Day-completion bonus row */}
+          <div className={`${styles.bonusCard} ${allClaimed ? styles.bonusReady : ''} ${store.dayBonusClaimed ? styles.bonusClaimed : ''}`}>
+            <div className={styles.bonusIcon}>🎁</div>
+            <div className={styles.bonusBody}>
+              <div className={styles.bonusTitle}>Бонус за полный день</div>
+              <div className={styles.bonusDesc}>
+                Выполни все 3 задания — получи +{dayBonusXp} XP сверху
+              </div>
+            </div>
+            <div className={styles.bonusRight}>
+              <div className={styles.taskXp}>+{dayBonusXp} XP</div>
+              {!allClaimed && !store.dayBonusClaimed && (
+                <div className={styles.taskStatus}>
+                  {tasks.filter(t => t.claimed).length} / {tasks.length}
+                </div>
+              )}
+              {allClaimed && !store.dayBonusClaimed && (
+                <button className={styles.claimBtn} onClick={claimDayBonus}>
+                  Забрать!
+                </button>
+              )}
+              {store.dayBonusClaimed && <div className={styles.taskCheckmark}>✅</div>}
+            </div>
+          </div>
+        </div>
+
+        {/* Weekly task */}
+        <div className={styles.section}>
+          <div className={styles.sectionHeader}>
+            <span className={styles.sectionTitle}>🌟 Задание недели</span>
+            <span className={styles.sectionSub}>{store.week}</span>
+          </div>
+
+          {weeklyProg && (
+            <TaskCard
+              {...weeklyProg}
+              onClaim={claimWeekly}
+              multiplier={multiplier}
+              pool={[weeklyDef]}
+              accent="#fbbf24"
+            />
+          )}
+          {!weeklyProg && (
+            <div className={styles.emptyTasks}>Загрузка задания недели...</div>
+          )}
+          <div className={styles.weeklyHint}>
+            Награда: +{weeklyXp} XP. Прогресс копится за все бои на этой неделе.
+          </div>
         </div>
 
         {/* Global stats */}
@@ -203,39 +324,6 @@ export default function DailyPage() {
             <StatPill icon="🏆" value={store.totalWins}    label="побед" color="#fbbf24" />
             <StatPill icon="📈" value={`${winRate}%`}      label="винрейт"   color={winRate >= 50 ? '#4ade80' : '#f87171'} />
             <StatPill icon="✨" value={store.totalXp}      label="XP"        color="#a78bfa" />
-          </div>
-        </div>
-
-        {/* Navigation to play */}
-        <div className={styles.playLinks}>
-          <Link to="/sparring" className="btn btn-primary" style={{ flex: 1 }}>
-            🥊 Отработка навыков
-          </Link>
-          <Link to="/learn" className="btn btn-ghost" style={{ flex: 1 }}>
-            🎓 Обучение
-          </Link>
-        </div>
-
-        {/* Streak milestones reference */}
-        <div className={styles.section}>
-          <div className={styles.sectionTitle}>🎯 Вехи серии побед</div>
-          <div className={styles.milestones}>
-            {[3, 7, 14, 30].map(m => {
-              const reached = store.bestStreak >= m
-              return (
-                <div key={m} className={`${styles.milestoneCard} ${reached ? styles.milestoneReached : ''}`}>
-                  <span className={styles.milestoneIcon}>{reached ? '✅' : '🔒'}</span>
-                  <span className={styles.milestoneNum}>{m}</span>
-                  <span className={styles.milestoneKey}>побед подряд</span>
-                  <span className={styles.milestoneReward}>
-                    {m === 3  ? '+150 XP'  :
-                     m === 7  ? '+400 XP'  :
-                     m === 14 ? '+1000 XP' :
-                                '🏆 Легенда'}
-                  </span>
-                </div>
-              )
-            })}
           </div>
         </div>
       </div>

@@ -65,6 +65,76 @@ export function todayStr(): string {
   return new Date().toISOString().slice(0, 10)
 }
 
+/** ISO week key: YYYY-Www (e.g. 2026-W20). Stable for one calendar week. */
+export function weekStr(d: Date = new Date()): string {
+  const date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()))
+  const dayNum = date.getUTCDay() || 7
+  date.setUTCDate(date.getUTCDate() + 4 - dayNum)
+  const yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1))
+  const weekNo = Math.ceil((((date.getTime() - yearStart.getTime()) / 86400000) + 1) / 7)
+  return `${date.getUTCFullYear()}-W${String(weekNo).padStart(2, '0')}`
+}
+
+// ── Weekly task pool ──────────────────────────────────────────────────────────
+
+export const WEEKLY_POOL: TaskDef[] = [
+  { id: 'w_wins15',     title: 'Чемпион недели',  description: 'Выиграй 15 боёв за неделю',       icon: '👑', metric: 'wins',    target: 15,  xp: 600 },
+  { id: 'w_battles25',  title: 'Марафон',         description: 'Сыграй 25 боёв за неделю',         icon: '🏃', metric: 'battles', target: 25,  xp: 500 },
+  { id: 'w_damage1500', title: 'Артиллерист',     description: 'Нанеси 1500 урона за неделю',      icon: '🎯', metric: 'damage',  target: 1500, xp: 700 },
+  { id: 'w_ko7',        title: 'Король нокаутов', description: 'Победи нокаутом 7 раз за неделю',  icon: '🥊', metric: 'ko',      target: 7,   xp: 800 },
+  { id: 'w_turns300',   title: 'Несокрушимый',    description: 'Продержись 300 ходов за неделю',   icon: '🛡️', metric: 'turns',   target: 300, xp: 600 },
+]
+
+/** Stable weekly task pick by week string */
+export function pickWeeklyTask(weekKey: string): TaskDef {
+  // Use the digits of the week string as seed; fall back to length-based hash
+  const digits = weekKey.replace(/\D/g, '')
+  const seed = digits ? Number(digits) : weekKey.length
+  return WEEKLY_POOL[seed % WEEKLY_POOL.length]
+}
+
+// ── Leagues (lifetime XP tiers) ───────────────────────────────────────────────
+
+export interface League {
+  id:        string
+  name:      string
+  icon:      string
+  color:     string
+  minXp:     number
+}
+
+export const LEAGUES: League[] = [
+  { id: 'bronze',   name: 'Бронза',    icon: '🥉', color: '#cd7f32', minXp: 0     },
+  { id: 'silver',   name: 'Серебро',   icon: '🥈', color: '#c0c0c0', minXp: 500   },
+  { id: 'gold',     name: 'Золото',    icon: '🥇', color: '#ffd700', minXp: 1500  },
+  { id: 'platinum', name: 'Платина',   icon: '💎', color: '#5dade2', minXp: 4000  },
+  { id: 'diamond',  name: 'Алмаз',     icon: '🏆', color: '#a78bfa', minXp: 10000 },
+]
+
+export function getLeague(totalXp: number): { current: League; next: League | null; pct: number } {
+  let current = LEAGUES[0]
+  let next: League | null = LEAGUES[1] ?? null
+  for (let i = 0; i < LEAGUES.length; i++) {
+    if (totalXp >= LEAGUES[i].minXp) {
+      current = LEAGUES[i]
+      next = LEAGUES[i + 1] ?? null
+    }
+  }
+  const pct = next
+    ? Math.min(100, Math.round(((totalXp - current.minXp) / (next.minXp - current.minXp)) * 100))
+    : 100
+  return { current, next, pct }
+}
+
+// ── Streak multiplier ─────────────────────────────────────────────────────────
+
+export function getStreakMultiplier(streak: number): number {
+  if (streak >= 14) return 3
+  if (streak >= 7)  return 2
+  if (streak >= 3)  return 1.5
+  return 1
+}
+
 // ── Store types ───────────────────────────────────────────────────────────────
 
 export interface DailyTaskProgress {
@@ -77,6 +147,13 @@ export interface DailyTaskProgress {
 export interface DailyState {
   date:      string                 // YYYY-MM-DD
   tasks:     DailyTaskProgress[]    // 3 tasks for today
+
+  // Weekly task
+  week:           string             // YYYY-Www
+  weeklyProgress: DailyTaskProgress | null
+
+  // Day-completion bonus
+  dayBonusClaimed: boolean           // resets with date
 
   // Streak
   currentStreak: number
@@ -106,22 +183,29 @@ interface DailyActions {
   refreshDay:    () => void
   /** Record a completed battle and update streak + task progress */
   recordBattle:  (record: BattleRecord) => void
-  /** Claim XP reward for a completed task */
+  /** Claim XP reward for a completed daily task (streak multiplier applies) */
   claimTask:     (taskId: string) => void
+  /** Claim the weekly task reward (streak multiplier applies) */
+  claimWeekly:   () => void
+  /** Claim the "all 3 daily tasks done" bonus (+50% of summed daily XP) */
+  claimDayBonus: () => void
 }
 
 // ── Store ─────────────────────────────────────────────────────────────────────
 
 const INIT: DailyState = {
-  date:          '',
-  tasks:         [],
-  currentStreak: 0,
-  bestStreak:    0,
-  lastWinDate:   '',
-  totalWins:     0,
-  totalBattles:  0,
-  totalXp:       0,
-  todayXp:       0,
+  date:            '',
+  tasks:           [],
+  week:            '',
+  weeklyProgress:  null,
+  dayBonusClaimed: false,
+  currentStreak:   0,
+  bestStreak:      0,
+  lastWinDate:     '',
+  totalWins:       0,
+  totalBattles:    0,
+  totalXp:         0,
+  todayXp:         0,
 }
 
 function makeTasks(date: string): DailyTaskProgress[] {
@@ -131,6 +215,31 @@ function makeTasks(date: string): DailyTaskProgress[] {
     completed: false,
     claimed:   false,
   }))
+}
+
+function makeWeekly(week: string): DailyTaskProgress {
+  return {
+    taskId:    pickWeeklyTask(week).id,
+    progress:  0,
+    completed: false,
+    claimed:   false,
+  }
+}
+
+function applyMetricDelta(metric: TaskMetric, rec: BattleRecord): number {
+  switch (metric) {
+    case 'wins':      return rec.won ? 1 : 0
+    case 'battles':   return 1
+    case 'damage':    return rec.damageDealt
+    case 'turns':     return rec.turnsPlayed
+    case 'healing':   return rec.healing
+    case 'ko':        return rec.isKo ? 1 : 0
+    case 'special':   return rec.specialUsed
+    case 'heavy':     return rec.heavyUsed
+    case 'laser':     return rec.laserUsed
+    case 'dodge':     return rec.dodgeUsed
+    case 'no_repair': return (rec.won && !rec.usedRepair) ? 1 : 0
+  }
 }
 
 // ── Backend sync helper ───────────────────────────────────────────────────────
@@ -156,39 +265,49 @@ export const useDailyStore = create<DailyState & DailyActions>()(
 
       refreshDay: () => {
         const today = todayStr()
-        if (get().date !== today) {
-          set(s => ({
-            date:    today,
-            tasks:   makeTasks(today),
-            todayXp: 0,
-            // keep streak, wins, battles, xp
-            currentStreak: s.currentStreak,
-            bestStreak:    s.bestStreak,
-            lastWinDate:   s.lastWinDate,
-            totalWins:     s.totalWins,
-            totalBattles:  s.totalBattles,
-            totalXp:       s.totalXp,
-          }))
-        }
+        const wk    = weekStr()
+        set(s => {
+          const next: Partial<DailyState> = {}
+          if (s.date !== today) {
+            next.date            = today
+            next.tasks           = makeTasks(today)
+            next.todayXp         = 0
+            next.dayBonusClaimed = false
+          }
+          if (s.week !== wk) {
+            next.week           = wk
+            next.weeklyProgress = makeWeekly(wk)
+          }
+          return Object.keys(next).length > 0 ? next : s
+        })
       },
 
       recordBattle: (rec: BattleRecord) => {
         const today = todayStr()
+        const wk    = weekStr()
 
         set(s => {
-          // ── Ensure tasks are current ──────────────────────────
+          // ── Rollover guards ──────────────────────────────────
           let tasks = s.tasks
           let todayXp = s.todayXp
           let date = s.date
+          let dayBonusClaimed = s.dayBonusClaimed
           if (date !== today) {
-            tasks    = makeTasks(today)
-            todayXp  = 0
-            date     = today
+            tasks            = makeTasks(today)
+            todayXp          = 0
+            date             = today
+            dayBonusClaimed  = false
+          }
+
+          let week           = s.week
+          let weeklyProgress = s.weeklyProgress
+          if (week !== wk || !weeklyProgress) {
+            week           = wk
+            weeklyProgress = makeWeekly(wk)
           }
 
           // ── Streak ────────────────────────────────────────────
           let { currentStreak, bestStreak, lastWinDate, totalWins, totalBattles } = s
-
           totalBattles++
           if (rec.won) {
             totalWins++
@@ -199,34 +318,29 @@ export const useDailyStore = create<DailyState & DailyActions>()(
             currentStreak = 0
           }
 
-          // ── Task progress ─────────────────────────────────────
+          // ── Daily task progress ───────────────────────────────
           const taskDefs = pickDailyTasks(date)
           const newTasks = tasks.map(tp => {
             const def = taskDefs.find(d => d.id === tp.taskId)
             if (!def || tp.completed) return tp
-
-            let delta = 0
-            switch (def.metric) {
-              case 'wins':      delta = rec.won ? 1 : 0;         break
-              case 'battles':   delta = 1;                        break
-              case 'damage':    delta = rec.damageDealt;          break
-              case 'turns':     delta = rec.turnsPlayed;          break
-              case 'healing':   delta = rec.healing;              break
-              case 'ko':        delta = rec.isKo ? 1 : 0;        break
-              case 'special':   delta = rec.specialUsed;          break
-              case 'heavy':     delta = rec.heavyUsed;            break
-              case 'laser':     delta = rec.laserUsed;            break
-              case 'dodge':     delta = rec.dodgeUsed;            break
-              case 'no_repair': delta = (rec.won && !rec.usedRepair) ? 1 : 0; break
-            }
-
+            const delta = applyMetricDelta(def.metric, rec)
             const newProgress = Math.min(def.target, tp.progress + delta)
             const completed   = newProgress >= def.target
             return { ...tp, progress: newProgress, completed }
           })
 
+          // ── Weekly progress ───────────────────────────────────
+          const weeklyDef = pickWeeklyTask(week)
+          let newWeekly = weeklyProgress
+          if (newWeekly.taskId === weeklyDef.id && !newWeekly.completed) {
+            const delta = applyMetricDelta(weeklyDef.metric, rec)
+            const wp    = Math.min(weeklyDef.target, newWeekly.progress + delta)
+            newWeekly   = { ...newWeekly, progress: wp, completed: wp >= weeklyDef.target }
+          }
+
           return {
-            date, tasks: newTasks, todayXp,
+            date, tasks: newTasks, todayXp, dayBonusClaimed,
+            week, weeklyProgress: newWeekly,
             currentStreak, bestStreak, lastWinDate,
             totalWins, totalBattles,
           }
@@ -238,21 +352,55 @@ export const useDailyStore = create<DailyState & DailyActions>()(
           const taskDefs = pickDailyTasks(s.date)
           const def = taskDefs.find(d => d.id === taskId)
           if (!def) return s
+          const tp = s.tasks.find(t => t.taskId === taskId)
+          if (!tp || !tp.completed || tp.claimed) return s
 
-          const tasks = s.tasks.map(tp =>
-            tp.taskId === taskId && tp.completed && !tp.claimed
-              ? { ...tp, claimed: true }
-              : tp
+          const multiplier = getStreakMultiplier(s.currentStreak)
+          const earned     = Math.round(def.xp * multiplier)
+          const tasks      = s.tasks.map(t =>
+            t.taskId === taskId ? { ...t, claimed: true } : t
           )
-          const earned = def.xp
           return {
             tasks,
-            totalXp:  s.totalXp  + earned,
-            todayXp:  s.todayXp  + earned,
+            totalXp: s.totalXp + earned,
+            todayXp: s.todayXp + earned,
+          }
+        })
+      },
+
+      claimWeekly: () => {
+        set(s => {
+          const def = pickWeeklyTask(s.week)
+          const wp  = s.weeklyProgress
+          if (!wp || wp.taskId !== def.id || !wp.completed || wp.claimed) return s
+
+          const multiplier = getStreakMultiplier(s.currentStreak)
+          const earned     = Math.round(def.xp * multiplier)
+          return {
+            weeklyProgress: { ...wp, claimed: true },
+            totalXp: s.totalXp + earned,
+            todayXp: s.todayXp + earned,
+          }
+        })
+      },
+
+      claimDayBonus: () => {
+        set(s => {
+          if (s.dayBonusClaimed) return s
+          const allClaimed = s.tasks.length > 0 && s.tasks.every(t => t.claimed)
+          if (!allClaimed) return s
+
+          const dailyDefs = pickDailyTasks(s.date)
+          const baseSum   = dailyDefs.reduce((sum, d) => sum + d.xp, 0)
+          const bonus     = Math.round(baseSum * 0.5)
+          return {
+            dayBonusClaimed: true,
+            totalXp: s.totalXp + bonus,
+            todayXp: s.todayXp + bonus,
           }
         })
       },
     }),
-    { name: 'robocode-daily-v1' }
+    { name: 'robocode-daily-v2' }
   )
 )
