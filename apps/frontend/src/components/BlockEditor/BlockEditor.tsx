@@ -173,11 +173,10 @@ export default function BlockEditor({
     if (e.button !== 0) return
     e.preventDefault()
     e.stopPropagation()
-    const scriptId = findScriptOf(scriptsRef.current, inst.instanceId)
-    if (!scriptId) return
 
-    const [nextScripts, pickedInst] = pickUpBlock(scriptsRef.current, scriptId, inst.instanceId)
-    if (!pickedInst) return
+    // Remove only this block; its .next chain stays in place (promoted to parent's next)
+    const nextScripts = removeBlockEverywhere(scriptsRef.current, inst.instanceId)
+    const pickedInst = { ...inst, next: undefined }
 
     scriptsRef.current = nextScripts
     setScripts(nextScripts)
@@ -215,8 +214,12 @@ export default function BlockEditor({
   // We track snap separately so we can update it during mousemove with live scripts
   const dragRef = useRef(drag)
   const scriptsRef = useRef(scripts)
+  const panOffsetRef = useRef(panOffset)
+  const zoomRef = useRef(zoom)
   dragRef.current = drag
   scriptsRef.current = scripts
+  panOffsetRef.current = panOffset
+  zoomRef.current = zoom
 
   useEffect(() => {
     function onMove(e: MouseEvent) {
@@ -231,8 +234,8 @@ export default function BlockEditor({
       const canvas = canvasRef.current
       if (!canvas) return
       const rect = canvas.getBoundingClientRect()
-      const x = (e.clientX - rect.left - panOffset.x) / zoom
-      const y = (e.clientY - rect.top  - panOffset.y) / zoom
+      const x = (e.clientX - rect.left - panOffsetRef.current.x) / zoomRef.current
+      const y = (e.clientY - rect.top  - panOffsetRef.current.y) / zoomRef.current
       const slotTarget = findSlotDropTargetAtPoint(e.clientX, e.clientY, d.inst)
       setSlotDropTargetKey(slotTarget ? makeSlotTargetKey(slotTarget.instanceId, slotTarget.slotId) : null)
       if (slotTarget) {
@@ -254,11 +257,16 @@ export default function BlockEditor({
 
       const canvas = canvasRef.current!
       const rect = canvas.getBoundingClientRect()
-      const x = (e.clientX - rect.left - panOffset.x) / zoom
-      const y = (e.clientY - rect.top  - panOffset.y) / zoom
+      const x = (e.clientX - rect.left - panOffsetRef.current.x) / zoomRef.current
+      const y = (e.clientY - rect.top  - panOffsetRef.current.y) / zoomRef.current
 
-      // Dropped on palette
-      const onPalette = e.clientX < rect.left
+      // Dropped on palette — check against actual palette element bounds
+      const paletteEl = document.querySelector('.' + styles.palette)
+      const paletteRect = paletteEl?.getBoundingClientRect()
+      const onPalette = paletteRect
+        ? e.clientX >= paletteRect.left && e.clientX <= paletteRect.right
+          && e.clientY >= paletteRect.top && e.clientY <= paletteRect.bottom
+        : e.clientX < rect.left
       if (onPalette) {
         if (!d.fromPalette) {
           // Canvas block → delete it
@@ -305,7 +313,7 @@ export default function BlockEditor({
       window.removeEventListener('mousemove', onMove)
       window.removeEventListener('mouseup', onUp)
     }
-  }, [panOffset, zoom])  // re-attach only when pan/zoom changes
+  }, [])  // panOffset/zoom читаются через refs — useEffect не пересоздаётся при пане/зуме
 
   // ── Canvas interactions ────────────────────────────────────────────────────
   const handleCanvasMouseDown = (e: React.MouseEvent) => {
@@ -325,6 +333,10 @@ export default function BlockEditor({
   // ── Slot change ────────────────────────────────────────────────────────────
   const handleSlotChange = useCallback((instId: string, slotId: string, value: string | number | BlockInstance | null) => {
     setScripts(prev => prev.map(s => ({ ...s, root: updateSlot(s.root, instId, slotId, value) })))
+  }, [])
+
+  const handleDropOnSlot = useCallback((instId: string, slotId: string, dropped: BlockInstance) => {
+    setScripts(prev => prev.map(s => ({ ...s, root: updateSlot(s.root, instId, slotId, deepCopy(dropped)) })))
   }, [])
 
   // ── Context menu ───────────────────────────────────────────────────────────
@@ -473,6 +485,7 @@ export default function BlockEditor({
                   script.root, script.id,
                   handleSlotChange, handleBlockRightClick, variables,
                   handleCanvasBlockMouseDown, snapTargetId, slotDropTargetKey,
+                  handleDropOnSlot,
                 )}
               </div>
             ))}
@@ -593,6 +606,7 @@ function renderStack(
   onBlockMouseDown: (e: React.MouseEvent, inst: BlockInstance) => void,
   snapTargetId: string | null,
   slotDropTargetKey: string | null,
+  onDropOnSlot?: (instId: string, slotId: string, dropped: BlockInstance) => void,
 ): React.ReactNode {
   const def = BLOCK_DEF_MAP.get(inst.defId)
   if (!def) return null
@@ -607,6 +621,7 @@ function renderStack(
         inst={inst}
         def={def}
         onSlotChange={onSlotChange}
+        onDropOnSlot={onDropOnSlot}
         onBlockMouseDown={onBlockMouseDown}
         onBlockContextMenu={onRightClick}
         variables={variables}
@@ -614,7 +629,7 @@ function renderStack(
         isUnreachable={isUnreachable}
         activeSlotTargetKey={slotDropTargetKey}
       />
-      {inst.next && renderStack(inst.next, scriptId, onSlotChange, onRightClick, variables, onBlockMouseDown, snapTargetId, slotDropTargetKey)}
+      {inst.next && renderStack(inst.next, scriptId, onSlotChange, onRightClick, variables, onBlockMouseDown, snapTargetId, slotDropTargetKey, onDropOnSlot)}
     </div>
   )
 }
@@ -756,7 +771,7 @@ interface SnapTarget {
 }
 
 // Real block height: PuzzleTop(6) + Body(32 min) + PuzzleBottom(6) = 44px
-const BLOCK_H = 50
+const BLOCK_H = 44
 
 function findSnapTarget(scripts: Script[], inst: BlockInstance, radius: number): SnapTarget | null {
   for (const script of scripts) {
@@ -855,75 +870,6 @@ function attachBlock(scripts: Script[], newInst: BlockInstance, target: SnapTarg
     if (s.id !== target.scriptId) return s
     return { ...s, root: attachToInstance(s.root, target.afterInstanceId, newInst, target.type) }
   })
-}
-
-function pickUpBlock(scripts: Script[], scriptId: string, instId: string): [Script[], BlockInstance | null] {
-  let picked: BlockInstance | null = null
-  const newScripts = scripts.flatMap(s => {
-    if (s.id !== scriptId) return [s]
-    if (s.root.instanceId === instId) {
-      picked = s.root
-      return []
-    }
-    const [newRoot, pickedBlock] = cutAtBlock(s.root, instId)
-    picked = pickedBlock
-    return newRoot ? [{ ...s, root: newRoot }] : []
-  })
-  return [newScripts, picked]
-}
-
-function cutAtBlock(inst: BlockInstance, targetId: string): [BlockInstance | null, BlockInstance | null] {
-  for (let i = 0; i < inst.slots.length; i++) {
-    const slot = inst.slots[i]
-    if (!slot.value || typeof slot.value !== 'object' || !('instanceId' in slot.value)) continue
-    const nested = slot.value as BlockInstance
-    if (nested.instanceId === targetId) {
-      return [{
-        ...inst,
-        slots: inst.slots.map((s, j) => j === i ? { ...s, value: null } : s),
-      }, nested]
-    }
-    const [newNested, picked] = cutAtBlock(nested, targetId)
-    if (picked !== null) {
-      return [{
-        ...inst,
-        slots: inst.slots.map((s, j) => j === i ? { ...s, value: newNested } : s),
-      }, picked]
-    }
-  }
-
-  // Next chain
-  if (inst.next?.instanceId === targetId) {
-    const cut = inst.next
-    return [{ ...inst, next: undefined }, cut]
-  }
-  if (inst.next) {
-    const [newNext, picked] = cutAtBlock(inst.next, targetId)
-    if (picked !== null) return [{ ...inst, next: newNext ?? undefined }, picked]
-  }
-  // Body children
-  for (let i = 0; i < (inst.body ?? []).length; i++) {
-    const child = inst.body![i]
-    if (child.instanceId === targetId) {
-      return [{ ...inst, body: inst.body!.filter((_, j) => j !== i) }, child]
-    }
-    const [newChild, picked] = cutAtBlock(child, targetId)
-    if (picked !== null) {
-      return [{ ...inst, body: inst.body!.map((b, j) => j === i ? newChild! : b) }, picked]
-    }
-  }
-  // ElseBody children
-  for (let i = 0; i < (inst.elseBody ?? []).length; i++) {
-    const child = inst.elseBody![i]
-    if (child.instanceId === targetId) {
-      return [{ ...inst, elseBody: inst.elseBody!.filter((_, j) => j !== i) }, child]
-    }
-    const [newChild, picked] = cutAtBlock(child, targetId)
-    if (picked !== null) {
-      return [{ ...inst, elseBody: inst.elseBody!.map((b, j) => j === i ? newChild! : b) }, picked]
-    }
-  }
-  return [inst, null]
 }
 
 /** Walk to the tail of a chain and attach `after` there */

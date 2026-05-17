@@ -255,9 +255,8 @@ function generateBlock(inst: BlockInstance | null, depth: number): string[] {
       break
     }
     case 'forever': {
-      lines.push(`${ind}for (let _loop = 0; _loop < 100; _loop++) {`)
-      lines.push(...generateBlocks(inst.body ?? [], depth + 1))
-      lines.push(`${ind}}`)
+      // strategy() вызывается движком каждый ход — цикл внутри одного хода бессмысленен и роняет sandbox
+      lines.push(...generateBlocks(inst.body ?? [], depth))
       break
     }
   }
