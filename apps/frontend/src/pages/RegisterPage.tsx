@@ -14,6 +14,13 @@ const SKINS = [
 
 const AVATARS = ['🤖', '⚔️', '🥊', '🚀', '🦾', '🎮', '👾', '💻', '🧠', '🔥', '⚡', '🌀']
 
+const LANGUAGES = [
+  { value: 'PYTHON',     icon: '🐍', label: 'Python',     sub: 'Читаемый, популярный', legacy: 'py'   },
+  { value: 'JAVASCRIPT', icon: '⚡', label: 'JavaScript',  sub: 'Универсальный, быстрый', legacy: 'js' },
+  { value: 'JAVA',       icon: '☕', label: 'Java',        sub: 'Строгий, надёжный',   legacy: 'java' },
+  { value: 'CPP',        icon: '⚙️', label: 'C++',         sub: 'Мощный, быстрый',     legacy: 'cpp'  },
+] as const
+
 export default function RegisterPage() {
   const navigate  = useNavigate()
   const setAuth   = useUserStore(s => s.setAuth)
@@ -21,7 +28,8 @@ export default function RegisterPage() {
   const [step, setStep] = useState<1 | 2>(1)
   const [form, setForm] = useState({
     email: '', username: '', displayName: '', password: '', confirmPassword: '',
-    preferredSkin: 'robot', preferredLang: 'js', avatar: '🤖',
+    preferredSkin: 'robot', preferredLang: 'py', avatar: '🤖',
+    language: 'PYTHON',
     experienceLevel: 'beginner', programmingYears: 0,
   })
   const [loading, setLoading] = useState(false)
@@ -168,26 +176,32 @@ export default function RegisterPage() {
               </div>
             </div>
 
-            <div className={styles.row}>
-              <div className={styles.field}>
-                <label className={styles.label}>Язык программирования</label>
-                <select className={styles.select} value={form.preferredLang}
-                  onChange={e => set('preferredLang', e.target.value)}>
-                  <option value="js">JavaScript</option>
-                  <option value="py">Python</option>
-                  <option value="cpp">C++</option>
-                  <option value="java">Java</option>
-                </select>
+            <div className={styles.field}>
+              <label className={styles.label}>Язык программирования</label>
+              <div className={styles.langGrid}>
+                {LANGUAGES.map(lang => (
+                  <button
+                    key={lang.value}
+                    type="button"
+                    className={`${styles.langCard} ${form.language === lang.value ? styles.langActive : ''}`}
+                    onClick={() => setForm(f => ({ ...f, language: lang.value, preferredLang: lang.legacy }))}
+                  >
+                    <span className={styles.langIcon}>{lang.icon}</span>
+                    <span className={styles.langName}>{lang.label}</span>
+                    <span className={styles.langSub}>{lang.sub}</span>
+                  </button>
+                ))}
               </div>
-              <div className={styles.field}>
-                <label className={styles.label}>Уровень опыта</label>
-                <select className={styles.select} value={form.experienceLevel}
-                  onChange={e => set('experienceLevel', e.target.value)}>
-                  <option value="beginner">Начинающий</option>
-                  <option value="intermediate">Средний</option>
-                  <option value="advanced">Продвинутый</option>
-                </select>
-              </div>
+            </div>
+
+            <div className={styles.field}>
+              <label className={styles.label}>Уровень опыта</label>
+              <select className={styles.select} value={form.experienceLevel}
+                onChange={e => set('experienceLevel', e.target.value)}>
+                <option value="beginner">Начинающий</option>
+                <option value="intermediate">Средний</option>
+                <option value="advanced">Продвинутый</option>
+              </select>
             </div>
 
             <div className={styles.field}>

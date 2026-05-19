@@ -51,6 +51,11 @@
   color: var(--text);
 }
 
+/* ── Division block ───────────────────────────────────────────────────────── */
+.divisionBlock {
+  margin-bottom: 4px;
+}
+
 /* ── Incoming challenges ──────────────────────────────────────────────────── */
 .incomingSection {
   display: flex;

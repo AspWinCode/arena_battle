@@ -34,6 +34,9 @@ import AdminCharacterEditor from './pages/admin/AdminCharacterEditor'
 import ShopPage from './pages/ShopPage'
 import DemoBattlePage from './pages/DemoBattlePage'
 import ForgotPasswordPage from './pages/ForgotPasswordPage'
+import TopicsPage from './pages/TopicsPage'
+import TaskPage from './pages/TaskPage'
+import DivisionPage from './pages/DivisionPage'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import AchievementToast from './components/AchievementToast'
 
@@ -81,6 +84,11 @@ export default function App() {
       <Route path="/admin/characters/:characterId" element={<ProtectedRoute><AdminCharacterEditor /></ProtectedRoute>} />
 
       <Route path="/shop" element={<ShopPage />} />
+
+      {/* Division system */}
+      <Route path="/topics" element={<TopicsPage />} />
+      <Route path="/topics/:topicId/task/:taskId" element={<TaskPage />} />
+      <Route path="/division" element={<DivisionPage />} />
 
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

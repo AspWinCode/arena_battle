@@ -5,7 +5,9 @@ import { ALL_SKIN_IDS } from '@robocode/shared'
 import { api } from '../api/client'
 import { useBattleStore } from '../stores/battleStore'
 import { useUserStore } from '../stores/userStore'
+import { useProgressStore } from '../stores/progressStore'
 import RankBadge from '../components/RankBadge'
+import DivisionProgress from '../components/DivisionProgress/DivisionProgress'
 import styles from './BattleHubPage.module.css'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -47,6 +49,11 @@ export default function BattleHubPage() {
   const navigate    = useNavigate()
   const setSession  = useBattleStore(s => s.setSession)
   const { user, token } = useUserStore()
+  const { division, fetchDivision } = useProgressStore()
+
+  useEffect(() => {
+    if (token) fetchDivision(token)
+  }, [token, fetchDivision])
 
   // ── Matchmaking ──────────────────────────────────────────────────────────
   const [inQueue,   setInQueue]   = useState(false)
@@ -303,6 +310,12 @@ export default function BattleHubPage() {
       <div className={styles.content}>
         <Link to="/profile" className={styles.back}>← Профиль</Link>
         <h1 className={styles.title}>⚔️ В бой</h1>
+
+        {division && (
+          <div className={styles.divisionBlock}>
+            <DivisionProgress data={division} />
+          </div>
+        )}
 
         {/* ── Incoming challenges ────────────────────────── */}
         {incoming.length > 0 && (

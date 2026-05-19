@@ -1,0 +1,297 @@
+.root {
+  min-height: 100vh;
+  background: var(--bg-dark);
+  color: var(--text);
+  font-family: var(--font-main);
+}
+
+.bg {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+.bgGlow1 {
+  position: absolute;
+  top: -200px;
+  left: -200px;
+  width: 600px;
+  height: 600px;
+  background: radial-gradient(circle, rgba(0,230,118,.06) 0%, transparent 70%);
+}
+.bgGlow2 {
+  position: absolute;
+  bottom: -200px;
+  right: -200px;
+  width: 500px;
+  height: 500px;
+  background: radial-gradient(circle, rgba(255,85,0,.05) 0%, transparent 70%);
+}
+
+.content {
+  position: relative;
+  z-index: 1;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 32px 20px 80px;
+}
+
+/* Header */
+.header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 32px;
+}
+.back {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  padding: 8px 14px;
+  border-radius: var(--radius);
+  cursor: pointer;
+  font-size: 14px;
+  transition: all .2s;
+}
+.back:hover { border-color: var(--accent); color: var(--accent); }
+
+.titleRow {
+  flex: 1;
+}
+.title {
+  font-size: 28px;
+  font-weight: 700;
+  margin: 0;
+}
+.subtitle {
+  color: var(--text-muted);
+  margin: 4px 0 0;
+  font-size: 14px;
+}
+
+/* Division badge */
+.divBadge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 8px 14px;
+  font-size: 14px;
+}
+.divIcon { font-size: 20px; }
+.divLabel { font-weight: 600; color: var(--accent); }
+.divRating { color: var(--text-muted); font-size: 13px; }
+
+/* Filters */
+.filters {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+.filterBtn {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  padding: 6px 14px;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: all .2s;
+}
+.filterBtn:hover { border-color: var(--accent); color: var(--text); }
+.filterBtnActive {
+  background: rgba(0,230,118,.1);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* Level section */
+.levelSection { margin-bottom: 32px; }
+.levelTitle {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.levelTitle::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+/* Topic grid */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px;
+}
+
+/* Topic card */
+.topicCard {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  cursor: pointer;
+  transition: all .2s;
+  position: relative;
+  overflow: hidden;
+}
+.topicCard:hover:not(.topicLocked) {
+  border-color: var(--accent);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0,230,118,.1);
+}
+.topicUnlocked { border-color: rgba(0,230,118,.3); }
+.topicDone {
+  border-color: var(--accent);
+  background: rgba(0,230,118,.05);
+}
+.topicLocked {
+  opacity: .5;
+  cursor: default;
+}
+.topicLocked:hover { transform: none; }
+
+.topicDoneStripe {
+  position: absolute;
+  top: 0; right: 0;
+  width: 0; height: 0;
+  border-style: solid;
+  border-width: 0 32px 32px 0;
+  border-color: transparent var(--accent) transparent transparent;
+}
+.topicDoneCheck {
+  position: absolute;
+  top: 3px; right: 3px;
+  font-size: 11px;
+  color: var(--bg-dark);
+  font-weight: 700;
+}
+
+.topicNum {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+  font-weight: 600;
+  letter-spacing: .05em;
+}
+.topicName {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 10px;
+  line-height: 1.3;
+}
+
+.topicMeta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.topicBadgeDone {
+  background: rgba(0,230,118,.15);
+  color: var(--accent);
+  border-radius: 4px;
+  padding: 2px 7px;
+  font-size: 11px;
+  font-weight: 600;
+}
+.topicBadgeLocked {
+  background: rgba(122,122,136,.1);
+  color: var(--text-muted);
+  border-radius: 4px;
+  padding: 2px 7px;
+  font-size: 11px;
+}
+
+/* Tasks mini progress */
+.tasksBar {
+  margin-top: 8px;
+}
+.tasksBarLabel {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+.tasksBarTrack {
+  height: 3px;
+  background: var(--border);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.tasksBarFill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 2px;
+  transition: width .4s ease;
+}
+
+/* Action button */
+.topicAction {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 10px;
+  font-size: 12px;
+  color: var(--accent);
+  font-weight: 600;
+}
+
+/* Empty / loading */
+.loading {
+  text-align: center;
+  padding: 80px 20px;
+  color: var(--text-muted);
+  font-size: 16px;
+}
+.spinner {
+  display: inline-block;
+  width: 32px;
+  height: 32px;
+  border: 3px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin .8s linear infinite;
+  margin-bottom: 16px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Summary bar */
+.summaryBar {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 28px;
+  flex-wrap: wrap;
+}
+.summaryStat {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px 20px;
+  text-align: center;
+  flex: 1;
+  min-width: 120px;
+}
+.summaryNum {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--accent);
+}
+.summaryLabel {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}

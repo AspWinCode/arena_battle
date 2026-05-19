@@ -12,6 +12,8 @@ export interface UserProfile {
   preferredSkin: string
   experienceLevel: string
   programmingYears: number
+  language?: string
+  division?: string
   elo?: number
   totalXp?: number
   totalBattles?: number
