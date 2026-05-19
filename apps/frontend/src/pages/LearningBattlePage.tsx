@@ -14,6 +14,19 @@ import TutorialOverlay from '../components/tutorial/TutorialOverlay'
 import { api } from '../api/client'
 import styles from './LearningBattlePage.module.css'
 
+const MISSION_TOPICS: Record<string, { id: string; label: string }> = {
+  'mission-01': { id: 'IF_ELSE_ELIF', label: 'If / Else / Elif' },
+  'mission-02': { id: 'LOGIC',        label: 'Логические операции' },
+  'mission-03': { id: 'IF_ELSE_ELIF', label: 'If / Else / Elif' },
+  'mission-04': { id: 'ARRAYS_1D',    label: 'Одномерные массивы' },
+  'mission-05': { id: 'ARITHMETIC',   label: 'Арифметика' },
+  'mission-06': { id: 'IF_ELSE_ELIF', label: 'If / Else / Elif' },
+  'mission-07': { id: 'FOR_LOOP',     label: 'Цикл for' },
+  'mission-08': { id: 'WHILE_LOOP',   label: 'Цикл while' },
+  'mission-09': { id: 'DICTS',        label: 'Словари' },
+  'mission-10': { id: 'NESTED_LOOPS', label: 'Вложенные циклы' },
+}
+
 const ACTION_ICON: Record<string, string> = {
   attack: '👊', heavy: '💥', laser: '⚡', shield: '🛡️',
   dodge: '💨', repair: '💊', special: '☄️',
@@ -544,6 +557,16 @@ export default function LearningBattlePage() {
                     {winner === 1 ? 'Отличная стратегия!' : 'Измени стратегию и попробуй ещё раз!'}
                   </div>
                 </div>
+              )}
+
+              {phase === 'result' && winner === 1 && missionId && MISSION_TOPICS[missionId] && (
+                <Link to="/topics" className={styles.topicBanner}>
+                  <span className={styles.topicBannerIcon}>📚</span>
+                  <div className={styles.topicBannerText}>
+                    <span className={styles.topicBannerTitle}>Закрепи знания!</span>
+                    <span className={styles.topicBannerSub}>Порешай задачи по теме «{MISSION_TOPICS[missionId].label}» →</span>
+                  </div>
+                </Link>
               )}
 
               {phase === 'result' && matchAnalysis && (

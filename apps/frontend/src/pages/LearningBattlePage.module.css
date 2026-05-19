@@ -519,3 +519,24 @@
   background: var(--bg-mid);
   border-radius: var(--radius);
 }
+
+.topicBanner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  margin-top: 10px;
+  border-radius: var(--radius-lg);
+  background: rgba(167,139,250,.1);
+  border: 1px solid rgba(167,139,250,.3);
+  text-decoration: none;
+  transition: background .15s, border-color .15s;
+}
+.topicBanner:hover {
+  background: rgba(167,139,250,.18);
+  border-color: #a78bfa;
+}
+.topicBannerIcon { font-size: 22px; flex-shrink: 0; }
+.topicBannerText { display: flex; flex-direction: column; gap: 2px; }
+.topicBannerTitle { font-size: 13px; font-weight: 700; color: #c4b5fd; }
+.topicBannerSub { font-size: 12px; color: var(--text-muted); }

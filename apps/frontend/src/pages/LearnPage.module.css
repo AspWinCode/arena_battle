@@ -92,12 +92,108 @@
   transition: width 0.5s;
 }
 
+/* ── Topics section ───────────────────────────────────────────────────── */
+.topicsSection {
+  margin-bottom: 40px;
+}
+
+.topicsProgressBar {
+  height: 5px;
+  background: var(--bg-card);
+  border-radius: 99px;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+
+.topicsProgressFill {
+  height: 100%;
+  background: linear-gradient(90deg, #a78bfa, #818cf8);
+  border-radius: 99px;
+  transition: width .5s;
+}
+
+.topicsGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.topicChip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 99px;
+  font-size: 12px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all .15s;
+}
+
+.topicChipUnlocked {
+  background: rgba(167,139,250,.12);
+  border: 1px solid rgba(167,139,250,.35);
+  color: #c4b5fd;
+}
+.topicChipUnlocked:hover {
+  background: rgba(167,139,250,.2);
+  border-color: #a78bfa;
+}
+
+.topicChipLocked {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  opacity: 0.6;
+}
+
+.topicChipDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  flex-shrink: 0;
+}
+
+.topicChipLabel {
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.topicChipDone {
+  font-size: 10px;
+  color: #4ade80;
+  font-weight: 800;
+}
+
+.topicsHint {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin: 0 0 16px;
+}
+
+.topicsActions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+
 /* Section heading (Missions, etc) */
 .sectionHead {
   display: flex;
   align-items: center;
   gap: 16px;
   margin-bottom: 16px;
+}
+
+.sectionBadge {
+  font-size: 13px;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
 }
 
 .sectionTitle {
@@ -205,4 +301,24 @@
   display: block;
   text-align: center;
   padding: 8px;
+}
+
+.missionTopicChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 8px;
+  padding: 3px 10px;
+  border-radius: 99px;
+  font-size: 11px;
+  font-weight: 600;
+  text-decoration: none;
+  background: rgba(167,139,250,.1);
+  border: 1px solid rgba(167,139,250,.25);
+  color: #c4b5fd;
+  transition: background .15s, border-color .15s;
+}
+.missionTopicChip:hover {
+  background: rgba(167,139,250,.2);
+  border-color: #a78bfa;
 }

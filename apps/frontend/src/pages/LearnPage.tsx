@@ -1,17 +1,46 @@
+import { useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { MISSIONS, SKIN_ICON } from '@robocode/shared'
 import { useLearnStore } from '../stores/learnStore'
+import { useProgressStore } from '../stores/progressStore'
+import { useUserStore } from '../stores/userStore'
 import TheorySection from './learn/TheorySection'
 import styles from './LearnPage.module.css'
 
 const DIFF_LABEL = ['', 'Легко', 'Легко', 'Средне', 'Сложно', 'Босс']
 const DIFF_COLOR = ['', '#4ade80', '#4ade80', '#facc15', '#f97316', '#f43f5e']
 
+// Связка миссий с темами для практики
+const MISSION_TOPICS: Record<string, { id: string; label: string }> = {
+  'mission-01': { id: 'IF_ELSE_ELIF', label: 'If / Else / Elif' },
+  'mission-02': { id: 'LOGIC',        label: 'Логические операции' },
+  'mission-03': { id: 'IF_ELSE_ELIF', label: 'If / Else / Elif' },
+  'mission-04': { id: 'ARRAYS_1D',    label: 'Одномерные массивы' },
+  'mission-05': { id: 'ARITHMETIC',   label: 'Арифметика' },
+  'mission-06': { id: 'IF_ELSE_ELIF', label: 'If / Else / Elif' },
+  'mission-07': { id: 'FOR_LOOP',     label: 'Цикл for' },
+  'mission-08': { id: 'WHILE_LOOP',   label: 'Цикл while' },
+  'mission-09': { id: 'DICTS',        label: 'Словари' },
+  'mission-10': { id: 'NESTED_LOOPS', label: 'Вложенные циклы' },
+}
+
+
 export default function LearnPage() {
   const navigate = useNavigate()
   const progress = useLearnStore(s => s.progress)
+  const { token } = useUserStore()
+  const { topics, fetchTopics } = useProgressStore()
+
+  useEffect(() => {
+    if (token) fetchTopics(token)
+  }, [token, fetchTopics])
 
   const totalCompleted = MISSIONS.filter(m => progress[m.id]?.completed).length
+  const unlockedCount  = topics.filter(t => t.unlocked).length
+  const totalTopics    = topics.length || 27
+
+  // Group topics by level for the mini-grid (show first 9 max)
+  const topicPreview = topics.slice(0, 9)
 
   return (
     <div className={styles.root}>
@@ -25,9 +54,61 @@ export default function LearnPage() {
           <button className={styles.back} onClick={() => navigate(-1)}>← Назад</button>
           <div className={styles.titleRow}>
             <h1 className={styles.title}>🎓 Режим обучения</h1>
-            <span className={styles.progress}>{totalCompleted} / {MISSIONS.length} миссий</span>
           </div>
-          <p className={styles.subtitle}>Пройди 10 миссий и стань мастером программирования!</p>
+          <p className={styles.subtitle}>Изучай теорию, решай задачи, сражайся — открывай новые возможности</p>
+        </div>
+
+        {/* ── Теория ────────────────────────────────────────────── */}
+        <TheorySection />
+
+        {/* ── Карта тем ─────────────────────────────────────────── */}
+        <div className={styles.topicsSection}>
+          <div className={styles.sectionHead}>
+            <h2 className={styles.sectionTitle}>📚 Карта тем</h2>
+            <span className={styles.sectionBadge}>{unlockedCount} / {totalTopics} разблокировано</span>
+          </div>
+
+          <div className={styles.topicsProgressBar}>
+            <div
+              className={styles.topicsProgressFill}
+              style={{ width: `${totalTopics > 0 ? (unlockedCount / totalTopics) * 100 : 0}%` }}
+            />
+          </div>
+
+          {topicPreview.length > 0 ? (
+            <div className={styles.topicsGrid}>
+              {topicPreview.map(t => (
+                <Link
+                  key={t.id}
+                  to={`/topics`}
+                  className={`${styles.topicChip} ${t.unlocked ? styles.topicChipUnlocked : styles.topicChipLocked}`}
+                >
+                  <span className={styles.topicChipDot} />
+                  <span className={styles.topicChipLabel}>{t.label}</span>
+                  {t.unlocked && t.tasksDone >= t.tasksRequired && (
+                    <span className={styles.topicChipDone}>✓</span>
+                  )}
+                </Link>
+              ))}
+            </div>
+          ) : (
+            <p className={styles.topicsHint}>Войди в аккаунт чтобы увидеть прогресс по темам</p>
+          )}
+
+          <div className={styles.topicsActions}>
+            <Link to="/topics" className="btn btn-primary" style={{ fontSize: 13 }}>
+              📚 Открыть карту тем →
+            </Link>
+            <Link to="/division" className="btn btn-ghost" style={{ fontSize: 13 }}>
+              🏆 Мой дивизион
+            </Link>
+          </div>
+        </div>
+
+        {/* ── Боевые миссии ─────────────────────────────────────── */}
+        <div className={styles.sectionHead} style={{ marginTop: 8 }}>
+          <h2 className={styles.sectionTitle}>⚔️ Боевые миссии</h2>
+          <span className={styles.sectionBadge}>{totalCompleted} / {MISSIONS.length} пройдено</span>
         </div>
 
         <div className={styles.progressBar}>
@@ -35,12 +116,6 @@ export default function LearnPage() {
             className={styles.progressFill}
             style={{ width: `${(totalCompleted / MISSIONS.length) * 100}%` }}
           />
-        </div>
-
-        <TheorySection />
-
-        <div className={styles.sectionHead}>
-          <h2 className={styles.sectionTitle}>🎯 Миссии</h2>
         </div>
 
         <div className={styles.grid}>
@@ -78,6 +153,16 @@ export default function LearnPage() {
                       ))}
                     </span>
                   </div>
+
+                  {MISSION_TOPICS[m.id] && !locked && (
+                    <Link
+                      to="/topics"
+                      className={styles.missionTopicChip}
+                      onClick={e => e.stopPropagation()}
+                    >
+                      📚 {MISSION_TOPICS[m.id].label}
+                    </Link>
+                  )}
 
                   {p?.completed && (
                     <div className={styles.stars}>
