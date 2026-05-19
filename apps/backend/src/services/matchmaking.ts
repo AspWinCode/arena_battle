@@ -11,6 +11,7 @@ interface QueueEntry {
   skin:     string
   lang:     string
   elo:      number
+  division: string
   joinedAt: Date
   // Set when matched
   matched?:  true
@@ -41,11 +42,11 @@ async function uniqueCode(field: 'code1' | 'code2'): Promise<string> {
 
 /** Join the queue. Returns immediately; caller should poll getStatus. */
 export async function joinQueue(userId: string, name: string, skin: string, lang: string): Promise<void> {
-  // Fetch current ELO
-  const user = await prisma.user.findUnique({ where: { id: userId }, select: { elo: true } })
+  const user = await prisma.user.findUnique({ where: { id: userId }, select: { elo: true, division: true } })
   const elo = user?.elo ?? 1000
+  const division = user?.division ?? 'DIVISION_2'
 
-  queue.set(userId, { userId, name, skin, lang, elo, joinedAt: new Date() })
+  queue.set(userId, { userId, name, skin, lang, elo, division, joinedAt: new Date() })
 
   // Attempt immediate match
   await tryMatch(userId)
@@ -122,11 +123,14 @@ async function tryMatch(userId: string): Promise<void> {
     code1 = await uniqueCode('code1')
     code2 = await uniqueCode('code2')
 
+    const bothDiv2 = me.division === 'DIVISION_2' && candidate.division === 'DIVISION_2'
+    const sessionLevel = bothDiv2 ? 'BLOCKS' : 'CODE'
+
     const session = await prisma.session.create({
       data: {
         adminId:     null,
         name:        `⚡ ${me.name} vs ${candidate.name}`,
-        level:       'CODE',
+        level:       sessionLevel,
         lang:        me.lang === 'auto' || candidate.lang === 'auto' ? null : (me.lang || null),
         format:      'bo3',
         timeLimit:   10,

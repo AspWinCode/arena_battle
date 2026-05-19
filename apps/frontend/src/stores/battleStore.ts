@@ -51,6 +51,8 @@ interface BattleState {
   eloDelta: { p1: number; p2: number } | null
   divisionPromoted: { from: string; to: string; unlockedFeatures: string[] } | null
   topicUnlocked: { topic: string; newContextVars?: string[] } | null
+  availableActions: string[]
+  contextVars: string[]
 
   // Actions
   setSession: (sessionId: string, slot: 1 | 2, level: SessionLevel, skins: SkinId[], token: string, name: string, skin: SkinId) => void
@@ -95,6 +97,8 @@ const initialState = {
   eloDelta: null,
   divisionPromoted: null,
   topicUnlocked: null,
+  availableActions: ['attack', 'dodge', 'shield'],
+  contextVars: ['hp', 'enemy_hp', 'round'],
 }
 
 export const useBattleStore = create<BattleState>()(
@@ -120,6 +124,8 @@ export const useBattleStore = create<BattleState>()(
           slot: msg.payload.slot,
           sessionLevel: msg.payload.sessionLevel,
           allowedSkins: msg.payload.allowedSkins,
+          ...(msg.payload.availableActions && { availableActions: msg.payload.availableActions }),
+          ...(msg.payload.contextVars && { contextVars: msg.payload.contextVars }),
         })
         break
 

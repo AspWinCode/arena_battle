@@ -71,8 +71,10 @@ export default function CodingScreen({
   const p1 = useBattleStore(s => s.p1)
   const p2 = useBattleStore(s => s.p2)
   const compileError = useBattleStore(s => s.compileError)
-  const allowedSkins = useBattleStore(s => s.allowedSkins)
-  const mySkin = useBattleStore(s => s.mySkin)
+  const allowedSkins     = useBattleStore(s => s.allowedSkins)
+  const mySkin           = useBattleStore(s => s.mySkin)
+  const availableActions = useBattleStore(s => s.availableActions)
+  const contextVars      = useBattleStore(s => s.contextVars)
   const myInfo = slot === 1 ? p1 : p2
   const opponentInfo = slot === 1 ? p2 : p1
 
@@ -202,12 +204,12 @@ export default function CodingScreen({
       {/* API Reference */}
       <div className={styles.apiRef}>
         <span className={styles.apiTitle}>actions:</span>
-        {['attack', 'heavy', 'laser', 'shield', 'dodge', 'repair', 'special'].map(fn => (
+        {availableActions.map(fn => (
           <code key={fn} className={styles.apiChip}>{fn}</code>
         ))}
         <span className={styles.apiSep}>|</span>
         <span className={styles.apiTitle}>ctx:</span>
-        {['myHp', 'myStamina', 'myRage', 'enemyHp', 'cooldowns', 'myPosition', 'distanceModifier'].map(p => (
+        {contextVars.map(p => (
           <code key={p} className={styles.apiChip}>{p}</code>
         ))}
       </div>

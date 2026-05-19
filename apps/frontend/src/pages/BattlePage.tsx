@@ -1,6 +1,8 @@
 import { useEffect, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
+import type { Lang } from '@robocode/shared'
 import { useBattleStore } from '../stores/battleStore'
+import { useUserStore } from '../stores/userStore'
 import { useWebSocket } from '../hooks/useWebSocket'
 import LobbyScreen    from '../components/battle/LobbyScreen'
 import CodingScreen   from '../components/battle/CodingScreen'
@@ -21,6 +23,16 @@ export default function BattlePage() {
   const myName  = useBattleStore(s => s.myName)
   const mySkin  = useBattleStore(s => s.mySkin)
   const setMySkin = useBattleStore(s => s.setMySkin)
+  const setLang   = useBattleStore(s => s.setLang)
+  const { user }  = useUserStore()
+
+  // Sync battle lang from user's preferred language on first mount
+  useEffect(() => {
+    if (user?.preferredLang) {
+      setLang(user.preferredLang as Lang)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const { send } = useWebSocket(sessionId ?? null)
   const connected = useRef(false)
