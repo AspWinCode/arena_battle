@@ -27,6 +27,10 @@ import { shopRoutes } from './routes/shop.js'
 import { skinsPublicRoutes } from './routes/skinsPublic.js'
 import { learnRoutes } from './routes/learn.js'
 import { sparringRoutes } from './routes/sparring.js'
+import { progressRoutes } from './routes/progress.js'
+import { taskRoutes } from './routes/tasks.js'
+import { divisionRoutes } from './routes/divisions.js'
+import { recommendationRoutes } from './routes/recommendations.js'
 import { wsRoutes } from './ws/index.js'
 import { checkAndGeneratePendingBrackets, spawnRecurringInstances } from './tournament/tournament-service.js'
 
@@ -110,9 +114,13 @@ export async function buildServer() {
   await server.register(adminSkinsRoutes,   { prefix: '/api/v1/admin/skins' })
   await server.register(shopRoutes,         { prefix: '/api/v1/shop' })
   await server.register(skinsPublicRoutes,  { prefix: '/api/v1/skins' })
-  await server.register(learnRoutes,        { prefix: '/api/v1/learn' })
-  await server.register(sparringRoutes,     { prefix: '/api/v1/sparring' })
-  await server.register(wsRoutes,           { prefix: '/ws' })
+  await server.register(learnRoutes,          { prefix: '/api/v1/learn' })
+  await server.register(sparringRoutes,       { prefix: '/api/v1/sparring' })
+  await server.register(progressRoutes,       { prefix: '/api/v1/progress' })
+  await server.register(taskRoutes,           { prefix: '/api/v1/tasks' })
+  await server.register(divisionRoutes,       { prefix: '/api/v1/divisions' })
+  await server.register(recommendationRoutes, { prefix: '/api/v1/recommendations' })
+  await server.register(wsRoutes,             { prefix: '/ws' })
 
   server.get('/health', async () => ({ status: 'ok', ts: Date.now() }))
 

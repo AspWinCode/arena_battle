@@ -4,6 +4,7 @@ import { z } from 'zod'
 import { prisma } from '../db/client.js'
 import nodemailer from 'nodemailer'
 import { ALL_SKIN_IDS } from '@robocode/shared'
+import { ensureProgress } from '../services/division-service.js'
 
 function makeResetCode() {
   return Math.floor(100000 + Math.random() * 900000).toString()
@@ -32,6 +33,7 @@ const registerSchema = z.object({
   username:        z.string().min(3).max(20).regex(/^[a-zA-Z0-9_]+$/, 'Только латиница, цифры и _'),
   displayName:     z.string().min(1).max(30),
   password:        z.string().min(6).max(72),
+  language:        z.enum(['PYTHON', 'JAVASCRIPT', 'JAVA', 'CPP']).optional(),
   preferredLang:   z.enum(['js', 'py', 'cpp', 'java']).optional(),
   preferredSkin:   z.enum(ALL_SKIN_IDS).optional(),
   experienceLevel: z.enum(['beginner', 'intermediate', 'advanced']).optional(),
@@ -49,6 +51,7 @@ const updateSchema = z.object({
   bio:              z.string().max(500).optional(),
   // avatar can be an emoji (1-4 chars) OR a data: URL (base64) OR a /uploads/ path
   avatar:           z.string().max(200000).optional(),
+  language:         z.enum(['PYTHON', 'JAVASCRIPT', 'JAVA', 'CPP']).optional(),
   preferredLang:    z.enum(['js', 'py', 'cpp', 'java']).optional(),
   preferredSkin:    z.enum(ALL_SKIN_IDS).optional(),
   experienceLevel:  z.enum(['beginner', 'intermediate', 'advanced']).optional(),
@@ -79,10 +82,22 @@ export const userAuthRoutes: FastifyPluginAsync = async (fastify) => {
     }
 
     const passwordHash = await bcrypt.hash(password, 12)
+    const { language, ...legacyProfile } = profile
     const user = await prisma.user.create({
-      data: { email, username, displayName, passwordHash, ...profile },
-      select: { id: true, email: true, username: true, displayName: true, avatar: true, preferredLang: true, preferredSkin: true },
+      data: {
+        email, username, displayName, passwordHash,
+        ...legacyProfile,
+        ...(language ? { language } : {}),
+      },
+      select: {
+        id: true, email: true, username: true, displayName: true,
+        avatar: true, preferredLang: true, preferredSkin: true,
+        language: true, division: true,
+      },
     })
+
+    // Create initial PlayerProgress
+    await ensureProgress(user.id)
 
     const token = signUserToken(fastify, user.id, user.email)
     return reply.status(201).send({ user, token })

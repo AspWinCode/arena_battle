@@ -1,7 +1,8 @@
 import type { FastifyPluginAsync } from 'fastify'
-import type { ClientMessage, Lang, SkinId } from '@robocode/shared'
+import type { ClientMessage, Lang, SkinId, Division, Language, GameTopic } from '@robocode/shared'
 import { prisma } from '../db/client.js'
 import { SessionRoom } from './session-room.js'
+import { getAvailableActions, getContextVars, ensureProgress } from '../services/division-service.js'
 
 // Minimal socket interface to avoid @fastify/websocket version differences
 interface BareSocket {
@@ -125,8 +126,36 @@ export const wsRoutes: FastifyPluginAsync = async (fastify) => {
             if (existing?.userId) resolvedUserId = existing.userId
           }
 
+          // Load division context for this player
+          let playerDivision: Division | undefined
+          let playerLanguage: Language | undefined
+          let unlockedTopics: GameTopic[] | undefined
+          let availableActions: string[] | undefined
+          let contextVars: string[] | undefined
+
+          if (resolvedUserId) {
+            const userCtx = await prisma.user.findUnique({
+              where: { id: resolvedUserId },
+              select: {
+                division: true, language: true,
+                progress: { select: { unlockedTopics: true } },
+              },
+            })
+            if (userCtx) {
+              playerDivision = userCtx.division as Division
+              playerLanguage = userCtx.language as Language
+              unlockedTopics = (userCtx.progress?.unlockedTopics ?? []) as GameTopic[]
+              availableActions = getAvailableActions(playerDivision, unlockedTopics.length)
+              contextVars = getContextVars(unlockedTopics.length)
+              // Ensure progress record exists
+              await ensureProgress(resolvedUserId).catch(() => {})
+            }
+          }
+
           const room = rooms.get(sessionId)!
-          room.addPlayer(ws, playerSlot, name, skin as SkinId, resolvedUserId)
+          room.addPlayer(ws, playerSlot, name, skin as SkinId, resolvedUserId, {
+            playerDivision, playerLanguage, unlockedTopics, availableActions, contextVars,
+          })
           fastify.log.info({ sessionId, slot: playerSlot, name, userId: resolvedUserId }, '[WS] player added to room')
 
           await prisma.player.upsert({

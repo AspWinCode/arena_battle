@@ -13,6 +13,49 @@ enum Level {
   PRO
 }
 
+enum Language {
+  PYTHON
+  JAVASCRIPT
+  JAVA
+  CPP
+}
+
+enum Division {
+  DIVISION_2
+  DIVISION_1
+  PREMIER_LEAGUE
+}
+
+enum GameTopic {
+  PRINT
+  ASSIGNMENT
+  VARIABLES_INPUT
+  SEP_END_LEN
+  DATA_TYPES
+  ARITHMETIC
+  MATH_MODULE
+  LOGIC
+  IF_ELSE_ELIF
+  FOR_LOOP
+  WHILE_LOOP
+  NESTED_LOOPS
+  INDEXING
+  STRING_SLICES
+  ARRAYS_1D
+  ARRAYS_2D
+  SETS
+  TUPLES
+  FUNCTIONS_BASIC
+  FUNCTIONS_PARAMS
+  LOCAL_VARS
+  GLOBAL_VARS
+  FUNCTIONS_RETURN
+  FUNCTIONS_BOOL
+  FUNCTIONS_MULTI_RETURN
+  DICTS
+  SETS_ADVANCED
+}
+
 enum Status {
   WAITING
   CODING
@@ -53,6 +96,12 @@ model User {
   lastWinDate    String   @default("")
   elo            Int      @default(1000)
 
+  // Division system
+  language      Language  @default(PYTHON)
+  division      Division  @default(DIVISION_2)
+  rating        Int       @default(0)
+  eloRating     Int       @default(1000)
+
   // Password reset
   passwordResetToken  String?
   passwordResetExpiry DateTime?
@@ -74,6 +123,11 @@ model User {
   clanOwned    Clan?       @relation("ClanOwner")
   clanMember   ClanMember?
   clanMessages ClanMessage[]
+
+  // Division system
+  progress         PlayerProgress?
+  taskCompletions  TaskCompletion[]
+  seasonResults    SeasonResult[]
 }
 
 model Session {
@@ -94,6 +148,10 @@ model Session {
   players     Player[]
   battles     Battle[]
   tournamentMatch TournamentMatch?
+
+  // Division system
+  division    Division? // division of the session (for matchmaking)
+  topic       GameTopic? // topic if this is a class session
 }
 
 model Player {
@@ -398,4 +456,63 @@ model ClanWar {
 
   clan1 Clan @relation("ClanWar1", fields: [clan1Id], references: [id])
   clan2 Clan @relation("ClanWar2", fields: [clan2Id], references: [id])
+}
+
+// ─── Division system ──────────────────────────────────────────────────────────
+
+model PlayerProgress {
+  id                String      @id @default(cuid())
+  userId            String      @unique
+  user              User        @relation(fields: [userId], references: [id])
+
+  unlockedTopics    GameTopic[]
+  topicTasksDone    Json        @default("{}")  // { "FOR_LOOP": 7, ... }
+  topicLastUsed     Json        @default("{}")  // { "FOR_LOOP": "2025-05-01T...", ... }
+  topicBattlesSince Json        @default("{}")  // { "FOR_LOOP": 3, ... }
+
+  winsAfterLastTopic Int        @default(0)
+
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+}
+
+model Task {
+  id          String      @id @default(cuid())
+  topic       GameTopic
+  language    Language
+  title       String
+  description String      @db.Text
+  testCases   Json        // [{input: string|null, expected_output: string}]
+  hint        String?
+  difficulty  Int         @default(1)  // 1-3
+  orderIndex  Int         @default(0)
+
+  completions TaskCompletion[]
+
+  @@index([topic, language])
+}
+
+model TaskCompletion {
+  id        String   @id @default(cuid())
+  taskId    String
+  task      Task     @relation(fields: [taskId], references: [id])
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  solvedAt  DateTime @default(now())
+
+  @@unique([taskId, userId])
+  @@index([userId])
+}
+
+model SeasonResult {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  season      Int
+  division    Division
+  finalRating Int
+  totalWins   Int
+  endedAt     DateTime @default(now())
+
+  @@index([userId])
 }

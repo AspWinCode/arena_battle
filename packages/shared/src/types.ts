@@ -1,5 +1,16 @@
 // ─── Enums ────────────────────────────────────────────────────────────────────
 
+// Division system
+export type Division = 'DIVISION_2' | 'DIVISION_1' | 'PREMIER_LEAGUE'
+export type Language = 'PYTHON' | 'JAVASCRIPT' | 'JAVA' | 'CPP'
+export type GameTopic =
+  | 'PRINT' | 'ASSIGNMENT' | 'VARIABLES_INPUT' | 'SEP_END_LEN' | 'DATA_TYPES'
+  | 'ARITHMETIC' | 'MATH_MODULE' | 'LOGIC' | 'IF_ELSE_ELIF' | 'FOR_LOOP'
+  | 'WHILE_LOOP' | 'NESTED_LOOPS' | 'INDEXING' | 'STRING_SLICES' | 'ARRAYS_1D'
+  | 'ARRAYS_2D' | 'SETS' | 'TUPLES' | 'FUNCTIONS_BASIC' | 'FUNCTIONS_PARAMS'
+  | 'LOCAL_VARS' | 'GLOBAL_VARS' | 'FUNCTIONS_RETURN' | 'FUNCTIONS_BOOL'
+  | 'FUNCTIONS_MULTI_RETURN' | 'DICTS' | 'SETS_ADVANCED'
+
 export type SessionLevel = 'blocks' | 'code' | 'pro'
 export type SessionStatus = 'WAITING' | 'CODING' | 'BATTLE' | 'DONE'
 export type SessionFormat = 'bo1' | 'bo3' | 'bo5'
@@ -236,7 +247,7 @@ export type ClientMessage =
   | { type: 'ping'; payload: Record<string, never> }
 
 export type ServerMessage =
-  | { type: 'connected'; payload: { slot: 1 | 2; sessionLevel: SessionLevel; allowedSkins: SkinId[] } }
+  | { type: 'connected'; payload: { slot: 1 | 2; sessionLevel: SessionLevel; allowedSkins: SkinId[]; playerDivision?: Division; playerLanguage?: Language; unlockedTopics?: GameTopic[]; availableActions?: string[]; contextVars?: string[] } }
   | { type: 'lobby_update'; payload: { p1: LobbyPlayer | null; p2: LobbyPlayer | null } }
   | { type: 'coding_start'; payload: { timeLimit: number; round?: number; score?: [number, number] } }
   | { type: 'timer_tick'; payload: { remaining: number } }
@@ -247,6 +258,9 @@ export type ServerMessage =
   | { type: 'error'; payload: { code: string; message: string } }
   | { type: 'pong'; payload: Record<string, never> }
   | { type: 'compile_status'; payload: { status: 'compiling' | 'done' | 'error'; lang?: Lang; p1Done?: boolean; p2Done?: boolean; message?: string } }
+  | { type: 'topic_unlocked'; payload: { topic: GameTopic; newActions?: string[]; newContextVars?: string[] } }
+  | { type: 'division_promoted'; payload: { from: Division; to: Division; unlockedFeatures: string[] } }
+  | { type: 'recommendation'; payload: { trigger: 'after_loss' | 'after_win' | 'topic_unused'; topic: GameTopic; message: string; codeExample: string; cta: string } }
 
 export interface LobbyPlayer {
   name: string; skin: SkinId; ready: boolean; lang?: Lang

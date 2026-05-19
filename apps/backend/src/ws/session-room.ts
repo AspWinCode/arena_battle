@@ -1,4 +1,4 @@
-import type { ServerMessage, LobbyPlayer, SkinId, Lang, Strategy } from '@robocode/shared'
+import type { ServerMessage, LobbyPlayer, SkinId, Lang, Strategy, Division, Language, GameTopic } from '@robocode/shared'
 import { CHARACTER_STATS } from '@robocode/shared'
 import { prisma } from '../db/client.js'
 import { runInSandbox } from '../sandbox/sandbox-service.js'
@@ -49,7 +49,20 @@ export class SessionRoom {
     private allowedSkins: SkinId[],
   ) {}
 
-  addPlayer(ws: WsSocket, slot: 1 | 2, name: string, skin: SkinId, userId?: string) {
+  addPlayer(
+    ws: WsSocket,
+    slot: 1 | 2,
+    name: string,
+    skin: SkinId,
+    userId?: string,
+    divisionCtx?: {
+      playerDivision?: Division
+      playerLanguage?: Language
+      unlockedTopics?: GameTopic[]
+      availableActions?: string[]
+      contextVars?: string[]
+    },
+  ) {
     this.players.set(slot, { ws, slot, name, skin, ready: false, userId })
 
     this.send(slot, {
@@ -58,6 +71,11 @@ export class SessionRoom {
         slot,
         sessionLevel: this.level as 'blocks' | 'code' | 'pro',
         allowedSkins: this.allowedSkins,
+        ...(divisionCtx?.playerDivision && { playerDivision: divisionCtx.playerDivision }),
+        ...(divisionCtx?.playerLanguage && { playerLanguage: divisionCtx.playerLanguage }),
+        ...(divisionCtx?.unlockedTopics && { unlockedTopics: divisionCtx.unlockedTopics }),
+        ...(divisionCtx?.availableActions && { availableActions: divisionCtx.availableActions }),
+        ...(divisionCtx?.contextVars && { contextVars: divisionCtx.contextVars }),
       },
     })
 
