@@ -12,12 +12,21 @@ const TRIGGER_ICON: Record<string, string> = {
 
 interface Props {
   recommendations: Recommendation[]
+  onDismiss?: (id: string) => void
 }
 
-export default function RecommendationToast({ recommendations }: Props) {
+export default function RecommendationToast({ recommendations, onDismiss }: Props) {
   const navigate = useNavigate()
   const { token } = useUserStore()
   const { dismissRecommendation } = useProgressStore()
+
+  const handleDismiss = (id: string) => {
+    if (onDismiss) {
+      onDismiss(id)
+    } else if (token) {
+      dismissRecommendation(id, token)
+    }
+  }
 
   if (!recommendations.length) return null
 
@@ -34,7 +43,7 @@ export default function RecommendationToast({ recommendations }: Props) {
         >
           <button
             className={styles.closeBtn}
-            onClick={() => token && dismissRecommendation(rec.id, token)}
+            onClick={() => handleDismiss(rec.id)}
           >✕</button>
 
           <div className={styles.header}>
@@ -53,7 +62,7 @@ export default function RecommendationToast({ recommendations }: Props) {
             </button>
             <button
               className={styles.dismissBtn}
-              onClick={() => token && dismissRecommendation(rec.id, token)}
+              onClick={() => handleDismiss(rec.id)}
             >
               Скрыть
             </button>

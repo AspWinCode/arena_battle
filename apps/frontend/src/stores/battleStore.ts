@@ -4,6 +4,7 @@ import type {
   ServerMessage, TurnResult, RoundResult,
   LobbyPlayer, SkinId, SessionLevel, Lang,
 } from '@robocode/shared'
+import type { Recommendation } from '../api/progress'
 
 type BattlePhase = 'lobby' | 'coding' | 'inter_round' | 'compiling' | 'battle' | 'result'
 
@@ -53,8 +54,10 @@ interface BattleState {
   topicUnlocked: { topic: string; newContextVars?: string[] } | null
   availableActions: string[]
   contextVars: string[]
+  battleRecommendations: Recommendation[]
 
   // Actions
+  dismissBattleRecommendation: (id: string) => void
   setSession: (sessionId: string, slot: 1 | 2, level: SessionLevel, skins: SkinId[], token: string, name: string, skin: SkinId) => void
   setCode: (code: string) => void
   setLang: (lang: Lang) => void
@@ -99,6 +102,7 @@ const initialState = {
   topicUnlocked: null,
   availableActions: ['attack', 'dodge', 'shield'],
   contextVars: ['hp', 'enemy_hp', 'round'],
+  battleRecommendations: [],
 }
 
 export const useBattleStore = create<BattleState>()(
@@ -111,6 +115,9 @@ export const useBattleStore = create<BattleState>()(
 
   setCode: (code) => set({ code }),
   setLang: (lang) => set({ lang }),
+  dismissBattleRecommendation: (id) => set(s => ({
+    battleRecommendations: s.battleRecommendations.filter(r => r.id !== id),
+  })),
   setMySkin: (mySkin) => set((state) => ({
     mySkin,
     p1: state.slot === 1 && state.p1 ? { ...state.p1, skin: mySkin } : state.p1,
@@ -233,6 +240,14 @@ export const useBattleStore = create<BattleState>()(
 
       case 'topic_unlocked':
         set({ topicUnlocked: msg.payload })
+        break
+
+      case 'recommendation':
+        set(s => ({
+          battleRecommendations: s.battleRecommendations.some(r => r.id === (msg.payload as any).id)
+            ? s.battleRecommendations
+            : [...s.battleRecommendations, msg.payload as any],
+        }))
         break
     }
   },

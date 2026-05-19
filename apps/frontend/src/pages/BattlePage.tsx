@@ -8,6 +8,7 @@ import LobbyScreen    from '../components/battle/LobbyScreen'
 import CodingScreen   from '../components/battle/CodingScreen'
 import BattleScreen   from '../components/battle/BattleScreen'
 import ResultScreen   from '../components/battle/ResultScreen'
+import RecommendationToast from '../components/RecommendationToast/RecommendationToast'
 import styles from './BattlePage.module.css'
 
 export default function BattlePage() {
@@ -22,8 +23,10 @@ export default function BattlePage() {
   // myName/mySkin saved at join — p1/p2 are null until lobby_update arrives from server
   const myName  = useBattleStore(s => s.myName)
   const mySkin  = useBattleStore(s => s.mySkin)
-  const setMySkin = useBattleStore(s => s.setMySkin)
-  const setLang   = useBattleStore(s => s.setLang)
+  const setMySkin                  = useBattleStore(s => s.setMySkin)
+  const setLang                    = useBattleStore(s => s.setLang)
+  const battleRecommendations      = useBattleStore(s => s.battleRecommendations)
+  const dismissBattleRecommendation = useBattleStore(s => s.dismissBattleRecommendation)
   const { user }  = useUserStore()
 
   // Sync battle lang from user's preferred language on first mount
@@ -83,6 +86,12 @@ export default function BattlePage() {
       {(phase === 'compiling' || phase === 'battle') && <BattleScreen />}
       {phase === 'result' && (
         <ResultScreen onPlayAgain={() => { useBattleStore.getState().reset(); navigate('/join') }} />
+      )}
+      {battleRecommendations.length > 0 && (
+        <RecommendationToast
+          recommendations={battleRecommendations}
+          onDismiss={dismissBattleRecommendation}
+        />
       )}
     </div>
   )

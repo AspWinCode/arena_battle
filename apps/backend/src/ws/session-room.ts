@@ -6,6 +6,7 @@ import { runRound } from '../engine/battle-engine.js'
 import { calcElo, xpForWin, xpForLoss } from '../services/elo.js'
 import { advanceWinner } from '../tournament/tournament-service.js'
 import { addRatingPoints, checkTopicUnlock, getDivisionUnlockedFeatures } from '../services/division-service.js'
+import { generateRecommendations } from '../routes/recommendations.js'
 
 // Minimal WS interface to avoid @types/ws issues
 interface WsSocket {
@@ -601,6 +602,26 @@ export class SessionRoom {
         })
       }
     }
+
+    // Send recommendations to both players (fire-and-forget, delay slightly so result screen shows first)
+    setTimeout(async () => {
+      try {
+        if (winnerId) {
+          const winRecs = await generateRecommendations(winnerId)
+          for (const rec of winRecs.slice(0, 2)) {
+            this.send(winnerSlot, { type: 'recommendation', payload: rec as any })
+          }
+        }
+        if (loserId) {
+          const lossRecs = await generateRecommendations(loserId)
+          for (const rec of lossRecs.slice(0, 2)) {
+            this.send(loserSlot, { type: 'recommendation', payload: rec as any })
+          }
+        }
+      } catch (e) {
+        console.error('[room] Recommendations send failed:', e)
+      }
+    }, 3000)
   }
 
   private broadcastAll(msg: ServerMessage) {
