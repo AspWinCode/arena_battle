@@ -5,6 +5,7 @@ import { runInSandbox } from '../sandbox/sandbox-service.js'
 import { runRound } from '../engine/battle-engine.js'
 import { calcElo, xpForWin, xpForLoss } from '../services/elo.js'
 import { advanceWinner } from '../tournament/tournament-service.js'
+import { addRatingPoints, checkTopicUnlock, getDivisionUnlockedFeatures } from '../services/division-service.js'
 
 // Minimal WS interface to avoid @types/ws issues
 interface WsSocket {
@@ -310,6 +311,11 @@ export class SessionRoom {
           } catch (e) {
             console.error('[room] Failed to update ELO stats:', e)
           }
+          try {
+            await this.postBattleProgressUpdates(finalWinner)
+          } catch (e) {
+            console.error('[room] Post-battle progress update failed:', e)
+          }
         }
 
         this.broadcastAll({
@@ -531,6 +537,70 @@ export class SessionRoom {
     const toLobby = (p: PlayerConn | undefined): LobbyPlayer | null =>
       p ? { name: p.name, skin: p.skin, ready: p.ready, lang: p.lang } : null
     return { type: 'lobby_update', payload: { p1: toLobby(p1), p2: toLobby(p2) } }
+  }
+
+  private async postBattleProgressUpdates(finalWinner: 1 | 2) {
+    const p1 = this.players.get(1)
+    const p2 = this.players.get(2)
+
+    const userId1 = p1?.userId ?? (await prisma.player.findFirst({
+      where: { sessionId: this.sessionId, slot: 1 },
+      select: { userId: true },
+    }))?.userId ?? null
+
+    const userId2 = p2?.userId ?? (await prisma.player.findFirst({
+      where: { sessionId: this.sessionId, slot: 2 },
+      select: { userId: true },
+    }))?.userId ?? null
+
+    const winnerId   = finalWinner === 1 ? userId1 : userId2
+    const loserId    = finalWinner === 1 ? userId2 : userId1
+    const winnerSlot = finalWinner
+    const loserSlot: 1 | 2 = finalWinner === 1 ? 2 : 1
+
+    if (winnerId) {
+      await prisma.playerProgress.updateMany({
+        where: { userId: winnerId },
+        data: { winsAfterLastTopic: { increment: 1 } },
+      })
+
+      const winResult = await addRatingPoints(winnerId, 'win_normal')
+      if (winResult.promoted && winResult.from && winResult.to) {
+        this.send(winnerSlot, {
+          type: 'division_promoted',
+          payload: {
+            from: winResult.from,
+            to: winResult.to,
+            unlockedFeatures: getDivisionUnlockedFeatures(winResult.to),
+          },
+        })
+      }
+
+      const topicResult = await checkTopicUnlock(winnerId)
+      if (topicResult.unlocked && topicResult.topic) {
+        this.send(winnerSlot, {
+          type: 'topic_unlocked',
+          payload: {
+            topic: topicResult.topic,
+            newContextVars: topicResult.newContextVarsUnlocked,
+          },
+        })
+      }
+    }
+
+    if (loserId) {
+      const lossResult = await addRatingPoints(loserId, 'loss_normal')
+      if (lossResult.promoted && lossResult.from && lossResult.to) {
+        this.send(loserSlot, {
+          type: 'division_promoted',
+          payload: {
+            from: lossResult.from,
+            to: lossResult.to,
+            unlockedFeatures: getDivisionUnlockedFeatures(lossResult.to),
+          },
+        })
+      }
+    }
   }
 
   private broadcastAll(msg: ServerMessage) {

@@ -158,13 +158,15 @@ function Recs({ recs, color }: { recs: string[]; color: string }) {
 // ── Main component ────────────────────────────────────────────────────────────
 
 export default function ResultScreen({ onPlayAgain }: { onPlayAgain: () => void }) {
-  const p1             = useBattleStore(s => s.p1)
-  const p2             = useBattleStore(s => s.p2)
-  const matchWinner    = useBattleStore(s => s.matchWinner)
-  const score          = useBattleStore(s => s.score)
-  const eloDelta       = useBattleStore(s => s.eloDelta)
-  const completedRounds = useBattleStore(s => s.completedRounds)
-  const slot           = useBattleStore(s => s.slot)
+  const p1               = useBattleStore(s => s.p1)
+  const p2               = useBattleStore(s => s.p2)
+  const matchWinner      = useBattleStore(s => s.matchWinner)
+  const score            = useBattleStore(s => s.score)
+  const eloDelta         = useBattleStore(s => s.eloDelta)
+  const completedRounds  = useBattleStore(s => s.completedRounds)
+  const slot             = useBattleStore(s => s.slot)
+  const divisionPromoted = useBattleStore(s => s.divisionPromoted)
+  const topicUnlocked    = useBattleStore(s => s.topicUnlocked)
 
   const [tab, setTab] = useState<'result' | 'analysis' | 'graph' | 'tree'>('result')
   const [graphSide, setGraphSide] = useState<1 | 2>(slot ?? 1)
@@ -241,6 +243,55 @@ export default function ResultScreen({ onPlayAgain }: { onPlayAgain: () => void 
             <span style={{ fontWeight: 700, color: eloDelta.p2 > 0 ? '#4ade80' : '#f87171' }}>
               {eloDelta.p2 > 0 ? `+${eloDelta.p2}` : eloDelta.p2} ELO
             </span>
+          </div>
+        )}
+
+        {/* Division promotion banner */}
+        {divisionPromoted && (
+          <div style={{
+            background: 'linear-gradient(135deg, rgba(0,230,118,.12), rgba(255,230,102,.08))',
+            border: '1px solid rgba(255,230,102,.4)',
+            borderRadius: 10,
+            padding: '14px 18px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 12,
+          }}>
+            <span style={{ fontSize: 28 }}>🎖️</span>
+            <div>
+              <div style={{ fontWeight: 800, color: '#ffe666', fontSize: 14 }}>
+                Повышение дивизиона!
+              </div>
+              <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>
+                {divisionPromoted.from} → {divisionPromoted.to}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Topic unlock banner */}
+        {topicUnlocked && (
+          <div style={{
+            background: 'rgba(0,230,118,.08)',
+            border: '1px solid rgba(0,230,118,.3)',
+            borderRadius: 10,
+            padding: '14px 18px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 12,
+          }}>
+            <span style={{ fontSize: 28 }}>📚</span>
+            <div>
+              <div style={{ fontWeight: 800, color: 'var(--accent)', fontSize: 14 }}>
+                Новая тема разблокирована!
+              </div>
+              <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>
+                {topicUnlocked.topic}
+                {topicUnlocked.newContextVars?.length
+                  ? ` · новые переменные: ${topicUnlocked.newContextVars.join(', ')}`
+                  : ''}
+              </div>
+            </div>
           </div>
         )}
 

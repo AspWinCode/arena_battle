@@ -49,6 +49,8 @@ interface BattleState {
   matchWinner: 0 | 1 | 2 | null  // null = not finished, 0 = draw, 1|2 = winner slot
   score: [number, number]
   eloDelta: { p1: number; p2: number } | null
+  divisionPromoted: { from: string; to: string; unlockedFeatures: string[] } | null
+  topicUnlocked: { topic: string; newContextVars?: string[] } | null
 
   // Actions
   setSession: (sessionId: string, slot: 1 | 2, level: SessionLevel, skins: SkinId[], token: string, name: string, skin: SkinId) => void
@@ -91,6 +93,8 @@ const initialState = {
   matchWinner: null,
   score: [0, 0] as [number, number],
   eloDelta: null,
+  divisionPromoted: null,
+  topicUnlocked: null,
 }
 
 export const useBattleStore = create<BattleState>()(
@@ -215,6 +219,14 @@ export const useBattleStore = create<BattleState>()(
           phase: 'result',
           eloDelta: msg.payload.eloDelta ?? null,
         })
+        break
+
+      case 'division_promoted':
+        set({ divisionPromoted: msg.payload })
+        break
+
+      case 'topic_unlocked':
+        set({ topicUnlocked: msg.payload })
         break
     }
   },
