@@ -31,8 +31,7 @@ export default function TopicsPage() {
   const doneCount = topics.filter(t => t.tasksDone >= t.tasksRequired).length
 
   const handleTopicClick = async (topic: TopicProgress) => {
-    if (!token || !topic.unlocked) return
-    // Navigate to first incomplete task for this topic
+    if (!token) return
     try {
       const res = await tasksApi.getTasks(token, topic.id)
       const firstTask = res.tasks.find(t => !t.completed) ?? res.tasks[0]
@@ -146,28 +145,23 @@ export default function TopicsPage() {
                       <div className={styles.topicNum}>#{topics.indexOf(topic) + 1}</div>
                       <div className={styles.topicName}>{topic.label}</div>
 
-                      {topic.unlocked ? (
-                        <>
-                          <div className={styles.tasksBar}>
-                            <div className={styles.tasksBarLabel}>
-                              <span>Задачи</span>
-                              <span>{topic.tasksDone}/{topic.tasksRequired}</span>
-                            </div>
-                            <div className={styles.tasksBarTrack}>
-                              <div
-                                className={styles.tasksBarFill}
-                                style={{ width: `${Math.min(100, (topic.tasksDone / topic.tasksRequired) * 100)}%` }}
-                              />
-                            </div>
-                          </div>
-                          <div className={styles.topicAction}>
-                            {isDone ? '✓ Завершено' : '▶ Решать задачи'}
-                          </div>
-                        </>
-                      ) : (
-                        <div className={styles.topicMeta}>
-                          <span className={styles.topicBadgeLocked}>🔒 Заблокировано</span>
+                      <div className={styles.tasksBar}>
+                        <div className={styles.tasksBarLabel}>
+                          <span>Задачи</span>
+                          <span>{topic.tasksDone}/{topic.tasksRequired}</span>
                         </div>
+                        <div className={styles.tasksBarTrack}>
+                          <div
+                            className={styles.tasksBarFill}
+                            style={{ width: `${Math.min(100, (topic.tasksDone / topic.tasksRequired) * 100)}%` }}
+                          />
+                        </div>
+                      </div>
+                      <div className={styles.topicAction}>
+                        {isDone ? '✓ Завершено' : topic.unlocked ? '▶ Решать задачи' : '▶ Практиковать'}
+                      </div>
+                      {!topic.unlocked && (
+                        <div className={styles.topicLockHint}>🔒 Открывается после 5 побед</div>
                       )}
                     </div>
                   )

@@ -250,6 +250,12 @@
   font-weight: 600;
 }
 
+.topicLockHint {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
 /* Empty / loading */
 .loading {
   text-align: center;

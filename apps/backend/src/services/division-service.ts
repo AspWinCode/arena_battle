@@ -240,7 +240,8 @@ export async function checkTopicUnlock(userId: string): Promise<{
 
   const tasksForTopic = tasksDone[nextTopic] ?? 0
   const winsOk = progress.winsAfterLastTopic >= WINS_TO_UNLOCK
-  const tasksOk = tasksForTopic >= TASKS_TO_UNLOCK
+  // First topic has no task requirement — user needs wins only to bootstrap
+  const tasksOk = unlockedSet.size === 0 || tasksForTopic >= TASKS_TO_UNLOCK
 
   if (!winsOk || !tasksOk) return { unlocked: false }
 
